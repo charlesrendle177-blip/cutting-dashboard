@@ -1,14 +1,5 @@
 {
-  "buildCommand": "npm install",
-  "outputDirectory": "./",
   "rewrites": [
-    {
-      "source": "/api/cutting-data",
-      "destination": "/api/cutting-data.js"
-    }
-  ],
-  "env": {
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key"
-  }
+    { "source": "/api/cutting-logs", "destination": "/api/cutting-logs.js" }
+  ]
 }
