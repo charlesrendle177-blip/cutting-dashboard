@@ -1,0 +1,17 @@
+{
+  "name": "cutting-dashboard",
+  "version": "1.0.0",
+  "description": "Fitness cutting phase tracker with Supabase sync",
+  "main": "api/cutting-data.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site, no build needed'",
+    "start": "echo 'Vercel handles deployment'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

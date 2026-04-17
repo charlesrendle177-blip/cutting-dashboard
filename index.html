@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 0.95em;
+        }
+
+        .setup-banner {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none !important;
+        }
+
+        .setup-banner.show {
+            display: block;
+        }
+
+        .setup-banner p {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .setup-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .setup-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .setup-input button {
+            background: #ffc107;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #10b981;
+        }
+
+        .status-offline {
+            background: #f59e0b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #0f74b6;
+        }
+
+        .stat-secondary {
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .goal-progress {
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0f74b6;
+            transition: width 0.3s ease;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            height: 400px;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-container canvas {
+            max-height: 350px;
+        }
+
+        .chart-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #0f172a;
+        }
+
+        .table-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 8px;
+            font-weight: 600;
+            color: #0f74b6;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .data-input {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        input, textarea {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95em;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #cbd5e1;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #0f74b6;
+            background: #f8fafc;
+        }
+
+        button {
+            background: #0f74b6;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        button:hover {
+            background: #0d5a8f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(15, 116, 182, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.85em;
+            color: #64748b;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stat-value {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="headerTitle">💪 Fitness Tracker</h1>
+            <p class="subtitle" id="headerSubtitle">Track your progress across any phase</p>
+        </header>
+
+        <!-- Phase Configuration -->
+        <div class="setup-banner" id="phaseConfig" style="display: block !important; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3);">
+            <p style="color: #4caf50; margin-bottom: 15px;"><strong>⚙️ Training Phase Settings</strong></p>
+            <div class="input-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                <div>
+                    <label class="input-label">Current Phase</label>
+                    <select id="phaseSelect" onchange="updatePhase()" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                        <option value="cutting">🔪 Cutting</option>
+                        <option value="maintenance">⚖️ Maintenance</option>
+                        <option value="bulking">📈 Bulking</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Start Weight (kg)</label>
+                    <input type="number" id="startWeight" step="0.1" placeholder="87.5" onchange="updatePhase()" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                </div>
+                <div>
+                    <label class="input-label">Goal Weight (kg)</label>
+                    <input type="number" id="goalWeight" step="0.1" placeholder="84.5" onchange="updatePhase()" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                </div>
+                <div>
+                    <label class="input-label">Deadline</label>
+                    <input type="date" id="deadline" onchange="updatePhase()" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup Banner -->
+        <div class="setup-banner show" id="setupBanner">
+            <p><strong>⚙️ First Time Setup Required</strong></p>
+            <p>Enter your Supabase publishable API key to enable cloud sync. This key is safe to share and will only be used for your tracker.</p>
+            <div class="setup-input">
+                <input type="password" id="apiKeyInput" placeholder="sb_publishable_..." style="flex: 1;">
+                <button onclick="initializeSupabase()">Connect Supabase</button>
+            </div>
+            <p id="setupStatus" style="margin-top: 10px; display: none;"></p>
+        </div>
+
+        <!-- Data Input Section -->
+        <div class="data-input">
+            <h3 style="margin-bottom: 15px;">📊 Quick Entry
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="syncStatus" style="font-size: 0.8em; color: #888;">Ready</span>
+            </h3>
+            <div class="input-grid">
+                <div>
+                    <label class="input-label">Date</label>
+                    <input type="date" id="inputDate">
+                </div>
+                <div>
+                    <label class="input-label">Weight (kg)</label>
+                    <input type="number" id="inputWeight" step="0.1" placeholder="87.5">
+                </div>
+                <div>
+                    <label class="input-label">Sleep (hrs)</label>
+                    <input type="number" id="inputSleep" step="0.1" placeholder="8">
+                </div>
+                <div>
+                    <label class="input-label">Steps</label>
+                    <input type="number" id="inputSteps" placeholder="8500">
+                </div>
+                <div>
+                    <label class="input-label">Calories (kcal)</label>
+                    <input type="number" id="inputCalories" placeholder="2600">
+                </div>
+                <div>
+                    <label class="input-label">Workout Type</label>
+                    <select id="inputWorkout" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                        <option value="">— Select —</option>
+                        <option value="push">💪 Push</option>
+                        <option value="pull">🔗 Pull</option>
+                        <option value="legs">🦵 Legs</option>
+                        <option value="rest">😴 Rest</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Cardio</label>
+                    <select id="inputCardio" style="width: 100%; padding: 10px; background: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 8px;">
+                        <option value="">— Select —</option>
+                        <option value="none">None</option>
+                        <option value="light">🚶 Light</option>
+                        <option value="moderate">🏃 Moderate</option>
+                        <option value="intense">⚡ Intense</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label class="input-label">Notes</label>
+                <textarea id="inputNotes" placeholder="Session notes, how you felt, etc." style="width: 100%; min-height: 60px;"></textarea>
+            </div>
+            <button onclick="addEntry()" id="addBtn">Add Entry</button>
+            <button onclick="exportData()" style="margin-left: 10px; background: rgba(76, 175, 80, 0.3);">Export Data (JSON)</button>
+            <button onclick="importData()" style="margin-left: 10px; background: rgba(76, 175, 80, 0.3);">Import Data</button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Current Weight</div>
+                <div class="stat-value" id="currentWeight">—</div>
+                <div class="stat-secondary" id="weightSince">No data yet</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">7-Day Average</div>
+                <div class="stat-value" id="avgWeight">—</div>
+                <div class="stat-secondary" id="weekTrend">Calculating...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Progress to Goal</div>
+                <div class="stat-value" id="progressPercent">—%</div>
+                <div class="goal-progress">
+                    <div style="font-size: 0.85em; color: #b0b0b0; margin-bottom: 5px;" id="goalRange">87.5kg → 84.5kg</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div style="font-size: 0.75em; color: #888; margin-top: 5px;" id="daysRemaining"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Sleep</div>
+                <div class="stat-value" id="avgSleep">—</div>
+                <div class="stat-secondary">Last 7 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Steps</div>
+                <div class="stat-value" id="avgSteps">—</div>
+                <div class="stat-secondary">Last 7 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Calories</div>
+                <div class="stat-value" id="avgCalories">—</div>
+                <div class="stat-secondary">Target: 2900</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Weight Trend</div>
+                <canvas id="weightChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Daily Calories</div>
+                <canvas id="caloriesChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Sleep & Steps</div>
+                <canvas id="sleepStepsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">7-Day Rolling Average Weight</div>
+                <canvas id="rollingAvgChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Workouts by Type (Monthly)</div>
+                <canvas id="workoutTypeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+            <h3 style="margin-bottom: 15px;">📋 Recent Logs</h3>
+            <table id="logsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Weight (kg)</th>
+                        <th>Sleep (hrs)</th>
+                        <th>Steps</th>
+                        <th>Calories</th>
+                        <th>Workout</th>
+                        <th>Cardio</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="logsBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #888;">No data yet. Add an entry above!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let supabaseClient = null;
+        let isOnline = false;
+        let data = [];
+        let charts = {};
+
+        // Phase configuration
+        let phaseConfig = {
+            phase: 'cutting',
+            startWeight: 87.5,
+            goalWeight: 84.5,
+            deadline: '2026-07-01'
+        };
+
+        // Default data
+        const defaultData = [
+            {date: "2026-04-09", weight: 88, sleep: 5.32, steps: 7636, calories: 2850, workout: "rest", cardio: "none", notes: "Flight back from beach day"},
+            {date: "2026-04-10", weight: 86.7, sleep: 7.44, steps: 9168, calories: 2520, workout: "push", cardio: "light", notes: "Day one of cut start"},
+            {date: "2026-04-11", weight: 86.2, sleep: 7.25, steps: 10412, calories: 2480, workout: "pull", cardio: "light", notes: "Day 2 cutting"},
+            {date: "2026-04-12", weight: 86.6, sleep: 7, steps: 5162, calories: 2200, workout: "rest", cardio: "none", notes: "Felt ill today, really tired and nauseous"},
+            {date: "2026-04-13", weight: 86.4, sleep: 8.23, steps: 7500, calories: 2350, workout: "rest", cardio: "none", notes: "Day 2 of illness, sore throat was feeling worse"},
+            {date: "2026-04-14", weight: 86.5, sleep: 7.717, steps: 7317, calories: 2420, workout: "rest", cardio: "none", notes: "Really ill today, bed bound all day"},
+            {date: "2026-04-15", weight: 87, sleep: 8.2, steps: 6147, calories: 2550, workout: "rest", cardio: "light", notes: "Day 4 of illness. Best I felt so far, but waiting for it to clear"}
+        ];
+
+        // Load phase settings from localStorage
+        function loadPhaseConfig() {
+            const saved = localStorage.getItem('phaseConfig');
+            if (saved) {
+                phaseConfig = JSON.parse(saved);
+            }
+
+            // Populate UI with saved values
+            document.getElementById('phaseSelect').value = phaseConfig.phase;
+            document.getElementById('startWeight').value = phaseConfig.startWeight;
+            document.getElementById('goalWeight').value = phaseConfig.goalWeight;
+            document.getElementById('deadline').value = phaseConfig.deadline;
+
+            updatePhaseUI();
+        }
+
+        // Update phase and recalculate
+        function updatePhase() {
+            phaseConfig.phase = document.getElementById('phaseSelect').value;
+            phaseConfig.startWeight = parseFloat(document.getElementById('startWeight').value) || 87.5;
+            phaseConfig.goalWeight = parseFloat(document.getElementById('goalWeight').value) || 84.5;
+            phaseConfig.deadline = document.getElementById('deadline').value || '2026-07-01';
+
+            localStorage.setItem('phaseConfig', JSON.stringify(phaseConfig));
+            updatePhaseUI();
+            updateDashboard();
+        }
+
+        // Update UI based on phase
+        function updatePhaseUI() {
+            const phaseEmojis = { cutting: '🔪', maintenance: '⚖️', bulking: '📈' };
+            const phaseTitles = { cutting: 'Cutting Phase', maintenance: 'Maintenance Phase', bulking: 'Bulking Phase' };
+            const phaseMessages = {
+                cutting: 'Lose fat while preserving muscle',
+                maintenance: 'Maintain current weight and muscle',
+                bulking: 'Gain muscle and strength'
+            };
+
+            document.getElementById('headerTitle').textContent = `${phaseEmojis[phaseConfig.phase]} ${phaseTitles[phaseConfig.phase]}`;
+            document.getElementById('headerSubtitle').textContent = phaseMessages[phaseConfig.phase];
+
+            document.getElementById('goalRange').textContent = `${phaseConfig.startWeight}kg → ${phaseConfig.goalWeight}kg`;
+
+            // Days remaining
+            const today = new Date();
+            const deadline = new Date(phaseConfig.deadline);
+            const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+            const weightDiff = Math.abs(phaseConfig.goalWeight - phaseConfig.startWeight);
+            const paceNeeded = (weightDiff / Math.max(1, daysLeft)).toFixed(2);
+
+            document.getElementById('daysRemaining').textContent = daysLeft > 0
+                ? `${daysLeft} days left | ${paceNeeded} kg/${daysLeft > 7 ? 'week' : 'day'}`
+                : 'Deadline reached!';
+        }
+
+        // Initialize
+        async function initializeSupabase() {
+            let apiKey = document.getElementById('apiKeyInput')?.value;
+
+            // If no key entered in form, try to load from localStorage
+            if (!apiKey) {
+                apiKey = localStorage.getItem('sb_api_key');
+            }
+
+            // Use default key as fallback
+            if (!apiKey) {
+                apiKey = 'sb_publishable_NF0O8Hx7ZXps-rOAA8bPKw_uvesmCqR';
+            }
+
+            // Save API key to localStorage
+            localStorage.setItem('sb_api_key', apiKey);
+
+            const SUPABASE_URL = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
+            supabaseClient = supabase.createClient(SUPABASE_URL, apiKey);
+
+            try {
+                // Test connection by fetching data
+                const { data: test, error } = await supabaseClient.from('cutting_logs').select('id').limit(1);
+                if (error) {
+                    console.error('Supabase error:', JSON.stringify(error));
+                    console.error('Error message:', error.message);
+                    console.error('Error code:', error.code);
+                    throw error;
+                }
+
+                isOnline = true;
+                document.getElementById('setupBanner').classList.remove('show');
+                updateStatusIndicator();
+                await loadDataFromSupabase();
+                updateDashboard();
+                console.log('Supabase connected successfully!');
+            } catch (err) {
+                console.error('Supabase connection error - Full:', JSON.stringify(err));
+                console.error('Error message:', err.message);
+                isOnline = false;
+                updateStatusIndicator();
+                console.log('Connection failed. Using local storage only.');
+                loadDataFromLocalStorage();
+                updateDashboard();
+            }
+        }
+
+        async function loadDataFromSupabase() {
+            try {
+                const { data: supabaseData, error } = await supabaseClient
+                    .from('cutting_logs')
+                    .select('*')
+                    .order('date', { ascending: true });
+
+                if (error) throw error;
+                data = supabaseData || [];
+            } catch (err) {
+                console.error('Error loading from Supabase:', err);
+                loadDataFromLocalStorage();
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            let stored = JSON.parse(localStorage.getItem('cuttingData'));
+            if (!stored || stored.length === 0) {
+                stored = defaultData;
+            } else {
+                // Migrate old data by adding workout/cardio fields from defaultData if missing
+                stored = stored.map(entry => {
+                    const defaultEntry = defaultData.find(d => d.date === entry.date);
+                    if (!entry.workout && defaultEntry) {
+                        entry.workout = defaultEntry.workout || null;
+                    }
+                    if (!entry.cardio && defaultEntry) {
+                        entry.cardio = defaultEntry.cardio || null;
+                    }
+                    return entry;
+                });
+                // Save the migrated data
+                localStorage.setItem('cuttingData', JSON.stringify(stored));
+            }
+            data = stored;
+        }
+
+        async function addEntry() {
+            const date = document.getElementById('inputDate').value;
+            const weight = parseFloat(document.getElementById('inputWeight').value);
+            const sleep = parseFloat(document.getElementById('inputSleep').value);
+            const steps = parseInt(document.getElementById('inputSteps').value);
+            const calories = parseInt(document.getElementById('inputCalories').value);
+            const workout = document.getElementById('inputWorkout').value;
+            const cardio = document.getElementById('inputCardio').value;
+            const notes = document.getElementById('inputNotes').value;
+
+            if (!date || !weight) {
+                alert('Please enter at least date and weight');
+                return;
+            }
+
+            const entry = { date, weight, sleep: sleep || null, steps: steps || null, calories: calories || null, workout: workout || null, cardio: cardio || null, notes };
+
+            // Remove duplicate entries for same date
+            data = data.filter(d => d.date !== date);
+            data.push(entry);
+            data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Save locally first
+            localStorage.setItem('cuttingData', JSON.stringify(data));
+
+            // Try to save to Supabase
+            if (supabaseClient && isOnline) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('cutting_logs')
+                        .upsert([entry], { onConflict: 'date' });
+
+                    if (error) throw error;
+                    updateStatusIndicator();
+                } catch (err) {
+                    console.error('Error saving to Supabase:', err);
+                }
+            }
+
+            // Clear inputs
+            document.getElementById('inputWeight').value = '';
+            document.getElementById('inputSleep').value = '';
+            document.getElementById('inputSteps').value = '';
+            document.getElementById('inputCalories').value = '';
+            document.getElementById('inputWorkout').value = '';
+            document.getElementById('inputCardio').value = '';
+            document.getElementById('inputNotes').value = '';
+            document.getElementById('inputDate').valueAsDate = new Date();
+
+            updateDashboard();
+        }
+
+        function updateStatusIndicator() {
+            const indicator = document.getElementById('statusIndicator');
+            const status = document.getElementById('syncStatus');
+            if (isOnline) {
+                indicator.className = 'status-indicator status-online';
+                status.textContent = 'Synced';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                status.textContent = 'Local only';
+            }
+        }
+
+        function updateDashboard() {
+            if (data.length === 0) return;
+
+            const latest = data[data.length - 1];
+            document.getElementById('currentWeight').textContent = latest.weight.toFixed(1) + ' kg';
+
+            const last7 = data.slice(-7);
+            const avg7 = last7.reduce((sum, d) => sum + d.weight, 0) / last7.length;
+            document.getElementById('avgWeight').textContent = avg7.toFixed(1) + ' kg';
+
+            const weightDiff = latest.weight - avg7;
+            const trend = weightDiff > 0 ? '↑' : weightDiff < 0 ? '↓' : '→';
+            document.getElementById('weekTrend').textContent = `${trend} ${Math.abs(weightDiff).toFixed(2)} kg from 7-day avg`;
+
+            const startWeight = phaseConfig.startWeight;
+            const goalWeight = phaseConfig.goalWeight;
+            const remaining = Math.max(0, latest.weight - goalWeight);
+            const totalChange = Math.abs(goalWeight - startWeight);
+            const progress = totalChange !== 0 ? ((totalChange - remaining) / totalChange) * 100 : 0;
+            document.getElementById('progressPercent').textContent = remaining.toFixed(1) + ' kg';
+            document.getElementById('progressFill').style.width = Math.max(0, Math.min(100, progress)) + '%';
+
+            const avgSleep = (last7.filter(d => d.sleep).reduce((sum, d) => sum + d.sleep, 0) / last7.filter(d => d.sleep).length).toFixed(1);
+            const avgSteps = Math.round(last7.filter(d => d.steps).reduce((sum, d) => sum + d.steps, 0) / last7.filter(d => d.steps).length);
+            const avgCals = Math.round(last7.filter(d => d.calories).reduce((sum, d) => sum + d.calories, 0) / last7.filter(d => d.calories).length);
+
+            document.getElementById('avgSleep').textContent = isNaN(avgSleep) ? '—' : avgSleep + ' hrs';
+            document.getElementById('avgSteps').textContent = isNaN(avgSteps) ? '—' : avgSteps.toLocaleString();
+            document.getElementById('avgCalories').textContent = isNaN(avgCals) ? '—' : avgCals.toLocaleString();
+
+            updateCharts();
+            updateTable();
+        }
+
+        function calculate7DayRollingAverage() {
+            const rolling = [];
+            for (let i = 6; i < data.length; i++) {
+                const window = data.slice(i - 6, i + 1);
+                const avg = window.reduce((sum, d) => sum + d.weight, 0) / window.length;
+                rolling.push({ date: data[i].date, avg: avg });
+            }
+            return rolling;
+        }
+
+        function aggregateWorkoutsByMonth() {
+            const monthlyData = {};
+
+            // Group data by month
+            data.forEach(entry => {
+                const date = new Date(entry.date);
+                const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = {
+                        label: monthLabel,
+                        push: 0,
+                        pull: 0,
+                        legs: 0,
+                        rest: 0
+                    };
+                }
+
+                if (entry.workout) {
+                    monthlyData[monthKey][entry.workout]++;
+                }
+            });
+
+            // Sort by month and return in order
+            return Object.keys(monthlyData).sort().map(key => monthlyData[key]);
+        }
+
+        function updateCharts() {
+            const dates = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            const weights = data.map(d => d.weight);
+            const calories = data.map(d => d.calories || null);
+            const sleep = data.map(d => d.sleep || null);
+            const steps = data.map(d => d.steps || null);
+
+            // Weight chart
+            if (charts.weight) charts.weight.destroy();
+            charts.weight = new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Weight (kg)',
+                        data: weights,
+                        borderColor: '#0f74b6',
+                        backgroundColor: 'rgba(15, 116, 182, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#0f74b6',
+                        pointBorderColor: '#ffffff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#1e293b' } } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+
+            // Calories chart
+            if (charts.calories) charts.calories.destroy();
+            charts.calories = new Chart(document.getElementById('caloriesChart'), {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Calories',
+                        data: calories,
+                        backgroundColor: 'rgba(15, 116, 182, 0.6)',
+                        borderColor: '#0f74b6',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#1e293b' } } },
+                    scales: {
+                        y: {
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+
+            // Sleep & Steps chart
+            if (charts.sleepSteps) charts.sleepSteps.destroy();
+            charts.sleepSteps = new Chart(document.getElementById('sleepStepsChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Sleep (hrs)',
+                            data: sleep,
+                            borderColor: '#0f74b6',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Steps',
+                            data: steps,
+                            borderColor: '#0d5a8f',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#1e293b' } } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            ticks: { color: '#64748b' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+
+            // 7-day rolling average
+            const rolling = calculate7DayRollingAverage();
+            if (charts.rolling) charts.rolling.destroy();
+            charts.rolling = new Chart(document.getElementById('rollingAvgChart'), {
+                type: 'line',
+                data: {
+                    labels: rolling.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: '7-Day Rolling Average',
+                        data: rolling.map(d => d.avg),
+                        borderColor: '#0f74b6',
+                        backgroundColor: 'rgba(15, 116, 182, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#0f74b6',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#1e293b' } } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+
+            // Workout type chart
+            const workoutMonthly = aggregateWorkoutsByMonth();
+            if (charts.workoutType) charts.workoutType.destroy();
+            charts.workoutType = new Chart(document.getElementById('workoutTypeChart'), {
+                type: 'bar',
+                data: {
+                    labels: workoutMonthly.map(d => d.label),
+                    datasets: [
+                        {
+                            label: '💪 Push',
+                            data: workoutMonthly.map(d => d.push),
+                            backgroundColor: 'rgba(244, 67, 54, 0.7)',
+                            borderColor: '#f44336',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🔗 Pull',
+                            data: workoutMonthly.map(d => d.pull),
+                            backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                            borderColor: '#2196f3',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '🦵 Legs',
+                            data: workoutMonthly.map(d => d.legs),
+                            backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                            borderColor: '#ff9800',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '😴 Rest',
+                            data: workoutMonthly.map(d => d.rest),
+                            backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                            borderColor: '#9c27b0',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#1e293b' } }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        y: {
+                            stacked: true,
+                            ticks: { color: '#64748b' },
+                            grid: { color: '#e2e8f0' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = '';
+            const displayed = [...data].reverse().slice(0, 10);
+            const workoutEmojis = { push: '💪', pull: '🔗', legs: '🦵', rest: '😴' };
+            const cardioEmojis = { none: '—', light: '🚶', moderate: '🏃', intense: '⚡' };
+            displayed.forEach(entry => {
+                const row = document.createElement('tr');
+                const workoutDisplay = entry.workout ? `${workoutEmojis[entry.workout] || entry.workout}` : '—';
+                const cardioDisplay = entry.cardio ? `${cardioEmojis[entry.cardio] || entry.cardio}` : '—';
+                row.innerHTML = `
+                    <td>${new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                    <td><strong>${entry.weight.toFixed(1)}</strong></td>
+                    <td>${entry.sleep ? entry.sleep.toFixed(1) : '—'}</td>
+                    <td>${entry.steps ? entry.steps.toLocaleString() : '—'}</td>
+                    <td>${entry.calories ? entry.calories.toLocaleString() : '—'}</td>
+                    <td>${workoutDisplay}</td>
+                    <td>${cardioDisplay}</td>
+                    <td style="max-width: 300px; word-break: break-word;">${entry.notes || '—'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function exportData() {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cutting-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (Array.isArray(imported)) {
+                            data = imported;
+                            localStorage.setItem('cuttingData', JSON.stringify(data));
+                            updateDashboard();
+                            alert('Data imported successfully!');
+                        }
+                    } catch (err) {
+                        alert('Error importing file: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // Set today's date
+        document.getElementById('inputDate').valueAsDate = new Date();
+
+        // Auto-initialize after a short delay to ensure Supabase library is loaded
+        setTimeout(() => {
+            // Load phase config first, then initialize
+            loadPhaseConfig();
+            initializeSupabase();
+        }, 500);
+
+        // Update status every 30 seconds
+        setInterval(() => updateStatusIndicator(), 30000);
+    </script>
+</body>
+</html>
