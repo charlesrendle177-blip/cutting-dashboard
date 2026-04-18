@@ -709,7 +709,19 @@
                     updateStatusIndicator();
                 } catch (err) {
                     console.error('Error saving to Supabase:', err);
+                    // Show visible warning so user knows sync failed
+                    const warn = document.createElement('div');
+                    warn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#e53e3e;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+                    warn.textContent = '⚠️ Saved locally but failed to sync to cloud. Check connection.';
+                    document.body.appendChild(warn);
+                    setTimeout(() => warn.remove(), 6000);
                 }
+            } else if (!supabaseClient || !isOnline) {
+                const warn = document.createElement('div');
+                warn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#d69e2e;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+                warn.textContent = '⚠️ Offline — entry saved locally only. Will not sync until reconnected.';
+                document.body.appendChild(warn);
+                setTimeout(() => warn.remove(), 6000);
             }
 
             // Clear inputs
