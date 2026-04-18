@@ -645,6 +645,8 @@
 
                 if (error) throw error;
                 data = supabaseData || [];
+                // Always overwrite localStorage with fresh Supabase data
+                localStorage.setItem('cuttingData', JSON.stringify(data));
             } catch (err) {
                 console.error('Error loading from Supabase:', err);
                 loadDataFromLocalStorage();
