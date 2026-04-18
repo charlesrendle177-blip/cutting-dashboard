@@ -591,6 +591,8 @@
 
         // Initialize
         async function initializeSupabase() {
+            // Always use the JWT anon key — ignore any old publishable key in localStorage
+            const JWT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
             let apiKey = document.getElementById('apiKeyInput')?.value;
 
             // If no key entered in form, try to load from localStorage
@@ -598,9 +600,9 @@
                 apiKey = localStorage.getItem('sb_api_key');
             }
 
-            // Use default key as fallback
-            if (!apiKey) {
-                apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
+            // Replace old publishable key format or use default JWT key
+            if (!apiKey || apiKey.startsWith('sb_publishable_')) {
+                apiKey = JWT_KEY;
             }
 
             // Save API key to localStorage
