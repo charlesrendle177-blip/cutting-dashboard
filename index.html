@@ -318,6 +318,114 @@
                 font-size: 1.4em;
             }
         }
+
+        /* Edit Modal */
+        #editModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .edit-modal-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 560px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .edit-modal-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .edit-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .edit-modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .edit-modal-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .edit-modal-field label {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .edit-modal-field input,
+        .edit-modal-field textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            color: #1e293b;
+            background: #f8fafc;
+            font-family: inherit;
+        }
+
+        .edit-modal-field input:focus,
+        .edit-modal-field textarea:focus {
+            outline: none;
+            border-color: #0f74b6;
+            background: #fff;
+        }
+
+        .edit-modal-field textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .edit-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .edit-modal-actions .btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .edit-modal-actions .btn-cancel:hover {
+            background: #e2e8f0;
+            transform: none;
+            box-shadow: none;
+        }
+
+        @media (max-width: 520px) {
+            .edit-modal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -500,6 +608,7 @@
                         <th>Workout</th>
                         <th>Cardio</th>
                         <th>Notes</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="logsBody">
@@ -1070,10 +1179,60 @@
                     <td>${entry.calories ? entry.calories.toLocaleString() : '—'}</td>
                     <td>${workoutDisplay}</td>
                     <td>${cardioDisplay}</td>
-                    <td style="max-width: 300px; word-break: break-word;">${entry.notes || '—'}</td>
+                    <td style="max-width: 200px; word-break: break-word;">${entry.notes || '—'}</td>
+                    <td><button onclick="openEditModal('${entry.date}')" style="background:#4a9eff;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Edit</button></td>
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        function openEditModal(date) {
+            const entry = data.find(d => d.date === date);
+            if (!entry) return;
+            document.getElementById('editDate').value = entry.date;
+            document.getElementById('editWeight').value = entry.weight || '';
+            document.getElementById('editSleep').value = entry.sleep || '';
+            document.getElementById('editSteps').value = entry.steps || '';
+            document.getElementById('editCalories').value = entry.calories || '';
+            document.getElementById('editWorkout').value = entry.workout || '';
+            document.getElementById('editCardio').value = entry.cardio || '';
+            document.getElementById('editNotes').value = entry.notes || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveEdit() {
+            const date = document.getElementById('editDate').value;
+            const updated = {
+                date,
+                weight: parseFloat(document.getElementById('editWeight').value) || null,
+                sleep: parseFloat(document.getElementById('editSleep').value) || null,
+                steps: parseInt(document.getElementById('editSteps').value) || null,
+                calories: parseInt(document.getElementById('editCalories').value) || null,
+                workout: document.getElementById('editWorkout').value || null,
+                cardio: document.getElementById('editCardio').value || null,
+                notes: document.getElementById('editNotes').value || null,
+            };
+
+            // Update in Supabase
+            if (supabaseClient && isOnline) {
+                const { error } = await supabaseClient
+                    .from('cutting_logs')
+                    .upsert([updated], { onConflict: 'date' });
+                if (error) {
+                    alert('Failed to save: ' + error.message);
+                    return;
+                }
+            }
+
+            // Update local data and re-render
+            data = data.map(d => d.date === date ? { ...d, ...updated } : d);
+            localStorage.setItem('cuttingData', JSON.stringify(data));
+            updateDashboard();
+            closeEditModal();
         }
 
         function exportData() {
@@ -1124,5 +1283,47 @@
         // Update status every 30 seconds
         setInterval(() => updateStatusIndicator(), 30000);
     </script>
+
+    <!-- Edit Entry Modal -->
+    <div id="editModal">
+        <div class="edit-modal-card">
+            <div class="edit-modal-title">✏️ Edit Entry</div>
+            <input type="hidden" id="editDate">
+            <div class="edit-modal-grid">
+                <div class="edit-modal-field">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="editWeight" step="0.1" placeholder="e.g. 84.5">
+                </div>
+                <div class="edit-modal-field">
+                    <label>Sleep (hrs)</label>
+                    <input type="number" id="editSleep" step="0.5" placeholder="e.g. 7.5">
+                </div>
+                <div class="edit-modal-field">
+                    <label>Steps</label>
+                    <input type="number" id="editSteps" placeholder="e.g. 10000">
+                </div>
+                <div class="edit-modal-field">
+                    <label>Calories</label>
+                    <input type="number" id="editCalories" placeholder="e.g. 2400">
+                </div>
+                <div class="edit-modal-field">
+                    <label>Workout</label>
+                    <input type="text" id="editWorkout" placeholder="e.g. Upper body">
+                </div>
+                <div class="edit-modal-field">
+                    <label>Cardio</label>
+                    <input type="text" id="editCardio" placeholder="e.g. 30 min walk">
+                </div>
+                <div class="edit-modal-field full-width">
+                    <label>Notes</label>
+                    <textarea id="editNotes" placeholder="Any notes for this day…"></textarea>
+                </div>
+            </div>
+            <div class="edit-modal-actions">
+                <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button onclick="saveEdit()">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
