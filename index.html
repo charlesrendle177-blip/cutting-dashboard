@@ -426,6 +426,48 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* View toggle */
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .view-btn {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .view-btn:hover {
+            background: #e2e8f0;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .view-btn.view-btn-active {
+            background: #0f74b6;
+            color: #fff;
+            border-color: #0f74b6;
+        }
+
+        .view-btn.view-btn-active:hover {
+            background: #0d5a8f;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -570,6 +612,15 @@
             </div>
         </div>
 
+        <!-- View Toggle -->
+        <div class="section-header" style="margin-bottom: 20px;">
+            <span style="font-weight: 600; color: #0f172a; font-size: 1em;">📊 Dashboard View</span>
+            <div class="view-toggle">
+                <button id="btnAll" class="view-btn view-btn-active" onclick="setViewMode('all')">All Time</button>
+                <button id="btn2weeks" class="view-btn" onclick="setViewMode('2weeks')">Last 2 Weeks</button>
+            </div>
+        </div>
+
         <!-- Charts -->
         <div class="charts-grid">
             <div class="chart-container">
@@ -596,7 +647,9 @@
 
         <!-- Data Table -->
         <div class="table-container">
-            <h3 style="margin-bottom: 15px;">📋 Recent Logs</h3>
+            <div class="section-header">
+                <h3>📋 <span id="logsTitle">Recent Logs</span></h3>
+            </div>
             <table id="logsTable">
                 <thead>
                     <tr>
@@ -626,6 +679,25 @@
         let isOnline = false;
         let data = [];
         let charts = {};
+        let viewMode = 'all'; // 'all' or '2weeks'
+
+        function getDisplayData() {
+            if (viewMode === '2weeks') {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 13);
+                const cutoffStr = cutoff.toISOString().split('T')[0];
+                return data.filter(d => d.date >= cutoffStr);
+            }
+            return data;
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.getElementById('btnAll').classList.toggle('view-btn-active', mode === 'all');
+            document.getElementById('btn2weeks').classList.toggle('view-btn-active', mode === '2weeks');
+            document.getElementById('logsTitle').textContent = mode === '2weeks' ? 'Last 2 Weeks' : 'Recent Logs';
+            updateDashboard();
+        }
 
         // Phase configuration
         let phaseConfig = {
@@ -899,21 +971,21 @@
             updateTable();
         }
 
-        function calculate7DayRollingAverage() {
+        function calculate7DayRollingAverage(d) {
             const rolling = [];
-            for (let i = 6; i < data.length; i++) {
-                const window = data.slice(i - 6, i + 1);
-                const avg = window.reduce((sum, d) => sum + d.weight, 0) / window.length;
-                rolling.push({ date: data[i].date, avg: avg });
+            for (let i = 6; i < d.length; i++) {
+                const window = d.slice(i - 6, i + 1);
+                const avg = window.reduce((sum, e) => sum + e.weight, 0) / window.length;
+                rolling.push({ date: d[i].date, avg: avg });
             }
             return rolling;
         }
 
-        function aggregateWorkoutsByMonth() {
+        function aggregateWorkoutsByMonth(d) {
             const monthlyData = {};
 
             // Group data by month
-            data.forEach(entry => {
+            d.forEach(entry => {
                 const date = new Date(entry.date);
                 const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
                 const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
@@ -938,11 +1010,12 @@
         }
 
         function updateCharts() {
-            const dates = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-            const weights = data.map(d => d.weight);
-            const calories = data.map(d => d.calories || null);
-            const sleep = data.map(d => d.sleep || null);
-            const steps = data.map(d => d.steps || null);
+            const displayData = getDisplayData();
+            const dates = displayData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            const weights = displayData.map(d => d.weight);
+            const calories = displayData.map(d => d.calories || null);
+            const sleep = displayData.map(d => d.sleep || null);
+            const steps = displayData.map(d => d.steps || null);
 
             // Weight chart
             if (charts.weight) charts.weight.destroy();
@@ -1064,7 +1137,7 @@
             });
 
             // 7-day rolling average
-            const rolling = calculate7DayRollingAverage();
+            const rolling = calculate7DayRollingAverage(displayData);
             if (charts.rolling) charts.rolling.destroy();
             charts.rolling = new Chart(document.getElementById('rollingAvgChart'), {
                 type: 'line',
@@ -1101,7 +1174,7 @@
             });
 
             // Workout type chart
-            const workoutMonthly = aggregateWorkoutsByMonth();
+            const workoutMonthly = aggregateWorkoutsByMonth(displayData);
             if (charts.workoutType) charts.workoutType.destroy();
             charts.workoutType = new Chart(document.getElementById('workoutTypeChart'), {
                 type: 'bar',
@@ -1164,7 +1237,9 @@
         function updateTable() {
             const tbody = document.getElementById('logsBody');
             tbody.innerHTML = '';
-            const displayed = [...data].reverse().slice(0, 10);
+            const displayData = getDisplayData();
+            const limit = viewMode === '2weeks' ? displayData.length : 10;
+            const displayed = [...displayData].reverse().slice(0, limit);
             const workoutEmojis = { push: '💪', pull: '🔗', legs: '🦵', rest: '😴' };
             const cardioEmojis = { none: '—', light: '🚶', moderate: '🏃', intense: '⚡' };
             displayed.forEach(entry => {
