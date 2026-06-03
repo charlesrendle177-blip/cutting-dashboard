@@ -1059,6 +1059,14 @@
       <div class="table-card">
         <div class="table-card-header">
           <div class="table-card-title" id="f-table-title">Log History</div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="exportForClaude()" style="background:rgba(65,145,255,0.15);color:#4191ff;border:1px solid rgba(65,145,255,0.25);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+              📋 Copy for Claude
+            </button>
+            <button onclick="exportCSV()" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+              ⬇ Download CSV
+            </button>
+          </div>
         </div>
         <table>
           <thead>
@@ -1496,6 +1504,64 @@
     renderFitnessCharts();
     renderFitnessTable();
     loadFitness();
+  }
+
+  function exportForClaude() {
+    if (!fitnessAllData.length) { alert('No data to export yet.'); return; }
+    const sorted = [...fitnessAllData].sort((a, b) => a.date.localeCompare(b.date));
+    const latest = sorted[sorted.length - 1];
+    const startWeight = sorted[0].weight;
+    const currentWeight = latest.weight;
+    const totalChange = (currentWeight - startWeight).toFixed(1);
+
+    let text = `## Charles' Fitness Log — Export ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}\n\n`;
+    text += `**Current weight:** ${currentWeight} kg\n`;
+    text += `**Start weight:** ${startWeight} kg\n`;
+    text += `**Total change:** ${totalChange > 0 ? '+' : ''}${totalChange} kg\n`;
+    text += `**Days tracked:** ${sorted.length}\n\n`;
+    text += `### Daily Log\n`;
+    text += `| Date | Weight (kg) | Sleep (hrs) | Steps | Calories | Workout | Notes |\n`;
+    text += `|------|-------------|-------------|-------|----------|---------|-------|\n`;
+    sorted.forEach(e => {
+      text += `| ${e.date} | ${e.weight ?? '—'} | ${e.sleep ?? '—'} | ${e.steps ? Number(e.steps).toLocaleString() : '—'} | ${e.calories ? Number(e.calories).toLocaleString() : '—'} | ${e.workout ?? '—'} | ${e.notes ?? ''} |\n`;
+    });
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('button[onclick="exportForClaude()"]');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copied!';
+      btn.style.background = 'rgba(0,212,160,0.15)';
+      btn.style.color = '#00d4a0';
+      btn.style.borderColor = 'rgba(0,212,160,0.25)';
+      setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 2500);
+    }).catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('Copied to clipboard!');
+    });
+  }
+
+  function exportCSV() {
+    if (!fitnessAllData.length) { alert('No data to export yet.'); return; }
+    const sorted = [...fitnessAllData].sort((a, b) => a.date.localeCompare(b.date));
+    const headers = ['date','weight','sleep','steps','calories','workout','cardio','notes'];
+    const rows = sorted.map(e => headers.map(h => {
+      const v = e[h] ?? '';
+      return typeof v === 'string' && v.includes(',') ? `"${v}"` : v;
+    }).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `charles-fitness-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function loadFitness() {
