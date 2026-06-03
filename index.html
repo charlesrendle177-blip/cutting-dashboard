@@ -780,6 +780,79 @@
       .metrics-row.cols-4 { grid-template-columns: repeat(2,1fr); }
       .section-content  { padding: 28px 20px; }
       .section-header   { padding: 14px 20px; }
+      .f-charts-grid    { grid-template-columns: 1fr; }
+    }
+
+    /* Fitness view toggle */
+    .f-view-btn {
+      background: var(--navy-light);
+      color: var(--white-50);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.18s;
+    }
+    .f-view-btn:hover { background: var(--border); }
+    .f-view-btn.f-view-active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* Fitness edit modal */
+    #f-edit-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(13,35,69,0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .f-modal-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 24px 64px rgba(13,35,69,0.16);
+    }
+    .f-modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .f-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .f-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .f-modal-cancel {
+      background: var(--navy-light);
+      color: var(--white-70);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
     }
   </style>
 </head>
@@ -961,6 +1034,96 @@
         <button class="btn-save" onclick="logFitness()">Save Entry</button>
       </div>
 
+      <!-- View Toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;">Charts & History</div>
+        <div style="display:flex;gap:8px;">
+          <button id="f-btn-all" class="f-view-btn f-view-active" onclick="setFitnessView('all')">All Time</button>
+          <button id="f-btn-2w" class="f-view-btn" onclick="setFitnessView('2weeks')">Last 2 Weeks</button>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="f-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;">
+        <div class="log-card" style="margin-bottom:0;padding:22px 24px;">
+          <div class="log-card-title" style="margin-bottom:16px;">Weight Trend</div>
+          <div style="height:220px;position:relative;"><canvas id="f-weight-chart"></canvas></div>
+        </div>
+        <div class="log-card" style="margin-bottom:0;padding:22px 24px;">
+          <div class="log-card-title" style="margin-bottom:16px;">Daily Calories</div>
+          <div style="height:220px;position:relative;"><canvas id="f-cal-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Data Log Table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="table-card-title" id="f-table-title">Log History</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Weight</th>
+              <th>Sleep</th>
+              <th>Steps</th>
+              <th>Calories</th>
+              <th>Workout</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="f-log-body">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Fitness Edit Modal -->
+<div id="f-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(13,35,69,0.4);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div class="f-modal-card">
+    <div class="f-modal-title">✏️ Edit Entry</div>
+    <input type="hidden" id="f-edit-date">
+    <div class="f-modal-grid">
+      <div class="form-group">
+        <label>Weight (kg)</label>
+        <input type="number" id="f-edit-wt" step="0.1" placeholder="e.g. 84.5">
+      </div>
+      <div class="form-group">
+        <label>Sleep (hrs)</label>
+        <input type="number" id="f-edit-sleep" step="0.5" placeholder="e.g. 7.5">
+      </div>
+      <div class="form-group">
+        <label>Steps</label>
+        <input type="number" id="f-edit-steps" placeholder="e.g. 10000">
+      </div>
+      <div class="form-group">
+        <label>Calories</label>
+        <input type="number" id="f-edit-cals" placeholder="e.g. 2400">
+      </div>
+      <div class="form-group">
+        <label>Workout</label>
+        <select id="f-edit-workout">
+          <option value="">None</option>
+          <option value="Push">Push</option>
+          <option value="Pull">Pull</option>
+          <option value="Legs">Legs</option>
+          <option value="Hyrox">Hyrox</option>
+          <option value="Zone 2">Zone 2 Run</option>
+          <option value="Rest">Rest Day</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="f-edit-notes" placeholder="Optional note">
+      </div>
+    </div>
+    <div class="f-modal-actions">
+      <button class="f-modal-cancel" onclick="closeFitnessEdit()">Cancel</button>
+      <button class="btn-save" onclick="saveFitnessEdit()">💾 Save Changes</button>
     </div>
   </div>
 </div>
@@ -1214,14 +1377,139 @@
   }
 
   /* ---------- FITNESS ---------- */
+  let fitnessAllData = [];
+  let fitnessView = 'all';
+  let fCharts = {};
+
+  function setFitnessView(mode) {
+    fitnessView = mode;
+    document.getElementById('f-btn-all').classList.toggle('f-view-active', mode === 'all');
+    document.getElementById('f-btn-2w').classList.toggle('f-view-active', mode === '2weeks');
+    document.getElementById('f-table-title').textContent = mode === '2weeks' ? 'Last 2 Weeks' : 'Log History';
+    renderFitnessCharts();
+    renderFitnessTable();
+  }
+
+  function getFitnessDisplay() {
+    if (fitnessView === '2weeks') {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 13);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+      return fitnessAllData.filter(d => d.date >= cutoffStr);
+    }
+    return fitnessAllData;
+  }
+
+  function renderFitnessCharts() {
+    const d = getFitnessDisplay().slice().sort((a,b) => a.date.localeCompare(b.date));
+    const labels = d.map(e => new Date(e.date).toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
+    const navy = '#0d2345';
+    const navyAlpha = 'rgba(13,35,69,0.10)';
+    const gridColor = 'rgba(13,35,69,0.06)';
+    const tickColor = 'rgba(13,35,69,0.45)';
+    const axisOpts = (beginZero) => ({
+      beginAtZero: beginZero,
+      ticks: { color: tickColor, font: { size: 11 } },
+      grid: { color: gridColor }
+    });
+
+    if (fCharts.weight) fCharts.weight.destroy();
+    fCharts.weight = new Chart(document.getElementById('f-weight-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: 'Weight (kg)', data: d.map(e => e.weight), borderColor: navy, backgroundColor: navyAlpha, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: navy }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: axisOpts(false), x: { ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 10 }, grid: { display: false } } } }
+    });
+
+    if (fCharts.cal) fCharts.cal.destroy();
+    fCharts.cal = new Chart(document.getElementById('f-cal-chart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Calories', data: d.map(e => e.calories || null), backgroundColor: navyAlpha, borderColor: navy, borderWidth: 1, borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: axisOpts(true), x: { ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 10 }, grid: { display: false } } } }
+    });
+  }
+
+  function renderFitnessTable() {
+    const tbody = document.getElementById('f-log-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const d = getFitnessDisplay().slice().sort((a,b) => b.date.localeCompare(a.date));
+    if (!d.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:rgba(13,35,69,0.4);">No entries yet</td></tr>';
+      return;
+    }
+    d.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${new Date(e.date).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'})}</td>
+        <td style="font-weight:700;color:var(--accent)">${e.weight ? e.weight + ' kg' : '—'}</td>
+        <td>${e.sleep ? e.sleep + ' hrs' : '—'}</td>
+        <td>${e.steps ? Number(e.steps).toLocaleString() : '—'}</td>
+        <td>${e.calories ? Number(e.calories).toLocaleString() : '—'}</td>
+        <td>${e.workout || '—'}</td>
+        <td><button onclick="openFitnessEdit('${e.date}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 11px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;">Edit</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function openFitnessEdit(date) {
+    const e = fitnessAllData.find(d => d.date === date);
+    if (!e) return;
+    document.getElementById('f-edit-date').value = e.date;
+    document.getElementById('f-edit-wt').value = e.weight || '';
+    document.getElementById('f-edit-sleep').value = e.sleep || '';
+    document.getElementById('f-edit-steps').value = e.steps || '';
+    document.getElementById('f-edit-cals').value = e.calories || '';
+    document.getElementById('f-edit-workout').value = e.workout || '';
+    document.getElementById('f-edit-notes').value = e.notes || '';
+    const modal = document.getElementById('f-edit-modal');
+    modal.style.display = 'flex';
+  }
+
+  function closeFitnessEdit() {
+    document.getElementById('f-edit-modal').style.display = 'none';
+  }
+
+  async function saveFitnessEdit() {
+    const date = document.getElementById('f-edit-date').value;
+    const updated = {
+      date,
+      weight:   parseFloat(document.getElementById('f-edit-wt').value) || null,
+      sleep:    parseFloat(document.getElementById('f-edit-sleep').value) || null,
+      steps:    parseInt(document.getElementById('f-edit-steps').value) || null,
+      calories: parseInt(document.getElementById('f-edit-cals').value) || null,
+      workout:  document.getElementById('f-edit-workout').value || null,
+      notes:    document.getElementById('f-edit-notes').value || null,
+    };
+    if (sb) {
+      const { error } = await sb.from('cutting_logs').upsert([updated], { onConflict: 'date' });
+      if (error) { alert('Save failed: ' + error.message); return; }
+    }
+    fitnessAllData = fitnessAllData.map(d => d.date === date ? { ...d, ...updated } : d);
+    closeFitnessEdit();
+    renderFitnessCharts();
+    renderFitnessTable();
+    loadFitness();
+  }
+
   async function loadFitness() {
     if (!sb) return;
     try {
       const { data } = await sb.from('cutting_logs')
-        .select('*').order('date',{ascending:false}).limit(30);
+        .select('*').order('date', {ascending: true});
       if (!data?.length) return;
 
-      const latest = data[0];
+      fitnessAllData = data;
+      renderFitnessCharts();
+      renderFitnessTable();
+
+      const latest = [...data].sort((a,b) => b.date.localeCompare(a.date))[0];
       if (latest.weight) {
         document.getElementById('f-weight').innerHTML = latest.weight + '<span class="unit">kg</span>';
         document.getElementById('f-weight-date').textContent = 'Logged ' + fmtDate(latest.date);
@@ -1235,7 +1523,7 @@
       document.getElementById('f-sessions').innerHTML = weekSessions.length + '<span class="unit">sessions</span>';
       document.getElementById('s-sessions').textContent = weekSessions.length + ' sessions';
 
-      const lastW = data.find(d => d.workout && d.workout !== 'Rest' && d.workout !== '');
+      const lastW = [...data].sort((a,b) => b.date.localeCompare(a.date)).find(d => d.workout && d.workout !== 'Rest' && d.workout !== '');
       if (lastW) {
         document.getElementById('f-last-session').textContent = 'Last: ' + lastW.workout + ' on ' + fmtDate(lastW.date);
         document.getElementById('s-workout').textContent = lastW.workout;
