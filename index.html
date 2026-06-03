@@ -12,30 +12,30 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:          #060d1b;
-      --navy:        #0a1628;
-      --navy-mid:    #0f1f38;
-      --navy-card:   #0d1b30;
-      --navy-light:  #16294a;
-      --accent:      #4191ff;
-      --accent-dim:  rgba(65,145,255,0.12);
-      --accent-glow: rgba(65,145,255,0.22);
-      --green:       #00d4a0;
-      --green-dim:   rgba(0,212,160,0.10);
-      --amber:       #f59e0b;
-      --amber-dim:   rgba(245,158,11,0.10);
-      --danger:      #ef4444;
-      --white:       #ffffff;
-      --white-90:    rgba(255,255,255,0.9);
-      --white-70:    rgba(255,255,255,0.7);
-      --white-50:    rgba(255,255,255,0.5);
-      --white-40:    rgba(255,255,255,0.4);
-      --white-15:    rgba(255,255,255,0.15);
-      --white-08:    rgba(255,255,255,0.08);
-      --white-05:    rgba(255,255,255,0.05);
-      --white-03:    rgba(255,255,255,0.03);
-      --border:      rgba(255,255,255,0.08);
-      --border-hi:   rgba(255,255,255,0.14);
+      --bg:          #f2f6fc;
+      --navy:        #0d2345;
+      --navy-mid:    #ffffff;
+      --navy-card:   #ffffff;
+      --navy-light:  #e4edf8;
+      --accent:      #0d2345;
+      --accent-dim:  rgba(13,35,69,0.08);
+      --accent-glow: rgba(13,35,69,0.14);
+      --green:       #059669;
+      --green-dim:   rgba(5,150,105,0.10);
+      --amber:       #d97706;
+      --amber-dim:   rgba(217,119,6,0.10);
+      --danger:      #dc2626;
+      --white:       #0d2345;
+      --white-90:    rgba(13,35,69,0.90);
+      --white-70:    rgba(13,35,69,0.65);
+      --white-50:    rgba(13,35,69,0.50);
+      --white-40:    rgba(13,35,69,0.45);
+      --white-15:    rgba(13,35,69,0.10);
+      --white-08:    rgba(13,35,69,0.07);
+      --white-05:    rgba(13,35,69,0.04);
+      --white-03:    rgba(13,35,69,0.02);
+      --border:      rgba(13,35,69,0.08);
+      --border-hi:   rgba(13,35,69,0.18);
     }
 
     html, body {
@@ -66,9 +66,9 @@
       overflow: hidden;
       padding: 80px 80px 72px;
       background:
-        radial-gradient(ellipse 80% 60% at 70% -10%, rgba(65,145,255,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 50% at -10% 80%, rgba(0,212,160,0.05) 0%, transparent 60%),
-        linear-gradient(175deg, #0d1d33 0%, #0a1525 50%, #060e1e 100%);
+        radial-gradient(ellipse 70% 60% at 80% -10%, rgba(13,35,69,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at -10% 90%, rgba(13,35,69,0.04) 0%, transparent 60%),
+        linear-gradient(175deg, #ffffff 0%, #f2f6fc 100%);
       border-bottom: 1px solid var(--border);
     }
 
@@ -78,8 +78,8 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(65,145,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(65,145,255,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(13,35,69,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13,35,69,0.025) 1px, transparent 1px);
       background-size: 60px 60px;
       pointer-events: none;
       mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
@@ -218,6 +218,7 @@
       min-height: 290px;
       overflow: hidden;
       transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      box-shadow: 0 2px 8px rgba(13,35,69,0.06), 0 8px 24px rgba(13,35,69,0.04);
     }
 
     /* Coloured top accent */
@@ -247,7 +248,7 @@
     .section-card:hover {
       transform: translateY(-5px);
       border-color: var(--border-hi);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35), 0 0 0 1px var(--border-hi);
+      box-shadow: 0 16px 48px rgba(13,35,69,0.14), 0 0 0 1px var(--border-hi);
     }
     .section-card:hover::before {
       opacity: 0.9;
@@ -359,7 +360,7 @@
     }
 
     .section-header {
-      background: rgba(6,13,27,0.9);
+      background: rgba(255,255,255,0.95);
       border-bottom: 1px solid var(--border);
       padding: 16px 48px;
       display: flex;
@@ -370,6 +371,7 @@
       z-index: 100;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 1px 8px rgba(13,35,69,0.06);
     }
 
     .back-btn {
@@ -429,6 +431,7 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 22px 24px;
+      box-shadow: 0 1px 4px rgba(13,35,69,0.05), 0 4px 16px rgba(13,35,69,0.04);
     }
     .metric-label {
       font-size: 10px;
@@ -467,6 +470,7 @@
       border-radius: 20px;
       padding: 28px 32px;
       margin-bottom: 22px;
+      box-shadow: 0 1px 4px rgba(13,35,69,0.05), 0 4px 16px rgba(13,35,69,0.04);
     }
     .log-card-title {
       font-size: 13px;
@@ -497,7 +501,7 @@
     .form-group select,
     .form-group textarea {
       width: 100%;
-      background: rgba(6,13,27,0.7);
+      background: #f7faff;
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 13px;
@@ -514,7 +518,7 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    .form-group select option { background: #0a1628; }
+    .form-group select option { background: #ffffff; color: #0d2345; }
     .form-group textarea { resize: vertical; }
 
     .btn-save {
@@ -522,7 +526,7 @@
       align-items: center;
       gap: 8px;
       background: var(--accent);
-      color: var(--white);
+      color: #ffffff;
       border: none;
       border-radius: 11px;
       padding: 12px 26px;
@@ -534,7 +538,7 @@
       letter-spacing: 0.2px;
     }
     .btn-save:hover {
-      background: #5a9fff;
+      background: #1a3a6c;
       transform: translateY(-1px);
       box-shadow: 0 6px 20px var(--accent-glow);
     }
@@ -548,6 +552,7 @@
       border-radius: 20px;
       overflow: hidden;
       margin-bottom: 22px;
+      box-shadow: 0 1px 4px rgba(13,35,69,0.05), 0 4px 16px rgba(13,35,69,0.04);
     }
     .table-card-header {
       padding: 16px 24px;
@@ -625,21 +630,21 @@
     .jarvis-btn {
       width: 56px; height: 56px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #4a9fff 0%, #1561cc 100%);
+      background: linear-gradient(135deg, #1a3a6c 0%, #0d2345 100%);
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      box-shadow: 0 6px 28px rgba(65,145,255,0.4), 0 0 0 1px rgba(65,145,255,0.2);
+      box-shadow: 0 6px 28px rgba(13,35,69,0.3), 0 0 0 1px rgba(13,35,69,0.15);
       transition: transform 0.2s, box-shadow 0.2s;
       position: relative;
       z-index: 2;
     }
     .jarvis-btn:hover {
       transform: scale(1.08) translateY(-1px);
-      box-shadow: 0 10px 36px rgba(65,145,255,0.5);
+      box-shadow: 0 10px 36px rgba(13,35,69,0.4);
     }
 
     .jarvis-panel {
@@ -651,7 +656,7 @@
       background: var(--navy-mid);
       border: 1px solid var(--border-hi);
       border-radius: 22px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+      box-shadow: 0 32px 80px rgba(13,35,69,0.18), 0 0 0 1px var(--border);
       display: flex;
       flex-direction: column;
       z-index: 999;
@@ -677,11 +682,11 @@
     .jp-avatar {
       width: 32px; height: 32px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #1561cc);
+      background: linear-gradient(135deg, #1a3a6c, #0d2345);
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; flex-shrink: 0;
     }
-    .jp-name   { font-size: 14px; font-weight: 700; color: var(--white); }
+    .jp-name   { font-size: 14px; font-weight: 700; color: var(--white); color: #0d2345; }
     .jp-status { font-size: 11px; color: var(--green); }
 
     .jp-messages {
@@ -710,7 +715,7 @@
     }
     .msg.user {
       background: var(--accent);
-      color: var(--white);
+      color: #ffffff;
       align-self: flex-end;
       border-bottom-right-radius: 3px;
     }
@@ -723,7 +728,7 @@
     }
     .jp-input {
       flex: 1;
-      background: rgba(6,13,27,0.8);
+      background: #f7faff;
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 9px 12px;
@@ -740,14 +745,14 @@
       border-radius: 9px;
       background: var(--accent);
       border: none;
-      color: var(--white);
+      color: #ffffff;
       font-size: 15px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.18s;
       flex-shrink: 0;
     }
-    .jp-send:hover { background: #5a9fff; }
+    .jp-send:hover { background: #1a3a6c; }
 
     /* ============================================================
        ANIMATIONS
