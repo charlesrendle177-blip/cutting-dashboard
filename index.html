@@ -12,30 +12,30 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:          #eef2f8;
-      --navy:        #0d2345;
-      --navy-mid:    #ffffff;
-      --navy-card:   #ffffff;
-      --navy-light:  #e8eef8;
-      --accent:      #0d2345;
-      --accent-dim:  rgba(13,35,69,0.08);
-      --accent-glow: rgba(13,35,69,0.15);
-      --green:       #059669;
-      --green-dim:   rgba(5,150,105,0.10);
-      --amber:       #d97706;
-      --amber-dim:   rgba(217,119,6,0.10);
-      --danger:      #dc2626;
-      --white:       #0d2345;
-      --white-90:    rgba(13,35,69,0.90);
-      --white-70:    rgba(13,35,69,0.65);
-      --white-50:    rgba(13,35,69,0.50);
-      --white-40:    rgba(13,35,69,0.42);
-      --white-15:    rgba(13,35,69,0.10);
-      --white-08:    rgba(13,35,69,0.06);
-      --white-05:    rgba(13,35,69,0.04);
-      --white-03:    rgba(13,35,69,0.02);
-      --border:      rgba(13,35,69,0.08);
-      --border-hi:   rgba(13,35,69,0.18);
+      --bg:          #060d1b;
+      --navy:        #0a1628;
+      --navy-mid:    #0f1f38;
+      --navy-card:   #0d1b30;
+      --navy-light:  #16294a;
+      --accent:      #4191ff;
+      --accent-dim:  rgba(65,145,255,0.12);
+      --accent-glow: rgba(65,145,255,0.25);
+      --green:       #00d4a0;
+      --green-dim:   rgba(0,212,160,0.10);
+      --amber:       #f59e0b;
+      --amber-dim:   rgba(245,158,11,0.10);
+      --danger:      #ef4444;
+      --white:       #ffffff;
+      --white-90:    rgba(255,255,255,0.90);
+      --white-70:    rgba(255,255,255,0.70);
+      --white-50:    rgba(255,255,255,0.50);
+      --white-40:    rgba(255,255,255,0.40);
+      --white-15:    rgba(255,255,255,0.15);
+      --white-08:    rgba(255,255,255,0.08);
+      --white-05:    rgba(255,255,255,0.05);
+      --white-03:    rgba(255,255,255,0.03);
+      --border:      rgba(255,255,255,0.07);
+      --border-hi:   rgba(255,255,255,0.14);
     }
 
     html, body {
@@ -248,7 +248,7 @@
     .section-card:hover {
       transform: translateY(-5px);
       border-color: var(--border-hi);
-      box-shadow: 0 16px 48px rgba(13,35,69,0.14), 0 0 0 1px var(--border-hi);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px var(--border-hi);
     }
     .section-card:hover::before {
       opacity: 0.9;
@@ -429,8 +429,8 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 22px 24px;
-      border-top: 3px solid var(--accent);
-      box-shadow: 0 2px 8px rgba(13,35,69,0.06), 0 6px 20px rgba(13,35,69,0.04);
+      border-top: 2px solid rgba(65,145,255,0.4);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
     .metric-label {
       font-size: 10px;
@@ -469,7 +469,7 @@
       border-radius: 20px;
       padding: 28px 32px;
       margin-bottom: 22px;
-      box-shadow: 0 2px 8px rgba(13,35,69,0.06), 0 6px 20px rgba(13,35,69,0.04);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
     .log-card-title {
       font-size: 13px;
@@ -500,7 +500,7 @@
     .form-group select,
     .form-group textarea {
       width: 100%;
-      background: #f4f7fc;
+      background: rgba(6,13,27,0.6);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 13px;
@@ -517,7 +517,7 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    .form-group select option { background: #ffffff; color: #0d2345; }
+    .form-group select option { background: #0a1628; color: #ffffff; }
     .form-group textarea { resize: vertical; }
 
     .btn-save {
@@ -537,7 +537,7 @@
       letter-spacing: 0.2px;
     }
     .btn-save:hover {
-      background: #1a3a6c;
+      background: #5a9fff;
       transform: translateY(-1px);
       box-shadow: 0 6px 20px var(--accent-glow);
     }
@@ -551,7 +551,7 @@
       border-radius: 20px;
       overflow: hidden;
       margin-bottom: 22px;
-      box-shadow: 0 2px 8px rgba(13,35,69,0.06), 0 6px 20px rgba(13,35,69,0.04);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
     .table-card-header {
       padding: 16px 24px;
@@ -727,7 +727,7 @@
     }
     .jp-input {
       flex: 1;
-      background: #f4f7fc;
+      background: rgba(6,13,27,0.6);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 9px 12px;
@@ -751,7 +751,7 @@
       transition: background 0.18s;
       flex-shrink: 0;
     }
-    .jp-send:hover { background: #1a3a6c; }
+    .jp-send:hover { background: #5a9fff; }
 
     /* ============================================================
        ANIMATIONS
@@ -815,18 +815,18 @@
       padding: 20px;
     }
     .f-modal-card {
-      background: #ffffff;
-      border: 1px solid var(--border);
+      background: var(--navy-mid);
+      border: 1px solid var(--border-hi);
       border-radius: 18px;
       padding: 28px;
       width: 100%;
       max-width: 520px;
-      box-shadow: 0 24px 64px rgba(13,35,69,0.18);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
     }
     .f-modal-title {
       font-size: 15px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--white);
       margin-bottom: 20px;
       padding-bottom: 14px;
       border-bottom: 1px solid var(--border);
@@ -843,7 +843,7 @@
       justify-content: flex-end;
     }
     .f-modal-cancel {
-      background: var(--navy-light);
+      background: var(--white-08);
       color: var(--white-70);
       border: 1px solid var(--border);
       padding: 10px 20px;
@@ -1402,10 +1402,10 @@
   function renderFitnessCharts() {
     const d = getFitnessDisplay().slice().sort((a,b) => a.date.localeCompare(b.date));
     const labels = d.map(e => new Date(e.date).toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
-    const navy = '#0d2345';
-    const navyAlpha = 'rgba(13,35,69,0.08)';
-    const gridColor = 'rgba(13,35,69,0.06)';
-    const tickColor = 'rgba(13,35,69,0.45)';
+    const navy = '#4191ff';
+    const navyAlpha = 'rgba(65,145,255,0.12)';
+    const gridColor = 'rgba(255,255,255,0.06)';
+    const tickColor = 'rgba(255,255,255,0.4)';
     const axisOpts = (beginZero) => ({
       beginAtZero: beginZero,
       ticks: { color: tickColor, font: { size: 11 } },
@@ -1451,7 +1451,7 @@
         <td>${e.steps ? Number(e.steps).toLocaleString() : '—'}</td>
         <td>${e.calories ? Number(e.calories).toLocaleString() : '—'}</td>
         <td>${e.workout || '—'}</td>
-        <td><button onclick="openFitnessEdit('${e.date}')" style="background:rgba(13,35,69,0.06);color:#0d2345;border:1px solid rgba(13,35,69,0.14);border-radius:6px;padding:4px 11px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;">Edit</button></td>
+        <td><button onclick="openFitnessEdit('${e.date}')" style="background:rgba(65,145,255,0.12);color:#4191ff;border:1px solid rgba(65,145,255,0.2);border-radius:6px;padding:4px 11px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;">Edit</button></td>
       `;
       tbody.appendChild(tr);
     });
