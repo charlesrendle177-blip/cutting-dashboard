@@ -1060,10 +1060,10 @@
         <div class="table-card-header">
           <div class="table-card-title" id="f-table-title">Log History</div>
           <div style="display:flex;gap:8px;">
-            <button onclick="exportForClaude()" style="background:rgba(65,145,255,0.15);color:#4191ff;border:1px solid rgba(65,145,255,0.25);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+            <button onclick="exportForClaude()" style="background:#0d2345;color:#ffffff;border:none;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
               📋 Copy for Claude
             </button>
-            <button onclick="exportCSV()" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+            <button onclick="exportCSV()" style="background:#ffffff;color:#0d2345;border:1px solid rgba(13,35,69,0.18);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
               ⬇ Download CSV
             </button>
           </div>
@@ -1530,9 +1530,9 @@
       const btn = document.querySelector('button[onclick="exportForClaude()"]');
       const orig = btn.innerHTML;
       btn.innerHTML = '✅ Copied!';
-      btn.style.background = 'rgba(0,212,160,0.15)';
-      btn.style.color = '#00d4a0';
-      btn.style.borderColor = 'rgba(0,212,160,0.25)';
+      btn.style.background = '#059669';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#059669';
       setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 2500);
     }).catch(() => {
       // fallback for older browsers
