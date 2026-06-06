@@ -8,34 +8,45 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d2345">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:          #060d1b;
+      --bg:          #f0f2f7;
       --navy:        #0d2345;
       --navy-mid:    #ffffff;
       --navy-card:   #ffffff;
       --navy-light:  #e8eef8;
       --accent:      #0d2345;
-      --accent-dim:  rgba(13,35,69,0.08);
-      --accent-glow: rgba(13,35,69,0.15);
+      --accent-blue: #2563eb;
+      --accent-dim:  rgba(13,35,69,0.07);
+      --accent-glow: rgba(13,35,69,0.12);
       --green:       #059669;
       --green-dim:   rgba(5,150,105,0.10);
       --amber:       #d97706;
       --amber-dim:   rgba(217,119,6,0.10);
       --danger:      #dc2626;
-      --white:       #0d2345;
-      --white-90:    rgba(13,35,69,0.90);
-      --white-70:    rgba(13,35,69,0.65);
-      --white-50:    rgba(13,35,69,0.50);
-      --white-40:    rgba(13,35,69,0.42);
-      --white-15:    rgba(13,35,69,0.10);
-      --white-08:    rgba(13,35,69,0.06);
-      --white-05:    rgba(13,35,69,0.04);
-      --white-03:    rgba(13,35,69,0.02);
-      --border:      rgba(13,35,69,0.08);
-      --border-hi:   rgba(13,35,69,0.18);
+      --white:       #111827;
+      --white-90:    #1f2937;
+      --white-70:    #4b5563;
+      --white-50:    #6b7280;
+      --white-40:    #9ca3af;
+      --white-15:    rgba(13,35,69,0.08);
+      --white-08:    rgba(13,35,69,0.05);
+      --white-05:    rgba(13,35,69,0.03);
+      --white-03:    rgba(13,35,69,0.015);
+      --border:      rgba(0,0,0,0.07);
+      --border-hi:   rgba(0,0,0,0.14);
+      --shadow-sm:   0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      --shadow-md:   0 2px 8px rgba(0,0,0,0.05), 0 12px 32px rgba(0,0,0,0.07);
+      --shadow-lg:   0 4px 20px rgba(0,0,0,0.07), 0 24px 56px rgba(0,0,0,0.1);
+      --radius-sm:   10px;
+      --radius-md:   16px;
+      --radius-lg:   20px;
+      --radius-xl:   24px;
     }
 
     html, body {
@@ -191,7 +202,7 @@
     ============================================================ */
     .sections-wrapper {
       padding: 48px 80px 100px;
-      background: #eef2f8;
+      background: var(--bg);
     }
 
     .sections-label {
@@ -213,13 +224,13 @@
       position: relative;
       background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 22px;
+      border-radius: var(--radius-xl);
       padding: 32px 32px 76px;
       cursor: pointer;
       min-height: 290px;
       overflow: hidden;
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-      box-shadow: 0 2px 8px rgba(13,35,69,0.06), 0 8px 24px rgba(13,35,69,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     /* Coloured top accent */
@@ -247,9 +258,9 @@
     }
 
     .section-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
       border-color: var(--border-hi);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px var(--border-hi);
+      box-shadow: var(--shadow-lg);
     }
     .section-card:hover::before {
       opacity: 0.9;
@@ -357,7 +368,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background: #eef2f8;
+      background: var(--bg);
     }
 
     .section-header {
@@ -412,7 +423,7 @@
 
     .section-content {
       flex: 1;
-      padding: 44px 56px;
+      padding: 36px 48px;
     }
 
     /* ============================================================
@@ -428,37 +439,42 @@
     .metric-card {
       background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 22px 24px;
-      border-top: 2px solid rgba(65,145,255,0.4);
-      box-shadow: 0 2px 8px rgba(13,35,69,0.07), 0 6px 20px rgba(13,35,69,0.05);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     .metric-label {
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.8px;
       color: var(--white-40);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .metric-value {
-      font-size: 36px;
-      font-weight: 900;
+      font-size: 32px;
+      font-weight: 800;
       color: var(--white);
-      letter-spacing: -1.5px;
+      letter-spacing: -1px;
       line-height: 1;
     }
     .metric-value .unit {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
-      color: var(--white-40);
-      margin-left: 2px;
+      color: var(--white-50);
+      margin-left: 3px;
       letter-spacing: 0;
     }
     .metric-sub {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--white-40);
       margin-top: 8px;
+      font-weight: 500;
     }
 
     /* ============================================================
@@ -467,58 +483,58 @@
     .log-card {
       background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       padding: 28px 32px;
-      margin-bottom: 22px;
-      box-shadow: 0 2px 8px rgba(13,35,69,0.07), 0 6px 20px rgba(13,35,69,0.05);
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
     }
     .log-card-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--white-70);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 22px;
+      color: var(--white);
+      letter-spacing: -0.2px;
+      margin-bottom: 20px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 14px;
       margin-bottom: 20px;
     }
     .form-group label {
       display: block;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--white-40);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--white-50);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 7px;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
     }
     .form-group input,
     .form-group select,
     .form-group textarea {
       width: 100%;
-      background: #f4f7fc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      background: var(--bg);
+      border: 1.5px solid rgba(0,0,0,0.09);
+      border-radius: var(--radius-sm);
       padding: 10px 13px;
       color: var(--white);
       font-size: 14px;
       font-family: 'Inter', sans-serif;
       outline: none;
-      transition: border-color 0.18s, box-shadow 0.18s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       -webkit-appearance: none;
     }
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-dim);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(13,35,69,0.06);
     }
-    .form-group select option { background: #ffffff; color: #0d2345; }
+    .form-group select option { background: #ffffff; color: #111827; }
     .form-group textarea { resize: vertical; }
 
     .btn-save {
@@ -528,20 +544,21 @@
       background: var(--accent);
       color: #ffffff;
       border: none;
-      border-radius: 11px;
-      padding: 12px 26px;
+      border-radius: var(--radius-sm);
+      padding: 11px 24px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
       font-family: 'Inter', sans-serif;
       cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.2px;
+      transition: all 0.15s;
+      letter-spacing: 0.1px;
     }
     .btn-save:hover {
-      background: #1a3a6c;
+      background: #162f5c;
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px var(--accent-glow);
+      box-shadow: 0 6px 16px rgba(13,35,69,0.2);
     }
+    .btn-save:active { transform: translateY(0); }
 
     /* ============================================================
        TABLE
@@ -549,42 +566,48 @@
     .table-card {
       background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      margin-bottom: 22px;
-      box-shadow: 0 2px 8px rgba(13,35,69,0.07), 0 6px 20px rgba(13,35,69,0.05);
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
     }
     .table-card-header {
-      padding: 16px 24px;
+      padding: 18px 24px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
     }
     .table-card-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--white);
+      letter-spacing: -0.2px;
     }
-    table { width: 100%; border-collapse: collapse; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; min-width: 480px; }
     thead th {
-      padding: 10px 24px;
+      padding: 11px 20px;
       text-align: left;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.6px;
       color: var(--white-40);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
     tbody td {
-      padding: 13px 24px;
+      padding: 14px 20px;
       font-size: 13px;
       color: var(--white-70);
-      border-bottom: 1px solid rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
     }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td      { background: var(--white-03); }
+    tbody tr:hover td { background: #f8fafc; }
 
     .badge {
       display: inline-block;
@@ -770,17 +793,51 @@
     .fu6 { animation-delay: 0.34s;  opacity: 0; }
 
     /* ============================================================
-       RESPONSIVE
+       RESPONSIVE — tablet + mobile
     ============================================================ */
     @media (max-width: 960px) {
-      .home-hero        { padding: 52px 28px 48px; }
-      .greeting-text    { font-size: 40px; }
-      .sections-wrapper { padding: 32px 28px 80px; }
-      .sections-grid    { grid-template-columns: 1fr; }
-      .metrics-row.cols-4 { grid-template-columns: repeat(2,1fr); }
-      .section-content  { padding: 28px 20px; }
-      .section-header   { padding: 14px 20px; }
-      .f-charts-grid    { grid-template-columns: 1fr; }
+      .home-hero           { padding: 52px 32px 48px; }
+      .greeting-text       { font-size: 44px; letter-spacing: -2px; }
+      .sections-wrapper    { padding: 32px 24px 80px; }
+      .sections-grid       { grid-template-columns: 1fr; gap: 16px; }
+      .section-content     { padding: 28px 24px; }
+      .section-header      { padding: 14px 20px; }
+      .metrics-row.cols-4  { grid-template-columns: repeat(2, 1fr); }
+      .f-charts-grid       { grid-template-columns: 1fr !important; }
+      .hdr-crumb           { display: none; }
+    }
+    @media (max-width: 640px) {
+      .home-hero        { padding: 36px 18px 32px; }
+      .greeting-text    { font-size: 32px; letter-spacing: -1.2px; }
+      .greeting-date    { margin-bottom: 28px; }
+      .quote-block      { padding: 14px 16px; }
+      .quote-text       { font-size: 13px; }
+      .sections-wrapper { padding: 20px 14px 80px; }
+      .sections-grid    { gap: 12px; }
+      .section-card     { min-height: 220px; padding: 22px 22px 60px; border-radius: 18px; }
+      .card-title       { font-size: 17px; }
+      .section-header   { padding: 12px 16px; }
+      .section-content  { padding: 18px 14px; }
+      #ftab-overview, #ftab-workouts { flex: 1; text-align: center; padding: 12px 6px; font-size: 12px; }
+      .metrics-row.cols-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .metric-card        { padding: 16px; border-radius: 14px; }
+      .metric-value       { font-size: 26px; }
+      .metric-label       { font-size: 10px; }
+      .log-card           { padding: 18px 16px; border-radius: 16px; }
+      .log-card-title     { font-size: 13px; }
+      .form-grid          { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .table-card         { border-radius: 16px; }
+      .table-card-header  { padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 10px; }
+      .table-card-header > div:last-child { width: 100%; display: flex; }
+      .table-card-header > div:last-child button { flex: 1; justify-content: center; font-size: 11px; padding: 7px 10px; }
+      thead th, tbody td  { padding: 10px 14px; font-size: 12px; }
+      .jarvis-fab         { bottom: 16px; right: 14px; }
+      .jarvis-panel       { right: 10px; width: calc(100vw - 20px); bottom: 90px; }
+    }
+    @media (max-width: 375px) {
+      .greeting-text      { font-size: 26px; }
+      .metrics-row.cols-4 { grid-template-columns: 1fr; }
+      .form-grid          { grid-template-columns: 1fr; }
     }
 
     /* Fitness view toggle */
@@ -971,9 +1028,9 @@
     </div>
 
     <!-- Sub-tab bar -->
-    <div style="background:#ffffff;border-bottom:1px solid rgba(13,35,69,0.1);padding:0 56px;display:flex;gap:0;">
-      <button id="ftab-overview" onclick="switchFitnessTab('overview')" style="padding:14px 22px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:#0d2345;border-bottom:2px solid #0d2345;margin-bottom:-1px;">Overview</button>
-      <button id="ftab-workouts" onclick="switchFitnessTab('workouts')" style="padding:14px 22px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:rgba(13,35,69,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;">💪 Workouts</button>
+    <div style="background:#ffffff;border-bottom:1px solid rgba(0,0,0,0.07);padding:0 48px;display:flex;gap:0;">
+      <button id="ftab-overview" onclick="switchFitnessTab('overview')" style="padding:14px 20px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:#0d2345;border-bottom:2px solid #0d2345;margin-bottom:-1px;transition:color 0.15s;">Overview</button>
+      <button id="ftab-workouts" onclick="switchFitnessTab('workouts')" style="padding:14px 20px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:rgba(13,35,69,0.42);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.15s;">💪 Workouts</button>
     </div>
 
     <div class="section-content">
@@ -1077,7 +1134,7 @@
             </button>
           </div>
         </div>
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr>
               <th>Date</th>
@@ -1092,7 +1149,7 @@
           <tbody id="f-log-body">
             <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">Loading…</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       </div><!-- end ftab-content-overview -->
@@ -1103,8 +1160,14 @@
       <!-- ===================== WORKOUT TRACKER ===================== -->
       <div style="margin-top:32px;">
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;">💪 Workout Tracker & Progressive Overload</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:18px;font-weight:800;color:var(--white);letter-spacing:-0.4px;">Workout Tracker</div>
+            <div style="font-size:13px;color:var(--white-40);margin-top:2px;">Log sets · track progressive overload</div>
+          </div>
+          <button onclick="openStrongImport()" style="display:inline-flex;align-items:center;gap:7px;background:#0d2345;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(13,35,69,0.2);">
+            📲 Import from Strong
+          </button>
         </div>
 
         <!-- Setup banner (shown if table not ready) -->
@@ -1350,7 +1413,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="table-card-header">
           <div class="table-card-title">Recent Calls</div>
         </div>
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr>
               <th>Date</th>
@@ -1363,7 +1426,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <tbody id="sl-tbody">
             <tr><td colspan="5" style="text-align:center;color:var(--white-40);padding:32px">No calls logged yet</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
 
     </div>
@@ -2027,6 +2090,155 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadWorkouts();
     loadSales();
   });
+
+  /* ===================== STRONG IMPORT ===================== */
+  function openStrongImport() {
+    document.getElementById('strong-modal').style.display = 'flex';
+    document.getElementById('strong-textarea').value = '';
+    document.getElementById('strong-preview').style.display = 'none';
+    document.getElementById('strong-parsed-list').innerHTML = '';
+  }
+
+  function closeStrongImport() {
+    document.getElementById('strong-modal').style.display = 'none';
+  }
+
+  function parseStrongText(text) {
+    const lines = text.split('\n').map(l => l.trim());
+    const results = [];
+    let date = null;
+    let exercise = null;
+    let dateFound = false;
+
+    for (const line of lines) {
+      if (!line || line.startsWith('http')) continue;
+
+      // Date line: "Saturday, 6 June 2026 at 5:47 pm"
+      const dateMatch = line.match(/\w+,\s+(\d+)\s+(\w+)\s+(\d{4})\s+at/i);
+      if (dateMatch) {
+        const d = new Date(`${dateMatch[1]} ${dateMatch[2]} ${dateMatch[3]}`);
+        if (!isNaN(d)) date = d.toISOString().split('T')[0];
+        dateFound = true;
+        exercise = null;
+        continue;
+      }
+
+      // Set line: "Set 1: 42 kg × 8"
+      const setMatch = line.match(/^Set\s+\d+:\s+(.+)$/i);
+      if (setMatch && exercise && date) {
+        const content = setMatch[1];
+        const failure = /failure/i.test(content);
+        // Weight × reps: "42 kg × 8" or "+8 kg × 6"
+        const wr = content.match(/([+-]?\d+\.?\d*)\s*kg\s*[×x]\s*(\d+)/i);
+        if (wr) {
+          results.push({ date, exercise, sets: 1, reps: parseInt(wr[2]), weight_kg: parseFloat(wr[1]), notes: failure ? 'Failure' : null });
+          continue;
+        }
+        // Bodyweight reps only: "× 8"
+        const bw = content.match(/^[×x]\s*(\d+)/i);
+        if (bw) {
+          results.push({ date, exercise, sets: 1, reps: parseInt(bw[1]), weight_kg: null, notes: failure ? 'Failure' : null });
+          continue;
+        }
+        // Time: "2:00"
+        const tm = content.match(/^(\d+:\d+)/);
+        if (tm) {
+          results.push({ date, exercise, sets: 1, reps: null, weight_kg: null, notes: tm[1] });
+        }
+        continue;
+      }
+
+      // Exercise name (only after date line)
+      if (dateFound && !setMatch && line.length > 1 && line.length < 100) {
+        exercise = line;
+      }
+    }
+    return results;
+  }
+
+  function previewStrong() {
+    const text = document.getElementById('strong-textarea').value;
+    if (!text.trim()) { alert('Paste your Strong workout data first.'); return; }
+    const parsed = parseStrongText(text);
+    if (!parsed.length) { alert('Nothing recognised — make sure you paste directly from the Strong app share.'); return; }
+
+    // Group by date + exercise for summary display
+    const grouped = {};
+    parsed.forEach(e => {
+      const k = `${e.date}|${e.exercise}`;
+      if (!grouped[k]) grouped[k] = { date: e.date, exercise: e.exercise, sets: [] };
+      grouped[k].sets.push(e);
+    });
+
+    const listEl = document.getElementById('strong-parsed-list');
+    listEl.innerHTML = Object.values(grouped).map(g => {
+      const setsSummary = g.sets.map((s, i) =>
+        `<span style="display:inline-block;background:rgba(13,35,69,0.06);border-radius:6px;padding:2px 8px;font-size:11px;margin:2px;">Set ${i+1}: ${s.weight_kg ? s.weight_kg+'kg' : '—'} × ${s.reps || s.notes || '—'}${s.notes === 'Failure' ? ' 🔴' : ''}</span>`
+      ).join('');
+      return `<div style="padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+        <div style="font-size:12px;color:#9ca3af;font-weight:600;margin-bottom:4px;">${g.date}</div>
+        <div style="font-size:14px;font-weight:700;color:#0d2345;margin-bottom:6px;">${g.exercise}</div>
+        <div>${setsSummary}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('strong-preview').style.display = 'block';
+    document.getElementById('strong-confirm-btn').onclick = () => confirmStrongImport(parsed);
+  }
+
+  async function confirmStrongImport(parsed) {
+    if (!sb) { alert('Not connected to database'); return; }
+    const btn = document.getElementById('strong-confirm-btn');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    const { error } = await sb.from('workout_logs').insert(parsed);
+    if (error) {
+      alert('Import failed: ' + error.message);
+      btn.textContent = 'Save All Sets';
+      btn.disabled = false;
+      return;
+    }
+
+    closeStrongImport();
+    await loadWorkouts();
+    // Switch to workouts tab
+    switchFitnessTab('workouts');
+
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(5,150,105,0.3)';
+    flash.textContent = `✅ ${parsed.length} sets imported!`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3000);
+  }
+  /* ============================================================ */
 </script>
+
+<!-- Strong Import Modal -->
+<div id="strong-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px);z-index:2000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#ffffff;border-radius:20px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.2);">
+    <div style="padding:24px 28px 20px;border-bottom:1px solid rgba(0,0,0,0.07);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:800;color:#0d2345;">📲 Import from Strong</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:3px;">Paste your workout export directly from the Strong app</div>
+      </div>
+      <button onclick="closeStrongImport()" style="background:rgba(0,0,0,0.06);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:#6b7280;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">✕</button>
+    </div>
+    <div style="padding:24px 28px;">
+      <div style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">How to export from Strong</div>
+      <div style="background:#f0f2f7;border-radius:10px;padding:14px 16px;font-size:13px;color:#4b5563;line-height:1.6;margin-bottom:18px;">
+        Open Strong → tap any workout → tap <strong>Share</strong> icon → select <strong>Copy to Clipboard</strong> → come back here and paste below
+      </div>
+      <textarea id="strong-textarea" placeholder="Paste your Strong workout text here…&#10;&#10;e.g.&#10;Leg Day&#10;Saturday, 6 June 2026 at 5:47 pm&#10;&#10;Squat (Barbell)&#10;Set 1: 110 kg × 8&#10;..." style="width:100%;height:180px;padding:14px;border:1.5px solid rgba(0,0,0,0.09);border-radius:12px;font-size:13px;font-family:'Inter',sans-serif;color:#111827;background:#f8fafc;outline:none;resize:vertical;line-height:1.5;"></textarea>
+      <button onclick="previewStrong()" style="width:100%;margin-top:12px;background:#0d2345;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Parse Workout →</button>
+
+      <div id="strong-preview" style="display:none;margin-top:20px;">
+        <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;">✅ Detected the following sets:</div>
+        <div id="strong-parsed-list" style="max-height:260px;overflow-y:auto;border:1px solid rgba(0,0,0,0.07);border-radius:12px;padding:0 16px;"></div>
+        <button id="strong-confirm-btn" style="width:100%;margin-top:14px;background:#059669;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Save All Sets</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
