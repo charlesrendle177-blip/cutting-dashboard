@@ -1086,6 +1086,118 @@
         </table>
       </div>
 
+      <!-- ===================== WORKOUT TRACKER ===================== -->
+      <div style="margin-top:32px;">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;">💪 Workout Tracker & Progressive Overload</div>
+        </div>
+
+        <!-- Setup banner (shown if table not ready) -->
+        <div id="w-setup-banner" style="display:none;background:#fff8ed;border:1px solid #fcd34d;border-radius:14px;padding:18px 22px;margin-bottom:20px;">
+          <div style="font-weight:700;color:#92400e;margin-bottom:8px;">⚠️ One-time setup needed</div>
+          <div style="font-size:13px;color:#78350f;margin-bottom:12px;">Run this SQL in your <a href="https://app.supabase.com/project/rxwmfssdvpilfvbpbrrq/sql" target="_blank" style="color:#0d2345;font-weight:600;">Supabase SQL editor</a> to enable workout tracking:</div>
+          <pre id="w-setup-sql" style="background:#1e293b;color:#94a3b8;padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;cursor:pointer;" onclick="copySetupSQL()" title="Click to copy">create table public.workout_logs (
+  id bigint generated always as identity primary key,
+  date date not null,
+  exercise text not null,
+  sets integer,
+  reps integer,
+  weight_kg numeric,
+  notes text,
+  created_at timestamptz default now()
+);
+alter table public.workout_logs enable row level security;
+create policy "anon_select" on public.workout_logs for select using (true);
+create policy "anon_insert" on public.workout_logs for insert with check (true);
+create policy "anon_update" on public.workout_logs for update using (true);
+create policy "anon_delete" on public.workout_logs for delete using (true);</pre>
+          <button onclick="copySetupSQL()" style="margin-top:10px;background:#0d2345;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">📋 Copy SQL</button>
+          <button onclick="retryWorkoutLoad()" style="margin-top:10px;margin-left:8px;background:#fff;color:#0d2345;border:1px solid rgba(13,35,69,0.2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">↻ I've run it — reload</button>
+        </div>
+
+        <!-- Log a set -->
+        <div class="log-card">
+          <div class="log-card-title">Log a Set</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="w-date">
+            </div>
+            <div class="form-group">
+              <label>Exercise</label>
+              <input type="text" id="w-exercise" placeholder="e.g. Bench Press" list="w-exercise-list" autocomplete="off">
+              <datalist id="w-exercise-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label>Sets</label>
+              <input type="number" id="w-sets" placeholder="e.g. 4" min="1" max="20">
+            </div>
+            <div class="form-group">
+              <label>Reps</label>
+              <input type="number" id="w-reps" placeholder="e.g. 8" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label>Weight (kg)</label>
+              <input type="number" id="w-weight" placeholder="e.g. 80" step="0.5" min="0">
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <input type="text" id="w-notes" placeholder="e.g. felt strong, slight form break">
+            </div>
+          </div>
+          <button class="btn-save" onclick="logWorkout()">Log Set</button>
+        </div>
+
+        <!-- Progressive Overload Status -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <div class="table-card-title">📈 Progressive Overload Status</div>
+            <div style="font-size:11px;color:var(--white-40);">🟢 Progressing &nbsp; 🟡 Push soon &nbsp; 🔴 Stuck — increase weight</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th>Current Weight</th>
+                <th>Sets × Reps</th>
+                <th>Sessions at weight</th>
+                <th>Last increased</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="w-overload-body">
+              <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <div class="table-card-title">Recent Sets</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Weight (kg)</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="w-log-body">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <!-- ============================================================ -->
+
     </div>
   </div>
 </div>
@@ -1358,14 +1470,14 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + view);
     if (el) { el.classList.add('active'); window.scrollTo(0,0); }
-    if (view === 'fitness') loadFitness();
+    if (view === 'fitness') { loadFitness(); loadWorkouts(); }
     if (view === 'sales')   loadSales();
   }
 
   /* ---------- DEFAULT DATES ---------- */
   function setDates() {
     const today = new Date().toISOString().split('T')[0];
-    ['f-date','sl-date'].forEach(id => {
+    ['f-date','sl-date','w-date'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = today;
     });
@@ -1564,6 +1676,166 @@
     URL.revokeObjectURL(url);
   }
 
+  /* ===================== WORKOUT TRACKER ===================== */
+  let workoutData = [];
+
+  function copySetupSQL() {
+    const sql = document.getElementById('w-setup-sql').textContent;
+    navigator.clipboard.writeText(sql).then(() => alert('SQL copied! Paste it into your Supabase SQL editor.'));
+  }
+
+  async function retryWorkoutLoad() {
+    document.getElementById('w-setup-banner').style.display = 'none';
+    await loadWorkouts();
+  }
+
+  async function loadWorkouts() {
+    if (!sb) return;
+    try {
+      const { data, error } = await sb.from('workout_logs')
+        .select('*').order('date', { ascending: false }).limit(200);
+      if (error) {
+        if (error.code === '42P01') { // table does not exist
+          document.getElementById('w-setup-banner').style.display = 'block';
+          document.getElementById('w-log-body').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#d97706;">⚠️ Setup required — see banner above</td></tr>';
+          document.getElementById('w-overload-body').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#d97706;">⚠️ Setup required — see banner above</td></tr>';
+        }
+        return;
+      }
+      workoutData = data || [];
+      populateExerciseSuggestions();
+      renderOverloadStatus();
+      renderWorkoutLog();
+    } catch(e) { console.warn('Workout load error', e); }
+  }
+
+  function populateExerciseSuggestions() {
+    const exercises = [...new Set(workoutData.map(d => d.exercise))].sort();
+    const dl = document.getElementById('w-exercise-list');
+    dl.innerHTML = exercises.map(e => `<option value="${e}">`).join('');
+  }
+
+  function renderOverloadStatus() {
+    const tbody = document.getElementById('w-overload-body');
+    if (!workoutData.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
+      return;
+    }
+
+    // Group by exercise
+    const byExercise = {};
+    workoutData.forEach(log => {
+      if (!byExercise[log.exercise]) byExercise[log.exercise] = [];
+      byExercise[log.exercise].push(log);
+    });
+
+    const rows = Object.entries(byExercise).map(([exercise, entries]) => {
+      const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+      const latest = sorted[0];
+      const currentWeight = latest.weight_kg;
+
+      // Get distinct dates sorted desc
+      const dates = [...new Set(sorted.map(e => e.date))].sort((a,b) => b.localeCompare(a));
+
+      // Count sessions at current weight
+      let sessionsAtWeight = 0;
+      let lastIncreasedDate = null;
+      for (const date of dates) {
+        const dayMax = Math.max(...entries.filter(e => e.date === date).map(e => e.weight_kg || 0));
+        if (dayMax >= currentWeight) {
+          sessionsAtWeight++;
+        } else {
+          lastIncreasedDate = date;
+          break;
+        }
+      }
+
+      // Status
+      let badge, badgeStyle;
+      if (sessionsAtWeight <= 2) {
+        badge = '🟢 Progressing';
+        badgeStyle = 'background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);';
+      } else if (sessionsAtWeight <= 4) {
+        badge = '🟡 Push soon';
+        badgeStyle = 'background:rgba(217,119,6,0.1);color:#d97706;border:1px solid rgba(217,119,6,0.2);';
+      } else {
+        badge = '🔴 Increase weight!';
+        badgeStyle = 'background:rgba(220,38,38,0.1);color:#dc2626;border:1px solid rgba(220,38,38,0.2);';
+      }
+
+      const lastInc = lastIncreasedDate
+        ? new Date(lastIncreasedDate).toLocaleDateString('en-GB', {day:'numeric',month:'short'})
+        : `Started ${new Date(dates[dates.length-1]).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+
+      return `<tr>
+        <td style="font-weight:600;color:var(--white)">${exercise}</td>
+        <td style="font-weight:700;color:var(--accent)">${currentWeight ? currentWeight + ' kg' : '—'}</td>
+        <td>${latest.sets ?? '—'} × ${latest.reps ?? '—'}</td>
+        <td>${sessionsAtWeight}</td>
+        <td style="color:var(--white-40)">${lastInc}</td>
+        <td><span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;${badgeStyle}">${badge}</span></td>
+      </tr>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+  }
+
+  function renderWorkoutLog() {
+    const tbody = document.getElementById('w-log-body');
+    if (!workoutData.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No sets logged yet</td></tr>';
+      return;
+    }
+    const recent = workoutData.slice(0, 50);
+    tbody.innerHTML = recent.map(e => `<tr>
+      <td>${new Date(e.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</td>
+      <td style="font-weight:600">${e.exercise}</td>
+      <td>${e.sets ?? '—'}</td>
+      <td>${e.reps ?? '—'}</td>
+      <td style="font-weight:700;color:var(--accent)">${e.weight_kg ? e.weight_kg + ' kg' : '—'}</td>
+      <td style="color:var(--white-40)">${e.notes || '—'}</td>
+      <td><button onclick="deleteWorkoutLog(${e.id})" style="background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.15);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;">✕</button></td>
+    </tr>`).join('');
+  }
+
+  async function logWorkout() {
+    const entry = {
+      date:      document.getElementById('w-date').value || new Date().toISOString().split('T')[0],
+      exercise:  document.getElementById('w-exercise').value.trim(),
+      sets:      parseInt(document.getElementById('w-sets').value) || null,
+      reps:      parseInt(document.getElementById('w-reps').value) || null,
+      weight_kg: parseFloat(document.getElementById('w-weight').value) || null,
+      notes:     document.getElementById('w-notes').value.trim() || null,
+    };
+    if (!entry.exercise) { alert('Please enter an exercise name'); return; }
+    if (!sb) { alert('Not connected to database'); return; }
+
+    const { error } = await sb.from('workout_logs').insert([entry]);
+    if (error) { alert('Save failed: ' + error.message); return; }
+
+    // Clear form (keep date + exercise for quick multi-set logging)
+    document.getElementById('w-sets').value = '';
+    document.getElementById('w-reps').value = '';
+    document.getElementById('w-weight').value = '';
+    document.getElementById('w-notes').value = '';
+
+    await loadWorkouts();
+
+    // Flash confirmation
+    const btn = document.querySelector('button[onclick="logWorkout()"]');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Logged!';
+    btn.style.background = '#059669';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+  }
+
+  async function deleteWorkoutLog(id) {
+    if (!confirm('Delete this set?')) return;
+    await sb.from('workout_logs').delete().eq('id', id);
+    await loadWorkouts();
+  }
+  /* ============================================================ */
+
   async function loadFitness() {
     if (!sb) return;
     try {
@@ -1726,6 +1998,7 @@
     setDates();
     navigate('home');
     loadFitness();
+    loadWorkouts();
     loadSales();
   });
 </script>
