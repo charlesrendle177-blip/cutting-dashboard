@@ -970,7 +970,16 @@
       <div class="hdr-crumb">Charles' Hub / Fitness</div>
     </div>
 
+    <!-- Sub-tab bar -->
+    <div style="background:#ffffff;border-bottom:1px solid rgba(13,35,69,0.1);padding:0 56px;display:flex;gap:0;">
+      <button id="ftab-overview" onclick="switchFitnessTab('overview')" style="padding:14px 22px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:#0d2345;border-bottom:2px solid #0d2345;margin-bottom:-1px;">Overview</button>
+      <button id="ftab-workouts" onclick="switchFitnessTab('workouts')" style="padding:14px 22px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;border:none;background:none;cursor:pointer;color:rgba(13,35,69,0.45);border-bottom:2px solid transparent;margin-bottom:-1px;">💪 Workouts</button>
+    </div>
+
     <div class="section-content">
+
+      <!-- ===== OVERVIEW TAB ===== -->
+      <div id="ftab-content-overview">
 
       <div class="metrics-row cols-4">
         <div class="metric-card">
@@ -1086,6 +1095,11 @@
         </table>
       </div>
 
+      </div><!-- end ftab-content-overview -->
+
+      <!-- ===== WORKOUTS TAB ===== -->
+      <div id="ftab-content-workouts" style="display:none;">
+
       <!-- ===================== WORKOUT TRACKER ===================== -->
       <div style="margin-top:32px;">
 
@@ -1197,6 +1211,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
       </div>
       <!-- ============================================================ -->
+
+      </div><!-- end ftab-content-workouts -->
 
     </div>
   </div>
@@ -1674,6 +1690,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     a.download = `charles-fitness-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function switchFitnessTab(tab) {
+    document.getElementById('ftab-content-overview').style.display = tab === 'overview' ? '' : 'none';
+    document.getElementById('ftab-content-workouts').style.display = tab === 'workouts' ? '' : 'none';
+    const activeStyle = 'color:#0d2345;border-bottom:2px solid #0d2345;';
+    const inactiveStyle = 'color:rgba(13,35,69,0.45);border-bottom:2px solid transparent;';
+    document.getElementById('ftab-overview').style.cssText += tab === 'overview' ? activeStyle : inactiveStyle;
+    document.getElementById('ftab-workouts').style.cssText += tab === 'workouts' ? activeStyle : inactiveStyle;
+    if (tab === 'workouts' && !workoutData.length) loadWorkouts();
   }
 
   /* ===================== WORKOUT TRACKER ===================== */
