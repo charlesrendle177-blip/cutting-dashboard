@@ -1226,27 +1226,30 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <button class="btn-save" onclick="logWorkout()">Log Set</button>
         </div>
 
-        <!-- Progressive Overload Status -->
+        <!-- Progressive Overload Tracker -->
         <div class="table-card">
           <div class="table-card-header">
-            <div class="table-card-title">📈 Progressive Overload Status</div>
-            <div style="font-size:11px;color:var(--white-40);">🟢 Progressing &nbsp; 🟡 Push soon &nbsp; 🔴 Stuck — increase weight</div>
+            <div>
+              <div class="table-card-title">📈 Progressive Overload Tracker</div>
+              <div style="font-size:11px;color:var(--white-40);margin-top:3px;">Dr Mike: <em>"Stalled lifts = stalled physique"</em> — increase 2.5–5kg when ready</div>
+            </div>
           </div>
-          <table>
+          <div class="table-scroll"><table>
             <thead>
               <tr>
                 <th>Exercise</th>
-                <th>Current Weight</th>
-                <th>Sets × Reps</th>
-                <th>Sessions at weight</th>
-                <th>Last increased</th>
+                <th>Weight</th>
+                <th>Best Reps</th>
+                <th style="text-align:center;">Sessions</th>
                 <th>Status</th>
+                <th>Next Target</th>
+                <th>Coaching Note</th>
               </tr>
             </thead>
             <tbody id="w-overload-body">
-              <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
 
         <!-- Recent Sessions -->
@@ -1807,7 +1810,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function renderOverloadStatus() {
     const tbody = document.getElementById('w-overload-body');
     if (!workoutData.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
       return;
     }
 
@@ -1820,49 +1823,102 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     const rows = Object.entries(byExercise).map(([exercise, entries]) => {
       const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
-      const latest = sorted[0];
-      const currentWeight = latest.weight_kg;
+      const currentWeight = Math.max(...entries.map(e => e.weight_kg || 0));
 
-      // Get distinct dates sorted desc
+      // Best reps achieved at current weight (across all sets at this weight)
+      const setsAtCurrentWeight = entries.filter(e => e.weight_kg === currentWeight && e.reps);
+      const bestReps = setsAtCurrentWeight.length ? Math.max(...setsAtCurrentWeight.map(e => e.reps)) : null;
+
+      // Distinct session dates sorted desc
       const dates = [...new Set(sorted.map(e => e.date))].sort((a,b) => b.localeCompare(a));
 
-      // Count sessions at current weight
+      // Count sessions where current weight was used
       let sessionsAtWeight = 0;
-      let lastIncreasedDate = null;
+      let lastIncreaseDate = null;
       for (const date of dates) {
         const dayMax = Math.max(...entries.filter(e => e.date === date).map(e => e.weight_kg || 0));
         if (dayMax >= currentWeight) {
           sessionsAtWeight++;
         } else {
-          lastIncreasedDate = date;
+          lastIncreaseDate = date;
           break;
         }
       }
 
-      // Status
-      let badge, badgeStyle;
-      if (sessionsAtWeight <= 2) {
-        badge = '🟢 Progressing';
+      // How many days since they first used this weight
+      const firstDateAtWeight = setsAtCurrentWeight.length
+        ? [...setsAtCurrentWeight].sort((a,b) => a.date.localeCompare(b.date))[0].date
+        : dates[0];
+      const daysSinceWeightSet = Math.floor((new Date() - new Date(firstDateAtWeight)) / 86400000);
+
+      // ── Dr Mike progressive overload logic ──────────────────────────
+      // Framework: 4-6 week mesocycle. At ~2x/week = 8-12 sessions per block.
+      // Stall = same weight for 3+ sessions with reps not going up.
+      // Linear progression: add 2.5-5kg when consistently hitting top of rep range.
+      // Rep range target: 6-10 reps for compound, 8-15 for isolation.
+
+      const isCompound = ['squat','deadlift','bench','press','row','pull','dip'].some(k => exercise.toLowerCase().includes(k));
+      const repTarget = isCompound ? 8 : 10; // minimum reps before weight increase
+
+      let badge, badgeStyle, nextTarget, advice;
+
+      if (!currentWeight || currentWeight === 0) {
+        // Bodyweight / timed exercise
+        badge = '⚪ Tracked';
+        badgeStyle = 'background:rgba(0,0,0,0.05);color:#6b7280;border:1px solid rgba(0,0,0,0.1);';
+        nextTarget = '—';
+        advice = 'Track consistently';
+
+      } else if (sessionsAtWeight === 1) {
+        badge = '🆕 New weight';
+        badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
+        nextTarget = `Hit ${repTarget}+ reps`;
+        advice = 'Build consistency before adding load';
+
+      } else if (sessionsAtWeight <= 2 && bestReps && bestReps < repTarget) {
+        badge = '🟢 Building reps';
+        badgeStyle = 'background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.18);';
+        nextTarget = `${repTarget - bestReps} more reps then ↑`;
+        advice = `Hit ${repTarget} reps, then add 2.5kg`;
+
+      } else if (sessionsAtWeight <= 3 && bestReps && bestReps >= repTarget) {
+        badge = '🟢 Ready to increase';
         badgeStyle = 'background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);';
-      } else if (sessionsAtWeight <= 4) {
-        badge = '🟡 Push soon';
+        nextTarget = `↑ +2.5kg next session`;
+        advice = `Hitting ${bestReps} reps — add 2.5kg`;
+
+      } else if (sessionsAtWeight <= 3) {
+        badge = '🟢 On track';
+        badgeStyle = 'background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.18);';
+        nextTarget = `+1 rep or +2.5kg`;
+        advice = 'Dr Mike: add a rep or small load';
+
+      } else if (sessionsAtWeight <= 5) {
+        badge = '🟡 Add weight now';
         badgeStyle = 'background:rgba(217,119,6,0.1);color:#d97706;border:1px solid rgba(217,119,6,0.2);';
+        nextTarget = `↑ +2.5kg next session`;
+        advice = `${sessionsAtWeight} sessions at ${currentWeight}kg — time to progress`;
+
       } else {
-        badge = '🔴 Increase weight!';
+        // 6+ sessions = stalled. Dr Mike: "Stalled lifts = stalled physique."
+        badge = '🔴 Stalled';
         badgeStyle = 'background:rgba(220,38,38,0.1);color:#dc2626;border:1px solid rgba(220,38,38,0.2);';
+        nextTarget = `↑ +2.5–5kg NOW`;
+        advice = `Dr Mike: "Stalled lifts = stalled physique" — ${daysSinceWeightSet}d at ${currentWeight}kg`;
       }
 
-      const lastInc = lastIncreasedDate
-        ? new Date(lastIncreasedDate).toLocaleDateString('en-GB', {day:'numeric',month:'short'})
-        : `Started ${new Date(dates[dates.length-1]).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+      const lastDateLabel = dates[0]
+        ? new Date(dates[0]).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+        : '—';
 
       return `<tr>
-        <td style="font-weight:600;color:var(--white)">${exercise}</td>
-        <td style="font-weight:700;color:var(--accent)">${currentWeight ? currentWeight + ' kg' : '—'}</td>
-        <td>${latest.sets ?? '—'} × ${latest.reps ?? '—'}</td>
-        <td>${sessionsAtWeight}</td>
-        <td style="color:var(--white-40)">${lastInc}</td>
-        <td><span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;${badgeStyle}">${badge}</span></td>
+        <td style="font-weight:600;color:var(--white);font-size:13px;">${exercise}</td>
+        <td style="font-weight:800;color:var(--accent);font-size:14px;">${currentWeight ? currentWeight + ' kg' : '—'}</td>
+        <td style="color:var(--white-70);">${bestReps ? bestReps + ' reps' : '—'}</td>
+        <td style="color:var(--white-70);text-align:center;">${sessionsAtWeight}</td>
+        <td><span style="padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;${badgeStyle}">${badge}</span></td>
+        <td style="font-size:12px;font-weight:600;color:${sessionsAtWeight >= 6 ? '#dc2626' : sessionsAtWeight >= 4 ? '#d97706' : '#059669'};">${nextTarget}</td>
+        <td style="font-size:11px;color:var(--white-40);max-width:180px;">${advice}</td>
       </tr>`;
     });
 
