@@ -1170,6 +1170,44 @@
           </button>
         </div>
 
+        <!-- Spain Prep Plan -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <div>
+              <div class="table-card-title">🇪🇸 Spain Prep — Training &amp; Calorie Plan</div>
+              <div style="font-size:11px;color:var(--white-40);margin-top:3px;" id="sp-today-tag">15 Jun – 7 Jul · Goal: ~85.5–86kg, lean &amp; developed</div>
+            </div>
+          </div>
+          <div class="table-scroll"><table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Session</th>
+                <th style="text-align:right;">Calorie Target</th>
+              </tr>
+            </thead>
+            <tbody id="sp-plan-body">
+              <tr data-day="1"><td><strong>Monday</strong></td><td>Pull</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
+              <tr data-day="2"><td><strong>Tuesday</strong></td><td>Hyrox Speed Session <span style="color:var(--white-40);">— 3×1200m repeats, Zone 4, after work</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,400 kcal</td></tr>
+              <tr data-day="3"><td><strong>Wednesday</strong></td><td>Push</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
+              <tr data-day="4"><td><strong>Thursday</strong></td><td>Legs <span style="color:var(--white-40);">(quad focus)</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,300 kcal</td></tr>
+              <tr data-day="5"><td><strong>Friday</strong></td><td>Pull + Legs <span style="color:var(--white-40);">(posterior, combined session)</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,400 kcal</td></tr>
+              <tr data-day="6"><td><strong>Saturday</strong></td><td>Push</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
+              <tr data-day="0"><td><strong>Sunday</strong></td><td>Zone 2 5k <span style="color:var(--white-40);">— conversational pace, HR 140–153bpm, ~6:00–6:20/km</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,300 kcal</td></tr>
+            </tbody>
+          </table></div>
+          <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <span style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:0.6px;margin-right:4px;">Non-negotiables:</span>
+            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">🥩 Protein 220g+</span>
+            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">👟 Steps 9,000+</span>
+            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">😴 Sleep 7.5h+</span>
+            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">💊 Creatine 5g</span>
+          </div>
+          <div style="padding:14px 24px;border-top:1px solid var(--border);font-size:12.5px;color:var(--white-70);line-height:1.6;background:var(--bg);">
+            🎯 <strong>Goal:</strong> Maintain muscle, clear surplus water &amp; food volume — arrive in Spain at <strong>~85.5–86kg</strong>, lean and developed, by <strong>7 July</strong>.
+          </div>
+        </div>
+
         <!-- Setup banner (shown if table not ready) -->
         <div id="w-setup-banner" style="display:none;background:#fff8ed;border:1px solid #fcd34d;border-radius:14px;padding:18px 22px;margin-bottom:20px;">
           <div style="font-weight:700;color:#92400e;margin-bottom:8px;">⚠️ One-time setup needed</div>
@@ -1768,6 +1806,29 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (tab === 'workouts' && !workoutData.length) loadWorkouts();
   }
 
+  /* ===================== SPAIN PREP PLAN ===================== */
+  function highlightSpainPrepToday() {
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const today = new Date();
+    const dayIdx = today.getDay();
+    document.querySelectorAll('#sp-plan-body tr').forEach(tr => {
+      if (parseInt(tr.dataset.day, 10) === dayIdx) {
+        tr.style.background = 'var(--accent-dim)';
+        const firstCell = tr.querySelector('td');
+        firstCell.innerHTML += ' <span class="badge" style="background:var(--accent);color:#fff;margin-left:6px;">Today</span>';
+      }
+    });
+    const tag = document.getElementById('sp-today-tag');
+    if (tag) {
+      const start = new Date('2026-06-15T00:00:00');
+      const end = new Date('2026-07-07T23:59:59');
+      if (today >= start && today <= end) {
+        const daysLeft = Math.ceil((end - today) / 86400000);
+        tag.textContent = `Today: ${dayNames[dayIdx]} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} to Spain`;
+      }
+    }
+  }
+
   /* ===================== WORKOUT TRACKER ===================== */
   let workoutData = [];
 
@@ -2145,6 +2206,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadFitness();
     loadWorkouts();
     loadSales();
+    highlightSpainPrepToday();
   });
 
   /* ===================== STRONG IMPORT ===================== */
