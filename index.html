@@ -729,6 +729,7 @@
       border-radius: 13px;
       font-size: 13px;
       line-height: 1.5;
+      white-space: pre-wrap;
     }
     .msg.bot  {
       background: var(--navy-light);
@@ -1532,6 +1533,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   /* ---------- CONFIG ---------- */
   const SB_URL = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
+  const CHAT_API = 'https://cutting-dashboard.vercel.app/api/chat';
   const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
   /* ---------- QUOTES ---------- */
@@ -1868,12 +1870,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     dl.innerHTML = exercises.map(e => `<option value="${e}">`).join('');
   }
 
-  function renderOverloadStatus() {
-    const tbody = document.getElementById('w-overload-body');
-    if (!workoutData.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
-      return;
-    }
+  // ── Dr Mike progressive overload logic ──────────────────────────
+  // Framework: 4-6 week mesocycle. At ~2x/week = 8-12 sessions per block.
+  // Stall = same weight for 3+ sessions with reps not going up.
+  // Linear progression: add 2.5-5kg when consistently hitting top of rep range.
+  // Rep range target: 6-10 reps for compound, 8-15 for isolation.
+  function computeOverloadData() {
+    if (!workoutData.length) return [];
 
     // Group by exercise
     const byExercise = {};
@@ -1882,7 +1885,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       byExercise[log.exercise].push(log);
     });
 
-    const rows = Object.entries(byExercise).map(([exercise, entries]) => {
+    return Object.entries(byExercise).map(([exercise, entries]) => {
       const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
       const currentWeight = Math.max(...entries.map(e => e.weight_kg || 0));
 
@@ -1895,15 +1898,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
       // Count sessions where current weight was used
       let sessionsAtWeight = 0;
-      let lastIncreaseDate = null;
       for (const date of dates) {
         const dayMax = Math.max(...entries.filter(e => e.date === date).map(e => e.weight_kg || 0));
-        if (dayMax >= currentWeight) {
-          sessionsAtWeight++;
-        } else {
-          lastIncreaseDate = date;
-          break;
-        }
+        if (dayMax >= currentWeight) sessionsAtWeight++;
+        else break;
       }
 
       // How many days since they first used this weight
@@ -1911,12 +1909,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         ? [...setsAtCurrentWeight].sort((a,b) => a.date.localeCompare(b.date))[0].date
         : dates[0];
       const daysSinceWeightSet = Math.floor((new Date() - new Date(firstDateAtWeight)) / 86400000);
-
-      // ── Dr Mike progressive overload logic ──────────────────────────
-      // Framework: 4-6 week mesocycle. At ~2x/week = 8-12 sessions per block.
-      // Stall = same weight for 3+ sessions with reps not going up.
-      // Linear progression: add 2.5-5kg when consistently hitting top of rep range.
-      // Rep range target: 6-10 reps for compound, 8-15 for isolation.
 
       const isCompound = ['squat','deadlift','bench','press','row','pull','dip'].some(k => exercise.toLowerCase().includes(k));
       const repTarget = isCompound ? 8 : 10; // minimum reps before weight increase
@@ -1972,18 +1964,27 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         ? new Date(dates[0]).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
         : '—';
 
-      return `<tr>
-        <td style="font-weight:600;color:var(--white);font-size:13px;">${exercise}</td>
-        <td style="font-weight:800;color:var(--accent);font-size:14px;">${currentWeight ? currentWeight + ' kg' : '—'}</td>
-        <td style="color:var(--white-70);">${bestReps ? bestReps + ' reps' : '—'}</td>
-        <td style="color:var(--white-70);text-align:center;">${sessionsAtWeight}</td>
-        <td><span style="padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;${badgeStyle}">${badge}</span></td>
-        <td style="font-size:12px;font-weight:600;color:${sessionsAtWeight >= 6 ? '#dc2626' : sessionsAtWeight >= 4 ? '#d97706' : '#059669'};">${nextTarget}</td>
-        <td style="font-size:11px;color:var(--white-40);max-width:180px;">${advice}</td>
-      </tr>`;
+      return { exercise, currentWeight, bestReps, sessionsAtWeight, badge, badgeStyle, nextTarget, advice, lastDateLabel, repTarget, daysSinceWeightSet };
     });
+  }
 
-    tbody.innerHTML = rows.join('');
+  function renderOverloadStatus() {
+    const tbody = document.getElementById('w-overload-body');
+    const overload = computeOverloadData();
+    if (!overload.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = overload.map(r => `<tr>
+        <td style="font-weight:600;color:var(--white);font-size:13px;">${r.exercise}</td>
+        <td style="font-weight:800;color:var(--accent);font-size:14px;">${r.currentWeight ? r.currentWeight + ' kg' : '—'}</td>
+        <td style="color:var(--white-70);">${r.bestReps ? r.bestReps + ' reps' : '—'}</td>
+        <td style="color:var(--white-70);text-align:center;">${r.sessionsAtWeight}</td>
+        <td><span style="padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;${r.badgeStyle}">${r.badge}</span></td>
+        <td style="font-size:12px;font-weight:600;color:${r.sessionsAtWeight >= 6 ? '#dc2626' : r.sessionsAtWeight >= 4 ? '#d97706' : '#059669'};">${r.nextTarget}</td>
+        <td style="font-size:11px;color:var(--white-40);max-width:180px;">${r.advice}</td>
+      </tr>`).join('');
   }
 
   function renderWorkoutLog() {
@@ -2160,6 +2161,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   /* ---------- JARVIS CHAT ---------- */
   let chatOpen = false;
+  let jarvisHistory = [];
 
   function toggleChat() {
     chatOpen = !chatOpen;
@@ -2167,22 +2169,43 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (chatOpen) document.getElementById('jp-input').focus();
   }
 
+  function buildJarvisContext() {
+    const recentLogs = fitnessAllData.slice(-14).map(d => ({
+      date: d.date, weight: d.weight, calories: d.calories,
+      sleep: d.sleep, steps: d.steps, workout: d.workout, cardio: d.cardio
+    }));
+    const overload = computeOverloadData().map(r => ({
+      exercise: r.exercise,
+      currentWeight: r.currentWeight,
+      bestReps: r.bestReps,
+      sessionsAtWeight: r.sessionsAtWeight,
+      status: r.badge.replace(/^\S+\s*/, ''),
+      nextTarget: r.nextTarget,
+      coachingNote: r.advice
+    }));
+    return { today: new Date().toISOString().slice(0, 10), recentLogs, overload };
+  }
+
   async function sendMsg() {
     const inp  = document.getElementById('jp-input');
     const text = inp.value.trim();
     if (!text) return;
     addMsg(text, 'user'); inp.value = '';
-    const thinking = addMsg('...', 'bot');
+    jarvisHistory.push({ role: 'user', content: text });
+    const thinking = addMsg('···', 'bot');
     try {
-      const res  = await fetch(`${SB_URL}/functions/v1/jarvis-chat`, {
+      const res  = await fetch(CHAT_API, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+SB_KEY },
-        body: JSON.stringify({ message: text })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: jarvisHistory.slice(-10), context: buildJarvisContext() })
       });
       const json = await res.json();
-      thinking.textContent = json.reply || 'No response.';
+      const reply = json.reply || json.error || 'No response.';
+      thinking.textContent = reply;
+      jarvisHistory.push({ role: 'assistant', content: reply });
     } catch(e) {
-      thinking.textContent = 'Edge function not connected yet — coming soon.';
+      thinking.textContent = 'Could not reach Jarvis — check your connection and try again.';
+      jarvisHistory.pop();
     }
     const msgs = document.getElementById('jp-msgs');
     msgs.scrollTop = msgs.scrollHeight;

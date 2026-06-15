@@ -1,6 +1,7 @@
 {
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/cutting-logs", "destination": "/api/cutting-logs.js" }
+    { "source": "/api/cutting-logs", "destination": "/api/cutting-logs.js" },
+    { "source": "/api/chat", "destination": "/api/chat.js" }
   ]
 }
