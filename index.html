@@ -1774,53 +1774,70 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <!-- ===== OVERVIEW ===== -->
         <div id="tmmb-overview" class="tmmb-section active">
           <div class="tmmb-section-header">
-            <h2>Performance Overview</h2>
-            <p>Live stats from your call log · commission at 10% per close</p>
+            <h2>Your Numbers</h2>
+            <p>Live performance at a glance</p>
           </div>
 
           <div class="tmmb-stats-grid">
             <div class="tmmb-stat-box">
               <div class="tmmb-stat-num" id="tmmb-stat-calls">0</div>
-              <div class="tmmb-stat-label">Calls Booked</div>
+              <div class="tmmb-stat-label">Calls Taken</div>
             </div>
             <div class="tmmb-stat-box">
-              <div class="tmmb-stat-num" id="tmmb-stat-shows">0%</div>
+              <div class="tmmb-stat-num gold" id="tmmb-stat-shows">—</div>
               <div class="tmmb-stat-label">Show Rate</div>
             </div>
             <div class="tmmb-stat-box">
-              <div class="tmmb-stat-num" id="tmmb-stat-close">0%</div>
+              <div class="tmmb-stat-num purple" id="tmmb-stat-close">—</div>
               <div class="tmmb-stat-label">Close Rate</div>
             </div>
             <div class="tmmb-stat-box">
-              <div class="tmmb-stat-num gold" id="tmmb-stat-earn">£0</div>
+              <div class="tmmb-stat-num" id="tmmb-stat-earn">£0</div>
               <div class="tmmb-stat-label">Commission Earned</div>
             </div>
           </div>
 
-          <div class="card" style="margin-bottom:14px;">
-            <div class="card-label">Commission Calculator</div>
-            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:160px;">
-                <label class="tmmb-form-label">Closes this month</label>
-                <input type="number" id="tmmb-calc-closes" value="0" min="0" onchange="tmmb_calcCommission()" style="max-width:120px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div class="card">
+              <div class="card-label">This Month</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--label);font-size:13px;">Calls on calendar</span>
+                <span style="font-weight:600;" id="tmmb-ov-calendar">0</span>
               </div>
-              <div style="font-size:13px;color:var(--muted);">×&nbsp;£400&nbsp;commission</div>
-              <div style="text-align:right;flex:1;">
-                <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Projected earnings</div>
-                <div id="tmmb-calc-result" style="font-size:32px;font-weight:700;color:#fbbf24;">£0</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--label);font-size:13px;">No shows</span>
+                <span style="font-weight:600;color:var(--red);" id="tmmb-ov-noshow">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--label);font-size:13px;">One call closes</span>
+                <span style="font-weight:600;color:var(--accent);" id="tmmb-ov-occ">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+                <span style="color:var(--label);font-size:13px;">Follow-up closes</span>
+                <span style="font-weight:600;color:var(--gold);" id="tmmb-ov-fup">0</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-label">Top Objections Faced</div>
+              <div id="tmmb-top-objections">
+                <div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Log calls to see objection patterns</div>
               </div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-label">Quick Tips — Top of Mind</div>
-            <ul>
-              <li>Open with energy — your first 30 seconds sets the frame for the whole call</li>
-              <li>Diagnose before prescribing — earn the right to pitch by understanding their pain</li>
-              <li>B2C resistance is emotional, not logical — fear of failure, not price</li>
-              <li>Ask: "What's stopped you from doing this before?" — unlocks the real objection</li>
-              <li>The close is just the logical next step after a great diagnosis</li>
-            </ul>
+          <div class="card gold">
+            <div class="card-label">Commission Calculator</div>
+            <div class="tmmb-form-grid" style="align-items:center;">
+              <div>
+                <label class="tmmb-form-label">Target closes per month</label>
+                <input type="number" id="tmmb-calc-closes" value="5" min="1" oninput="tmmb_calcCommission()">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">PROJECTED MONTHLY COMMISSION</div>
+                <div style="font-size:32px;font-weight:700;color:var(--gold);" id="tmmb-calc-result">£2,000</div>
+                <div style="font-size:11px;color:var(--muted);">at £4,000 ticket · 10% commission</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1840,62 +1857,52 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               </div>
               <div class="tmmb-form-group">
                 <label class="tmmb-form-label">Prospect Name</label>
-                <input type="text" id="cl-prospect" placeholder="e.g. Jordan Patel">
+                <input type="text" id="cl-name" placeholder="e.g. Sarah M.">
               </div>
+            </div>
+            <div class="tmmb-form-grid" style="margin-bottom:14px;">
               <div class="tmmb-form-group">
                 <label class="tmmb-form-label">Outcome</label>
                 <select id="cl-outcome">
-                  <option value="closed">Closed ✓</option>
-                  <option value="followup">Follow-Up</option>
-                  <option value="noclose">Showed — No Close</option>
-                  <option value="noshow">No Show</option>
+                  <option value="closed">Closed</option>
+                  <option value="followup">Follow-up booked</option>
+                  <option value="noclose">No close</option>
+                  <option value="noshow">No show</option>
                 </select>
               </div>
               <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Deal Value (£)</label>
-                <input type="number" id="cl-value" placeholder="4000" value="4000">
+                <label class="tmmb-form-label">Call Type</label>
+                <select id="cl-type">
+                  <option value="call1">Call 1 (Discovery)</option>
+                  <option value="call2">Call 2 (Close)</option>
+                </select>
               </div>
-              <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Duration (mins)</label>
-                <input type="number" id="cl-duration" placeholder="45">
-              </div>
-              <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Self Rating (1–10)</label>
-                <input type="number" id="cl-rating" min="1" max="10" placeholder="7">
+            </div>
+            <div class="tmmb-form-group" style="margin-bottom:14px;">
+              <label class="tmmb-form-label">Objections Faced</label>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;" id="tmmb-obj-checkboxes">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="fear-money" style="width:auto;"> Fear: Money</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="fear-think" style="width:auto;"> Think about it</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="fear-doubt" style="width:auto;"> Self-doubt</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="tried-before" style="width:auto;"> Tried before / sceptical</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="logic-time" style="width:auto;"> No time</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="logic-partner" style="width:auto;"> Partner / third party</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="value" style="width:auto;"> Value / not convinced</label>
               </div>
             </div>
             <div class="tmmb-form-group">
-              <label class="tmmb-form-label">Main Objection Hit</label>
-              <input type="text" id="cl-objection" placeholder="e.g. Price, timing, partner approval...">
+              <label class="tmmb-form-label">Notes (optional)</label>
+              <textarea id="cl-notes" rows="3" placeholder="What went well, what to improve, key moments..."></textarea>
             </div>
-            <div class="tmmb-form-group">
-              <label class="tmmb-form-label">Notes</label>
-              <textarea id="cl-notes" rows="3" placeholder="Key moments, what worked, what to improve..."></textarea>
-            </div>
-            <button class="tmmb-btn tmmb-btn-primary" onclick="tmmb_logCall()">Save Call</button>
+            <button class="tmmb-btn tmmb-btn-primary" onclick="tmmb_logCall()">Log Call</button>
           </div>
 
           <div class="card" style="overflow:hidden;padding:0;">
             <div style="padding:16px 22px 12px;border-bottom:1px solid var(--border);">
               <div class="card-label" style="margin-bottom:0;">Call History</div>
             </div>
-            <div style="overflow-x:auto;">
-              <table class="tmmb-call-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Prospect</th>
-                    <th>Outcome</th>
-                    <th>Value</th>
-                    <th>Rating</th>
-                    <th>Objection</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="tmmb-call-tbody">
-                  <tr><td colspan="7"><div class="tmmb-empty"><div class="icon">📋</div><p>No calls logged yet — use the form above</p></div></td></tr>
-                </tbody>
-              </table>
+            <div id="tmmb-call-history">
+              <div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>
             </div>
           </div>
         </div>
@@ -1919,47 +1926,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <div id="tmmb-analyser-out" class="tmmb-analyser-out">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-              <div style="font-size:15px;font-weight:700;color:var(--text);">Analysis Result</div>
-              <div style="font-size:13px;color:var(--muted);">Overall score: <span id="tmmb-out-score" style="color:var(--accent);font-weight:700;">—</span>/10</div>
-            </div>
-
-            <div id="tmmb-out-summary" style="font-size:14px;color:var(--label);margin-bottom:16px;line-height:1.7;padding:12px 14px;background:var(--card);border-radius:7px;"></div>
-
-            <div style="margin-bottom:16px;">
-              <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Score Breakdown</div>
-              <div id="tmmb-out-scores"></div>
-            </div>
-
-            <div class="tmmb-divider"></div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;" class="tmmb-out-cols">
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">What Worked</div>
-                <div id="tmmb-out-worked"></div>
-              </div>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">To Improve</div>
-                <div id="tmmb-out-improve"></div>
-              </div>
-            </div>
-
-            <div class="tmmb-divider"></div>
-
-            <div style="margin-bottom:14px;">
-              <div style="font-size:12px;font-weight:600;color:#fbbf24;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Objections Hit</div>
-              <div id="tmmb-out-objections"></div>
-            </div>
-
-            <div class="card" style="background:var(--card);padding:14px 16px;margin-bottom:12px;">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Key Moment</div>
-              <div id="tmmb-out-moment" style="font-size:14px;color:var(--text);line-height:1.7;"></div>
-            </div>
-
-            <div class="card" style="background:rgba(110,231,183,0.08);border-color:rgba(110,231,183,0.25);padding:14px 16px;">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6ee7b7;margin-bottom:6px;">Next Step</div>
-              <div id="tmmb-out-next" style="font-size:14px;color:var(--text);line-height:1.7;font-weight:500;"></div>
-            </div>
+            <div id="tmmb-analyser-content"></div>
           </div>
         </div>
 
@@ -1967,127 +1934,181 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div id="tmmb-scripts" class="tmmb-section">
           <div class="tmmb-section-header">
             <h2>Call Scripts</h2>
-            <p>Frameworks and word-for-word openers — adapt to your voice, don't read verbatim</p>
+            <p>Your framework for every call. Read before you dial.</p>
           </div>
 
           <div class="tmmb-sub-tabs">
-            <button class="tmmb-sub-tab active" onclick="tmmb_showSubTab('tmmb-script-open',this)">Opening</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-diag',this)">Diagnosis</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-pitch',this)">Pitch</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-close',this)">Close</button>
+            <button class="tmmb-sub-tab active" onclick="tmmb_showSubTab('tmmb-script-call1',this)">Call 1 — Discovery</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-call2',this)">Call 2 — Close</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-opening',this)">Opening Lines</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-questions',this)">Diagnostic Questions</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-closing',this)">Close Sequence</button>
           </div>
 
-          <div id="tmmb-script-open" class="tmmb-sub-section active">
+          <div id="tmmb-script-call1" class="tmmb-sub-section active">
             <div class="card">
+              <div class="card-label">Call 1 — Discovery Framework</div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">1</div>
                 <div class="tmmb-step-content">
-                  <h4>Set the Frame Immediately</h4>
-                  <p>Take control in the first 15 seconds. Don't wait for them to lead — you're the expert on the call.</p>
-                  <div class="tmmb-quote">"Hey [name], thanks for hopping on. So what I normally do with these calls is spend the first 10 minutes learning a bit about where you're at with your TikTok, then I can show you exactly how TMMB would work for you — sound good?"</div>
+                  <h4>Pre-Call Research</h4>
+                  <p>Before the call, find out what they've said publicly about their situation. Social media, comments, posts in the TMMB community. Come in with one specific observation so they know you've done your homework.</p>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">2</div>
                 <div class="tmmb-step-content">
-                  <h4>Establish Context</h4>
-                  <p>Find out where they are right now — follower count, current monetisation, how long they've been on TikTok Shop.</p>
-                  <div class="tmmb-quote">"Before I dive into anything, tell me — where are you currently at with TikTok? Are you just starting out or have you been posting for a while?"</div>
+                  <h4>Opening — Put Them at Ease</h4>
+                  <p>This is not a sales call in their mind yet. Keep it conversational. Find out where they are right now before you do anything else.</p>
+                  <div class="tmmb-quote">"Hey [name], good to speak. So I've got a bit of context from the form you filled in — but I'd rather just hear it from you. Where are you at right now with TikTok Shop?"</div>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">3</div>
                 <div class="tmmb-step-content">
-                  <h4>Uncover the Gap</h4>
-                  <p>You need to understand the gap between where they are and where they want to be. That gap is what you're selling into.</p>
-                  <div class="tmmb-quote">"And if everything went to plan over the next 12 months — what would that actually look like for you? Like, what does success look like?"</div>
+                  <h4>Diagnose — Surface the Gap</h4>
+                  <p>Let them talk. You're listening for the gap between where they are and where they want to be. Probe on the emotional side, not just the practical.</p>
+                  <div class="tmmb-quote">"And what's the dream with this? Like if TikTok Shop is working properly for you in 6 months — what does that actually look like for your life?"</div>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">4</div>
+                <div class="tmmb-step-content">
+                  <h4>Amplify the Pain</h4>
+                  <p>Get them to articulate what staying where they are actually costs them. Not just money — time, opportunity, the life they're not living.</p>
+                  <div class="tmmb-quote">"So if nothing changes in the next 6 months — what does that look like for you practically?"</div>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">5</div>
+                <div class="tmmb-step-content">
+                  <h4>Give Value Before You Leave</h4>
+                  <p>Drop something specific and useful based on what they've told you. A product angle, a content tip, something that proves you know the space. This is the moment that builds trust.</p>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">6</div>
+                <div class="tmmb-step-content">
+                  <h4>BAMFAM — Book a Meeting From a Meeting</h4>
+                  <p>Never leave without a booked call 2. Get them to commit to the next step before they hang up.</p>
+                  <div class="tmmb-quote">"Right, based on everything you've told me I think there's a real fit here. What I want to do is get you on a call with [Tom/Aaron] to go through the full Academy and see if it makes sense for you. Are you around Thursday or Friday?"</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div id="tmmb-script-diag" class="tmmb-sub-section">
+          <div id="tmmb-script-call2" class="tmmb-sub-section">
             <div class="card">
+              <div class="card-label">Call 2 — Close Framework</div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">1</div>
                 <div class="tmmb-step-content">
-                  <h4>What Have You Tried?</h4>
-                  <p>This surfaces past failures and tells you their frame of reference. People buy to avoid repeating past mistakes.</p>
-                  <div class="tmmb-quote">"Have you tried anything to get this off the ground before — courses, coaches, DIY approach? What happened?"</div>
+                  <h4>Recap Their Pain in Their Words</h4>
+                  <p>Open by reflecting back what they told you on call 1. Use their exact language. This shows you listened and re-anchors them to why they booked the second call.</p>
+                  <div class="tmmb-quote">"So when we last spoke, you said [their words]. Has anything changed since then, or is that still where you're at?"</div>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">2</div>
                 <div class="tmmb-step-content">
-                  <h4>What's the Cost of Not Acting?</h4>
-                  <p>The most powerful question in B2C. Force them to sit in the pain of inaction — not to manipulate, but so they make a real decision.</p>
-                  <div class="tmmb-quote">"If you don't figure this out in the next 6 months, what does that mean for you? Like, practically — what stays the same?"</div>
+                  <h4>Present the Solution</h4>
+                  <p>Walk through the Academy specifically as the answer to the gap they described. Not a generic pitch — connect each element to what they told you they need.</p>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">3</div>
                 <div class="tmmb-step-content">
-                  <h4>What's the #1 Thing Holding You Back?</h4>
-                  <p>This almost always reveals the real objection before you pitch. Handle it before it becomes a close blocker.</p>
-                  <div class="tmmb-quote">"Honestly — what's the number one thing that's stopped you from making progress with this until now?"</div>
+                  <h4>Case Studies — Make It Real</h4>
+                  <p>Drop Caleb or Kelly at the right moment. Pick the one closest to their situation. Don't recite it — weave it in naturally.</p>
+                  <div class="tmmb-quote">"We had someone in a really similar position — [Caleb/Kelly] — [their situation]. Within [timeframe], they were doing [result]. That's what this looks like when it works."</div>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">4</div>
+                <div class="tmmb-step-content">
+                  <h4>Handle Objections — Then Ask for the Decision</h4>
+                  <p>When they raise something, address it directly and return to the question. Never let an objection become the end of the conversation.</p>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">5</div>
+                <div class="tmmb-step-content">
+                  <h4>The Close</h4>
+                  <div class="tmmb-quote">"Based on everything we've talked about — this clearly makes sense for where you're trying to get to. What's stopping you from getting started today?"</div>
+                  <p style="margin-top:10px;">Then shut up. Whoever speaks next loses. Let the silence do the work.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div id="tmmb-script-pitch" class="tmmb-sub-section">
+          <div id="tmmb-script-opening" class="tmmb-sub-section">
             <div class="card">
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">1</div>
-                <div class="tmmb-step-content">
-                  <h4>Bridge From Their Pain</h4>
-                  <p>Never pitch cold. Connect TMMB directly to the specific pain they just told you about.</p>
-                  <div class="tmmb-quote">"So based on what you've said — [their pain point] — what TMMB is specifically built to solve is exactly that..."</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">2</div>
-                <div class="tmmb-step-content">
-                  <h4>The Three Pillars</h4>
-                  <p>Cover the three core value props: the community and network, the strategy system, and the live coaching accountability. Always in that order — community lands hardest for B2C.</p>
-                  <div class="tmmb-quote">"You're getting three things: the UK's best TikTok creator community, a proven content-to-commission system, and weekly live coaching so you never get stuck."</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">3</div>
-                <div class="tmmb-step-content">
-                  <h4>Social Proof Drop</h4>
-                  <p>One specific result from a member who started in a similar position to this prospect. Make it concrete — names, numbers, timelines.</p>
-                  <div class="tmmb-quote">"We had a member — [name] — who came in with [similar starting point]. Within [timeframe] they were doing [result]. And they had [same hesitation you're hearing now]."</div>
-                </div>
-              </div>
+              <div class="card-label">Opening Lines — Use These</div>
+              <div class="tmmb-quote" style="margin-bottom:10px;">"Hey [name], how are you getting on? So before I go into anything — where are you at right now? What made you book this call?"</div>
+              <div class="tmmb-quote" style="margin-bottom:10px;">"Good to meet you. I've had a quick look at your profile — [specific observation]. Tell me more about where you're at."</div>
+              <div class="tmmb-quote">"So you've been in the TMMB community for a bit — what's been the main sticking point for you so far?"</div>
+            </div>
+            <div class="card gold">
+              <div class="card-label">What NOT to Open With</div>
+              <ul>
+                <li>Don't open with the pitch — ever</li>
+                <li>Don't ask "so what do you know about the Academy?" — it sounds scripted</li>
+                <li>Don't jump to price before you've surfaced the gap</li>
+                <li>Don't talk more than them in the first 5 minutes</li>
+              </ul>
             </div>
           </div>
 
-          <div id="tmmb-script-close" class="tmmb-sub-section">
+          <div id="tmmb-script-questions" class="tmmb-sub-section">
             <div class="card">
+              <div class="card-label">Diagnostic Questions — Discovery</div>
+              <ul>
+                <li>"Where are you at right now with TikTok Shop — have you started, or still exploring?"</li>
+                <li>"What's working, and what's feeling like the sticking point?"</li>
+                <li>"What does your content output look like right now — how many videos a week?"</li>
+                <li>"Have you found any products that have converted well, or is that still the challenge?"</li>
+                <li>"What's the dream with this — if it's working in 6 months, what does that look like for you?"</li>
+                <li>"Is there a number that would change things for you? Like a monthly income that would actually shift your situation?"</li>
+                <li>"What's held you back from getting there so far — is it knowledge, time, knowing what products to focus on?"</li>
+                <li>"If nothing changes in the next 6 months, what does that actually cost you?"</li>
+              </ul>
+            </div>
+            <div class="card purple">
+              <div class="card-label">B2C Mindset Shift</div>
+              <p>These buyers are investing in themselves, not their business. The hesitation is almost never logical — it's fear, self-doubt, or past failure. Your job is to find the emotional blocker and remove it. Logic closes B2B. Emotion closes B2C.</p>
+            </div>
+          </div>
+
+          <div id="tmmb-script-closing" class="tmmb-sub-section">
+            <div class="card">
+              <div class="card-label">Close Sequence</div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">1</div>
                 <div class="tmmb-step-content">
-                  <h4>The Assumptive Transition</h4>
-                  <p>Don't ask if they want it — assume they do and move to the logistics. Forces a real yes or surfaces the real objection.</p>
-                  <div class="tmmb-quote">"So the way it works is — we'd get you onboarded this week, you'd be inside the community by [day]. Are you looking to pay in full or would the payment plan work better for you?"</div>
+                  <h4>Trial Close — Test the Temperature</h4>
+                  <div class="tmmb-quote">"Does this feel like it could be the right move for you?"</div>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">2</div>
                 <div class="tmmb-step-content">
-                  <h4>After an Objection — Don't Panic, Clarify</h4>
-                  <p>When an objection comes up, don't immediately answer it. Acknowledge, isolate it, then check if it's the only thing.</p>
-                  <div class="tmmb-quote">"I totally get that. Just so I understand — if [objection] wasn't a thing, is there anything else that would stop you moving forward today?"</div>
+                  <h4>The Assumptive Close</h4>
+                  <div class="tmmb-quote">"So in terms of getting started — are you looking at getting in straight away, or is there something specific we need to work through first?"</div>
                 </div>
               </div>
               <div class="tmmb-script-step">
                 <div class="tmmb-step-num">3</div>
                 <div class="tmmb-step-content">
-                  <h4>The Final Close — Force the Decision</h4>
-                  <p>Use this when they're sitting on the fence. Make the cost of inaction explicit one more time, then make it easy to say yes.</p>
-                  <div class="tmmb-quote">"Look — I'm not going to pressure you. But you said yourself that nothing changes if nothing changes. The only question is whether today is the day you decide to change it."</div>
+                  <h4>The Direct Close</h4>
+                  <div class="tmmb-quote">"Based on everything you've told me — this is clearly the right move. What's stopping you from getting started today?"</div>
+                  <p style="margin-top:8px;color:var(--red);font-size:12px;font-weight:600;">SHUT UP AFTER THIS. Do not fill the silence.</p>
+                </div>
+              </div>
+              <div class="tmmb-script-step">
+                <div class="tmmb-step-num">4</div>
+                <div class="tmmb-step-content">
+                  <h4>After a "Think About It"</h4>
+                  <div class="tmmb-quote">"What specifically do you need to think about? Let's think through it now — I'd rather you make a decision you're confident in on this call than leave with uncertainty."</div>
                 </div>
               </div>
             </div>
@@ -2098,166 +2119,191 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div id="tmmb-knowledge" class="tmmb-section">
           <div class="tmmb-section-header">
             <h2>Product Knowledge</h2>
-            <p>Everything you need to know to answer any question with confidence</p>
+            <p>Everything you need to know cold before your first call.</p>
           </div>
 
           <div class="card" style="margin-bottom:14px;">
-            <div class="card-label">What Is TMMB?</div>
-            <p>TMMB (The Making Money Brotherhood) is a UK-based TikTok Shop creator academy. Members learn to build a profitable content operation on TikTok Shop — from zero to consistent affiliate commission income. It's a community + coaching + curriculum product, not a course.</p>
-            <div class="tmmb-divider"></div>
-            <div class="tmmb-form-grid">
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Investment</div>
-                <div style="font-size:22px;font-weight:700;color:#6ee7b7;">£4,000</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px;">Full or payment plan available</div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Your Commission</div>
-                <div style="font-size:22px;font-weight:700;color:#fbbf24;">£400/close</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px;">10% of deal value</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-bottom:14px;">
-            <div class="card-label">What's Included</div>
+            <div class="card-label">What's in the Academy — £4,000</div>
             <ul>
-              <li><strong style="color:var(--text);">Private Community</strong> — members-only network of TikTok Shop creators, accountability pairs, collaboration opportunities</li>
-              <li><strong style="color:var(--text);">Content System</strong> — proven scripts, hooks, and content frameworks that convert to commissions</li>
-              <li><strong style="color:var(--text);">Weekly Live Coaching</strong> — live calls with the leadership team, hot seats, Q&amp;A, real-time feedback on content</li>
-              <li><strong style="color:var(--text);">TikTok Shop Masterclass</strong> — full A-Z curriculum from affiliate setup to £1k/month and beyond</li>
-              <li><strong style="color:var(--text);">1:1 Onboarding</strong> — personal setup call to build their 30-day action plan on day one</li>
-              <li><strong style="color:var(--text);">Brand Partnerships</strong> — access to preferred brand deals and higher commission rates through the TMMB network</li>
+              <li><strong style="color:var(--text);">Product and Brand Access</strong> — getting creators onto the right products, connecting them with retainer deals they couldn't get independently, identifying brands with strong ad spend</li>
+              <li><strong style="color:var(--text);">1-to-1 Coaching</strong> — direct access to Tom and the team. Message directly, get on calls, personalised advice on products, content strategy, and brand deals</li>
+              <li><strong style="color:var(--text);">Community</strong> — group of creators all working toward the same thing. Everyone sharing wins, advice, and support. Kelly said this was one of the biggest factors in her success</li>
+              <li><strong style="color:var(--text);">In-Person Events</strong> — bi-annual events. Kelly called hers a turning point — the month after was a record month for the whole agency</li>
+              <li><strong style="color:var(--text);">Content Strategy Guidance</strong> — hooks, video structure, batch filming, product selection, when to recreate winning videos</li>
+              <li><strong style="color:var(--text);">Brand Retainer Negotiation</strong> — helping creators understand their worth and negotiate retainer deals. Kelly has 3 retainers running simultaneously</li>
             </ul>
           </div>
 
-          <div class="card gold" style="margin-bottom:14px;">
-            <div class="card-label">Who It's For (Best Fit)</div>
-            <ul>
-              <li>18–35, wants an income outside of a 9–5 or to grow a side income fast</li>
-              <li>Has at least a smartphone and is willing to post 1–2 videos per day</li>
-              <li>Motivated by community and accountability, not just solo course-taking</li>
-              <li>Has tried "winging it" on TikTok and wants a system that actually works</li>
-            </ul>
+          <div style="margin-bottom:14px;">
+            <div class="card-label" style="padding:0 0 12px;color:var(--muted);">Case Studies — Use These on Calls</div>
+
+            <div class="tmmb-case-study">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div style="font-size:16px;font-weight:700;">Caleb</div>
+                  <div style="font-size:12px;color:var(--muted);">Amazon FBA background, some content experience</div>
+                </div>
+                <div class="tmmb-tag green">Best for: B2B crossover buyers</div>
+              </div>
+              <div class="tmmb-case-meta">
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">£4k</div><div class="tmmb-case-sub">Sep starting point</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num gold">£19.4k</div><div class="tmmb-case-sub">November</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">22M</div><div class="tmmb-case-sub">Views on one video</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">£100k</div><div class="tmmb-case-sub">GMV from one video</div></div>
+              </div>
+              <p style="color:var(--label);font-size:13px;margin-top:12px;">Set a goal of £10k in September. Hit £19.4k in November. One video did 22 million views and £100k GMV alone. Joined the Academy in April because he wanted a closer community and to see what top performers were doing differently.</p>
+            </div>
+
+            <div class="tmmb-case-study">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div style="font-size:16px;font-weight:700;">Kelly</div>
+                  <div style="font-size:12px;color:var(--muted);">Full-time NHS nurse, night shifts, zero free time</div>
+                </div>
+                <div class="tmmb-tag gold">Best for: employed / time-poor buyers</div>
+              </div>
+              <div class="tmmb-case-meta">
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">£200</div><div class="tmmb-case-sub">March starting point</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num gold">£10k</div><div class="tmmb-case-sub">December (first goal)</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">£20k</div><div class="tmmb-case-sub">January (next month)</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">Feb</div><div class="tmmb-case-sub">Quit nursing</div></div>
+              </div>
+              <p style="color:var(--label);font-size:13px;margin-top:12px;">Full-time nurse doing night shifts. Hit £10k in December, then £20k in January — her entire nursing wage in one month. Quit on 23rd February. She said the community was the thing that kept her going through the slow months. Without TMMB she would have quit.</p>
+            </div>
+
+            <div class="tmmb-case-study">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div style="font-size:16px;font-weight:700;">16-year-old member</div>
+                  <div style="font-size:12px;color:var(--muted);">No experience, started from scratch</div>
+                </div>
+                <div class="tmmb-tag green">Best for: younger / newer buyers</div>
+              </div>
+              <div class="tmmb-case-meta">
+                <div class="tmmb-case-stat"><div class="tmmb-case-num">£1.5k</div><div class="tmmb-case-sub">In one week</div></div>
+                <div class="tmmb-case-stat"><div class="tmmb-case-num gold">3.4M</div><div class="tmmb-case-sub">Views on one video</div></div>
+              </div>
+              <p style="color:var(--label);font-size:13px;margin-top:12px;">Made £1.5k in a single week from one video. Started with no experience, learned the content skills through TMMB. That video will continue making money for months.</p>
+            </div>
           </div>
 
-          <div class="card">
-            <div class="card-label">Case Studies</div>
-
-            <div class="tmmb-case-study">
-              <div class="tmmb-case-meta">
-                <div class="tmmb-case-stat"><div class="tmmb-case-num">£3.2k</div><div class="tmmb-case-sub">Month 3</div></div>
-                <div class="tmmb-case-stat"><div class="tmmb-case-num gold">67</div><div class="tmmb-case-sub">Days in</div></div>
+          <div class="card purple" style="margin-bottom:14px;">
+            <div class="card-label">Tom's System — Know This Cold</div>
+            <div class="tmmb-script-step">
+              <div class="tmmb-step-num">1</div>
+              <div class="tmmb-step-content">
+                <h4>Content Engine</h4>
+                <p>Brand page posting 1 to 3 pieces every day. This is the main lever. Affiliates see you're serious and want to work with you. TikTok pushes content further. Paid ads perform better off the back of it.</p>
               </div>
-              <p style="font-size:13px;color:var(--label);line-height:1.7;">Started with 0 followers, no TikTok experience. Used the TMMB content system to hit consistent affiliate commission within 10 weeks, earning £3.2k in month 3 alone.</p>
             </div>
-
-            <div class="tmmb-case-study">
-              <div class="tmmb-case-meta">
-                <div class="tmmb-case-stat"><div class="tmmb-case-num">£1.8k</div><div class="tmmb-case-sub">Month 2</div></div>
-                <div class="tmmb-case-stat"><div class="tmmb-case-num gold">45</div><div class="tmmb-case-sub">Days in</div></div>
+            <div class="tmmb-script-step">
+              <div class="tmmb-step-num">2</div>
+              <div class="tmmb-step-content">
+                <h4>Affiliates — Quality Not Volume</h4>
+                <p>Three-point check before sending anything: Brand aligned. Historic campaign data (follower count lies, conversion data doesn't). Commitment on video count. Start 20–30 creators, scale to 100–500 per month. 5% convert = 10–20 high quality creators added monthly.</p>
               </div>
-              <p style="font-size:13px;color:var(--label);line-height:1.7;">Part-time creator alongside a full-time job. Used the live coaching calls to tweak hooks — £1.8k in commissions by end of month 2 posting just 1 video per day.</p>
             </div>
+            <div class="tmmb-script-step">
+              <div class="tmmb-step-num">3</div>
+              <div class="tmmb-step-content">
+                <h4>Paid Ads — Only Behind Proven Content</h4>
+                <p>GMV Max ads only behind content that's already working organically. Any agency that puts paid behind cold content is burning budget. Let the algorithm show you what works, then add fuel.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card gold">
+            <div class="card-label">Industry Stats — Drop These Naturally</div>
+            <ul>
+              <li>TikTok Shop global GMV hit $33.2 billion in 2024 — more than doubled year on year</li>
+              <li>UK social commerce market projected to reach £16 billion by 2028</li>
+              <li>Over 200,000 UK small businesses now selling on TikTok Shop — double from a year ago</li>
+              <li>Black Friday 2025: 27 items sold every second at peak on TikTok Shop UK</li>
+              <li>58% of TikTok users globally have made a purchase through TikTok Shop</li>
+              <li>TikTok is now the UK's fourth-largest beauty retailer</li>
+            </ul>
           </div>
         </div>
 
         <!-- ===== OBJECTIONS ===== -->
         <div id="tmmb-objections" class="tmmb-section">
           <div class="tmmb-section-header">
-            <h2>Objection Handling</h2>
-            <p>Every common objection with a direct response — memorise the concept, not the words</p>
+            <h2>Objection Bank</h2>
+            <p>Every objection you'll face and exactly how to handle it.</p>
           </div>
 
           <div class="card" style="margin-bottom:14px;">
-            <div class="card-label">Price &amp; Money Objections</div>
-
+            <div class="card-label">Fear Objections — Most Common at £4k B2C</div>
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag fear">FEAR</div>
-                <div class="tmmb-obj-q">"It's too expensive / I don't have £4,000"</div>
+                <div class="tmmb-obj-tag fear">Fear</div>
+                <div class="tmmb-obj-q">"I need to think about it."</div>
               </div>
-              <div>
-                <div class="tmmb-obj-a">First, isolate: "Besides the investment, is there anything else holding you back?" Then reframe cost vs. cost of inaction: "You said you want [their goal] — how much is it costing you every month you don't have it?" Offer the payment plan. If they genuinely can't afford it, it's a disqualification — not an objection to handle.</div>
-              </div>
+              <div class="tmmb-obj-a">"What specifically do you need to think about? Let's think through it now — I'd rather you make a decision you're confident in on this call than leave with uncertainty." Then shut up.</div>
             </div>
-
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag logic">LOGIC</div>
-                <div class="tmmb-obj-q">"I need to think about it"</div>
+                <div class="tmmb-obj-tag fear">Fear</div>
+                <div class="tmmb-obj-q">"I'm not sure I'll follow through / make it work."</div>
               </div>
-              <div>
-                <div class="tmmb-obj-a">"Totally fair — what specifically do you need to think about? Is it the investment, or something about whether this is right for you?" This forces them to surface the real objection. "Thinking about it" is never the real objection — it's a delay tactic for something else.</div>
-              </div>
+              <div class="tmmb-obj-a">"That's actually the most honest thing anyone says on these calls. So let me ask — what would have to be true for you to make it work? Because that's exactly what the Academy is built around. You're not doing this alone."</div>
             </div>
-
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag fear">FEAR</div>
-                <div class="tmmb-obj-q">"What if it doesn't work for me?"</div>
+                <div class="tmmb-obj-tag fear">Fear</div>
+                <div class="tmmb-obj-q">"I've tried things like this before and it didn't work."</div>
               </div>
+              <div class="tmmb-obj-a">"What happened? [Listen fully.] Right — and that's exactly why what we do is different. [Specific differentiator based on what they said.] The people who've been burned before are actually our best members because they know what doesn't work."</div>
+            </div>
+            <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-a">This is fear of failure, not a logical concern. "That makes complete sense — can I ask, what specifically are you worried won't work? Is it the content side, or whether you personally can commit to it?" Then point to a case study who had the same fear. Focus on what's actually in their control.</div>
+                <div class="tmmb-obj-tag fear">Fear</div>
+                <div class="tmmb-obj-q">"What if I don't make my money back?"</div>
               </div>
+              <div class="tmmb-obj-a">"Kelly was a nurse making £200 a month when she started. Caleb was at £4k. The question isn't whether it works — the question is whether you're willing to put the work in. What would your situation look like if you made even half of what they did in month one?"</div>
             </div>
           </div>
 
-          <div class="card" style="margin-bottom:14px;">
-            <div class="card-label">Time &amp; Commitment Objections</div>
-
+          <div class="card gold" style="margin-bottom:14px;">
+            <div class="card-label">Logical / Practical Objections</div>
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag logic">LOGIC</div>
-                <div class="tmmb-obj-q">"I don't have time right now"</div>
+                <div class="tmmb-obj-tag logic">Logic</div>
+                <div class="tmmb-obj-q">"£4,000 is a lot of money."</div>
               </div>
-              <div>
-                <div class="tmmb-obj-a">"I hear you — how much time would you need to feel ready? Because the people who say 'I'll do it when I have more time' usually never find it. TMMB is designed for people who post 1 video a day — 30 minutes. That's it." Then confirm: is time genuinely the issue, or is it fear dressed up as time?</div>
-              </div>
+              <div class="tmmb-obj-a">"It is. And Kelly made her whole nursing salary in January — her first full month after going all in. What does £4k look like against a month of that? The question isn't whether it costs £4k. It's what it costs you to stay where you are."</div>
             </div>
-
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag logic">LOGIC</div>
-                <div class="tmmb-obj-q">"I need to speak to my partner first"</div>
+                <div class="tmmb-obj-tag logic">Logic</div>
+                <div class="tmmb-obj-q">"I don't have the time."</div>
               </div>
+              <div class="tmmb-obj-a">"Kelly was doing night shifts as a nurse and still found time to build this. What she got from the Academy was a clear system so she wasn't wasting the time she did have. How much time are you currently spending on TikTok without a clear direction?"</div>
+            </div>
+            <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-a">Never let the call end without setting a concrete next step. "Absolutely — that's sensible for a decision this size. When are you speaking to them? Let's book a follow-up call for [day after] so I can answer any questions they have too. Would [time] work?"</div>
+                <div class="tmmb-obj-tag logic">Logic</div>
+                <div class="tmmb-obj-q">"Can I not just figure it out myself?"</div>
               </div>
+              <div class="tmmb-obj-a">"You can. But Caleb was figuring it out himself for months before the Academy and plateaued at £4k. Kelly said without TMMB she would have quit entirely. The difference is not the information — it's the product access, the community, and having people who can tell you exactly which products to go hard on."</div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-label">Scepticism &amp; Value Objections</div>
-
+          <div class="card purple">
+            <div class="card-label">Value / Scepticism Objections</div>
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag value">VALUE</div>
-                <div class="tmmb-obj-q">"I could just figure this out for free on YouTube"</div>
+                <div class="tmmb-obj-tag value">Value</div>
+                <div class="tmmb-obj-q">"How is this different from other courses?"</div>
               </div>
-              <div>
-                <div class="tmmb-obj-a">"You probably could — and how long have you been trying to figure it out for free? The problem isn't access to information, it's having the system, the accountability, and the community to actually follow through. That's what you're buying."</div>
-              </div>
+              <div class="tmmb-obj-a">"Most courses sell you information. The Academy gives you brand access you can't get independently, 1-to-1 coaching on your specific account, and a community of people who are actually doing numbers right now. Tom is an active creator himself — he's in the trenches the same as you."</div>
             </div>
-
             <div class="tmmb-obj-grid">
               <div>
-                <div class="tmmb-obj-tag value">VALUE</div>
-                <div class="tmmb-obj-q">"I've bought courses before and they didn't work"</div>
+                <div class="tmmb-obj-tag value">Value</div>
+                <div class="tmmb-obj-q">"I can find this stuff for free online."</div>
               </div>
-              <div>
-                <div class="tmmb-obj-a">"That makes total sense — and that's exactly why TMMB isn't a course. You're not buying content to watch on your own. You're getting a community you're accountable to, live coaching every week, and people to chase results alongside. That's a completely different thing."</div>
-              </div>
-            </div>
-
-            <div class="tmmb-obj-grid">
-              <div>
-                <div class="tmmb-obj-tag fear">FEAR</div>
-                <div class="tmmb-obj-q">"TikTok feels like it's just for kids / I'm not the TikTok type"</div>
-              </div>
-              <div>
-                <div class="tmmb-obj-a">"The best-performing TikTok Shop creators are 25–45 year olds in niches like home, fitness, finance, and lifestyle — not teenagers doing dances. The audience buys from people who look like them. What niche would you naturally talk about?"</div>
-              </div>
+              <div class="tmmb-obj-a">"The information is out there, yeah. What you can't find for free is the brand retainer deals, the direct product recommendations from Tom, and 20 other creators in the same room who are hitting £10k to £20k months and will tell you exactly what's working right now."</div>
             </div>
           </div>
         </div>
@@ -2912,7 +2958,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_calcCommission() {
     const closes = parseInt(document.getElementById('tmmb-calc-closes').value) || 0;
     const el = document.getElementById('tmmb-calc-result');
-    if (el) el.textContent = '£' + (closes * 400).toLocaleString();
+    if (el) el.textContent = '£' + (closes * 4000 * 0.10).toLocaleString();
   }
 
   function tmmb_getCalls() {
@@ -2924,30 +2970,26 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_logCall() {
-    const date    = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
-    const name    = document.getElementById('cl-prospect').value.trim();
-    if (!name) { alert('Enter a prospect name first.'); return; }
-    const call = {
-      id:        Date.now(),
-      date,
-      prospect:  name,
-      outcome:   document.getElementById('cl-outcome').value,
-      value:     parseFloat(document.getElementById('cl-value').value) || 4000,
-      duration:  parseInt(document.getElementById('cl-duration').value) || null,
-      rating:    parseInt(document.getElementById('cl-rating').value) || null,
-      objection: document.getElementById('cl-objection').value.trim() || null,
-      notes:     document.getElementById('cl-notes').value.trim() || null,
-    };
+    const date = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
+    const name = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
+    const outcome = document.getElementById('cl-outcome').value;
+    const type    = document.getElementById('cl-type').value;
+    const notes   = (document.getElementById('cl-notes').value || '').trim();
+    const objections = Array.from(
+      document.querySelectorAll('#tmmb-obj-checkboxes input:checked')
+    ).map(i => i.value);
+
     const calls = tmmb_getCalls();
-    calls.unshift(call);
+    calls.unshift({ id: Date.now(), date, name, outcome, type, notes, objections });
     tmmb_saveCalls(calls);
-    ['cl-prospect','cl-objection','cl-notes','cl-duration','cl-rating'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    const valEl = document.getElementById('cl-value'); if (valEl) valEl.value = '4000';
+
+    document.getElementById('cl-name').value  = '';
+    document.getElementById('cl-notes').value = '';
+    document.getElementById('cl-outcome').value = 'closed';
+    document.querySelectorAll('#tmmb-obj-checkboxes input').forEach(i => i.checked = false);
+
     tmmb_renderCallHistory();
     tmmb_updateOverview();
-    tmmb_calcCommission();
   }
 
   function tmmb_deleteCall(id) {
@@ -2955,71 +2997,101 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_saveCalls(tmmb_getCalls().filter(c => c.id !== id));
     tmmb_renderCallHistory();
     tmmb_updateOverview();
-    tmmb_calcCommission();
   }
 
-  function tmmb_pillClass(outcome) {
-    return { closed:'closed', followup:'followup', noshow:'noshow', noclose:'noclose' }[outcome] || 'noclose';
+  function tmmb_outcomeLabel(o) {
+    return { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show' }[o] || o;
   }
-  function tmmb_pillLabel(outcome) {
-    return { closed:'Closed ✓', followup:'Follow-Up', noshow:'No Show', noclose:'No Close' }[outcome] || outcome;
+  function tmmb_outcomeClass(o) {
+    return { closed:'closed', followup:'followup', noshow:'noshow', noclose:'noclose' }[o] || 'noclose';
   }
 
   function tmmb_renderCallHistory() {
-    const tbody = document.getElementById('tmmb-call-tbody');
-    if (!tbody) return;
+    const el = document.getElementById('tmmb-call-history');
+    if (!el) return;
     const calls = tmmb_getCalls();
     if (!calls.length) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="tmmb-empty"><div class="icon">📋</div><p>No calls logged yet — use the form above</p></div></td></tr>';
+      el.innerHTML = '<div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>';
       return;
     }
-    tbody.innerHTML = calls.map(c => `
-      <tr>
+    el.innerHTML = '<div style="overflow-x:auto;"><table class="tmmb-call-table"><thead><tr>' +
+      '<th>Date</th><th>Name</th><th>Type</th><th>Outcome</th><th>Objections</th><th></th>' +
+      '</tr></thead><tbody>' +
+      calls.map(c => `<tr>
         <td>${c.date || '—'}</td>
-        <td style="color:var(--text);font-weight:500;">${c.prospect || '—'}</td>
-        <td><span class="tmmb-pill ${tmmb_pillClass(c.outcome)}">${tmmb_pillLabel(c.outcome)}</span></td>
-        <td>£${Number(c.value || 4000).toLocaleString()}</td>
-        <td>${c.rating ? c.rating + '/10' : '—'}</td>
-        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.objection || '—'}</td>
-        <td><button onclick="tmmb_deleteCall(${c.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;" title="Delete">×</button></td>
-      </tr>`).join('');
+        <td style="color:var(--text);font-weight:500;">${c.name || '—'}</td>
+        <td>${c.type === 'call1' ? 'Discovery' : 'Close'}</td>
+        <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
+        <td style="font-size:12px;">${(c.objections||[]).length ? c.objections.join(', ').replace(/-/g,' ') : '—'}</td>
+        <td><button onclick="tmmb_deleteCall(${c.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;" title="Delete">×</button></td>
+      </tr>`).join('') +
+      '</tbody></table></div>';
   }
 
   function tmmb_updateOverview() {
     const calls  = tmmb_getCalls();
     const total  = calls.length;
-    const showed = calls.filter(c => c.outcome !== 'noshow').length;
+    const shown  = calls.filter(c => c.outcome !== 'noshow').length;
     const closed = calls.filter(c => c.outcome === 'closed').length;
-    const showPct  = total  > 0 ? Math.round(showed / total  * 100) : 0;
-    const closePct = showed > 0 ? Math.round(closed / showed * 100) : 0;
-    const earn = closed * 400;
+    const noshow = calls.filter(c => c.outcome === 'noshow').length;
+    const occ    = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
+    const fup    = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
 
-    const s = document.getElementById('s-show');   if (s)  s.textContent  = showPct  + '%';
-    const sc = document.getElementById('s-close');  if (sc) sc.textContent = closePct + '%';
-    const sd = document.getElementById('s-deals');  if (sd) sd.textContent = closed + ' deals';
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('tmmb-stat-calls', shown);
+    set('tmmb-stat-shows', total  ? Math.round(shown/total*100)  + '%' : '—');
+    set('tmmb-stat-close', shown  ? Math.round(closed/shown*100) + '%' : '—');
+    set('tmmb-stat-earn',  '£' + (closed * 400).toLocaleString());
+    set('tmmb-ov-calendar', total);
+    set('tmmb-ov-noshow',   noshow);
+    set('tmmb-ov-occ',      occ);
+    set('tmmb-ov-fup',      fup);
 
-    const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-    el('tmmb-stat-calls',  total);
-    el('tmmb-stat-shows',  showPct + '%');
-    el('tmmb-stat-close',  closePct + '%');
-    el('tmmb-stat-earn',   '£' + earn.toLocaleString());
+    // Home screen stat cards
+    const s  = document.getElementById('s-show');  if (s)  s.textContent  = total ? Math.round(shown/total*100)  + '%' : '—';
+    const sc = document.getElementById('s-close'); if (sc) sc.textContent = shown ? Math.round(closed/shown*100) + '%' : '—';
+    const sd = document.getElementById('s-deals'); if (sd) sd.textContent = closed + ' deals';
 
-    const calcEl = document.getElementById('tmmb-calc-closes');
-    if (calcEl && !calcEl.value) { calcEl.value = closed; tmmb_calcCommission(); }
+    // Top objections
+    const objCounts = {};
+    calls.forEach(c => (c.objections||[]).forEach(o => objCounts[o] = (objCounts[o]||0)+1));
+    const sorted = Object.entries(objCounts).sort((a,b) => b[1]-a[1]).slice(0,4);
+    const objEl = document.getElementById('tmmb-top-objections');
+    if (objEl) {
+      objEl.innerHTML = sorted.length
+        ? sorted.map(([obj, count]) =>
+            `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--label);">${obj.replace(/-/g,' ')}</span>
+              <span style="font-weight:600;color:var(--accent);">${count}×</span>
+            </div>`).join('')
+        : '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Log calls to see objection patterns</div>';
+    }
+  }
+
+  function tmmb_scoreBar(label, score) {
+    const col = score >= 7 ? '' : score >= 5 ? 'gold' : 'red';
+    const scoreCol = score >= 7 ? 'var(--accent)' : score >= 5 ? 'var(--gold)' : 'var(--red)';
+    return `<div class="tmmb-score-bar-wrap">
+      <div class="tmmb-score-bar-label"><span>${label}</span><span style="color:${scoreCol};">${score}/10</span></div>
+      <div class="tmmb-score-bar"><div class="tmmb-score-fill ${col}" style="width:${score*10}%"></div></div>
+    </div>`;
   }
 
   async function tmmb_analyseCall() {
     const transcript = (document.getElementById('tmmb-transcript-input').value || '').trim();
-    if (transcript.length < 50) { alert('Paste a longer transcript first (at least 50 characters).'); return; }
+    if (transcript.length < 50) { alert('Paste a longer transcript first.'); return; }
 
-    const btn   = document.getElementById('tmmb-analyse-btn');
-    const label = document.getElementById('tmmb-analyse-label');
-    const out   = document.getElementById('tmmb-analyser-out');
-    btn.disabled = true;
-    label.textContent = 'Analysing…';
+    const btn     = document.getElementById('tmmb-analyse-btn');
+    const label   = document.getElementById('tmmb-analyse-label');
+    const out     = document.getElementById('tmmb-analyser-out');
+    const content = document.getElementById('tmmb-analyser-content');
+    btn.disabled  = true;
+    label.textContent = 'Analysing...';
+    out.classList.add('visible');
+    content.innerHTML = '<p style="color:var(--muted);font-size:13px;font-style:italic;">Reading the transcript...</p>';
 
     try {
-      const res = await fetch('https://cutting-dashboard.vercel.app/api/tmmb-analyse', {
+      const res  = await fetch('https://cutting-dashboard.vercel.app/api/tmmb-analyse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript })
@@ -3027,41 +3099,51 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const json = await res.json();
       if (!res.ok || !json.result) throw new Error(json.error || 'No result returned');
       const r = json.result;
+      const scoreCol = r.overall_score >= 7 ? 'var(--accent)' : r.overall_score >= 5 ? 'var(--gold)' : 'var(--red)';
 
-      document.getElementById('tmmb-out-summary').textContent = r.summary || '';
-      document.getElementById('tmmb-out-score').textContent   = r.overall_score ?? '—';
-      document.getElementById('tmmb-out-moment').textContent  = r.key_moment || '';
-      document.getElementById('tmmb-out-next').textContent    = r.next_step  || '';
-
-      const scoreFields = [
-        { key: 'rapport',           label: 'Rapport' },
-        { key: 'diagnosis',         label: 'Diagnosis' },
-        { key: 'pain_amplification',label: 'Pain Amplification' },
-        { key: 'close_attempt',     label: 'Close Attempt' },
-      ];
-      document.getElementById('tmmb-out-scores').innerHTML = scoreFields.map(f => {
-        const val = r[f.key] ?? 0;
-        const cls = val >= 7 ? '' : val >= 5 ? 'gold' : 'red';
-        return `<div class="tmmb-score-bar-wrap">
-          <div class="tmmb-score-bar-label"><span>${f.label}</span><span>${val}/10</span></div>
-          <div class="tmmb-score-bar"><div class="tmmb-score-fill ${cls}" style="width:${val*10}%"></div></div>
+      content.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-size:24px;font-weight:700;color:${scoreCol};">${r.overall_score}/10</div>
+            <div style="font-size:12px;color:var(--muted);">Overall Score</div>
+          </div>
+          <div style="font-size:13px;color:var(--label);max-width:60%;text-align:right;font-style:italic;">"${r.summary || ''}"</div>
+        </div>
+        <div style="margin-bottom:16px;">
+          ${tmmb_scoreBar('Rapport', r.rapport)}
+          ${tmmb_scoreBar('Diagnosis / Discovery', r.diagnosis)}
+          ${tmmb_scoreBar('Pain Amplification', r.pain_amplification)}
+          ${tmmb_scoreBar('Close Attempt', r.close_attempt)}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">What Worked</div>
+            ${(r.what_worked||[]).map(w=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--label);">${w}</div>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">To Improve</div>
+            ${(r.to_improve||[]).map(w=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--label);">${w}</div>`).join('')}
+          </div>
+        </div>
+        ${(r.objections_hit||[]).length ? `<div style="margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Objections Hit</div>
+          <div>${(r.objections_hit||[]).map(o=>`<span class="tmmb-tag gold">${o}</span>`).join('')}</div>
+        </div>` : ''}
+        <div style="background:var(--surface);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent2);margin-bottom:6px;">Key Moment</div>
+          <div style="font-size:13px;color:var(--text);">${r.key_moment||''}</div>
+        </div>
+        <div style="background:var(--surface);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:12px 16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;">Next Step</div>
+          <div style="font-size:13px;color:var(--text);font-weight:600;">${r.next_step||''}</div>
         </div>`;
-      }).join('');
 
-      document.getElementById('tmmb-out-worked').innerHTML =
-        (r.what_worked || []).map(w => `<div class="tmmb-tag green">✓ ${w}</div>`).join('');
-      document.getElementById('tmmb-out-improve').innerHTML =
-        (r.to_improve || []).map(w => `<div class="tmmb-tag red">↑ ${w}</div>`).join('');
-      document.getElementById('tmmb-out-objections').innerHTML =
-        (r.objections_hit || []).map(w => `<div class="tmmb-tag gold">${w}</div>`).join('');
-
-      out.classList.add('visible');
       out.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (e) {
-      alert('Analysis failed: ' + e.message);
+    } catch(e) {
+      content.innerHTML = `<p style="color:var(--red);">Could not analyse transcript: ${e.message}</p>`;
     } finally {
       btn.disabled = false;
-      label.textContent = 'Analyse Call →';
+      label.textContent = 'Analyse Call';
     }
   }
 
