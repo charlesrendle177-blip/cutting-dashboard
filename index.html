@@ -216,7 +216,7 @@
 
     .sections-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
     }
 
@@ -1331,6 +1331,197 @@
       .tmmb-obj-grid { grid-template-columns: 1fr; }
       .tmmb-charts-row { grid-template-columns: 1fr; }
     }
+
+    /* ============================================================
+       TO DO SECTION
+    ============================================================ */
+    .td-wrap { padding: 36px 48px 100px; max-width: 880px; }
+    .td-stats-row { display: flex; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+    .td-stat {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 20px; display: flex; align-items: baseline; gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .td-stat-num { font-size: 26px; font-weight: 800; color: #0d2345; letter-spacing: -0.5px; }
+    .td-stat-label { font-size: 12px; color: #9ca3af; font-weight: 500; }
+
+    .td-add-bar {
+      background: #fff; border: 1.5px solid rgba(0,0,0,0.09); border-radius: 14px;
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      margin-bottom: 22px; box-shadow: var(--shadow-sm); transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .td-add-bar:focus-within { border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124,58,237,0.07); }
+    .td-add-icon {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff; font-size: 22px; font-weight: 300;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .td-add-input {
+      flex: 1; border: none; outline: none;
+      font-family: inherit; font-size: 14px; color: #111827; background: transparent;
+    }
+    .td-add-input::placeholder { color: #9ca3af; }
+    .td-add-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .td-quick-select {
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; background: #f8fafc;
+      color: #374151; font-family: inherit; font-size: 12px; font-weight: 600;
+      padding: 6px 10px; cursor: pointer; outline: none;
+    }
+    .td-quick-select:focus { border-color: #7c3aed; }
+    .td-add-btn {
+      background: #0d2345; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .td-add-btn:hover { background: #1a3560; }
+
+    .td-task-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      margin-bottom: 20px; box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .td-sec-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px 10px; border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .td-sec-name {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--sec-c, #7c3aed); flex-shrink: 0;
+    }
+    .td-sec-divider {
+      flex: 1; height: 0;
+      border-top: 1.5px solid var(--sec-c, #7c3aed); opacity: 0.18;
+    }
+    .td-sec-count { font-size: 10px; font-weight: 700; color: #9ca3af; flex-shrink: 0; }
+
+    .td-task-wrap { border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .td-task-wrap:last-child { border-bottom: none; }
+    .td-task-wrap.dragging { opacity: 0.4; }
+    .td-task-wrap.drop-over { background: rgba(124,58,237,0.04); }
+    .td-task {
+      display: grid; grid-template-columns: 14px 26px 20px 1fr auto;
+      align-items: center; gap: 10px; padding: 12px 18px;
+    }
+    .td-task-wrap:hover .td-task { background: rgba(0,0,0,0.01); }
+    .td-grip {
+      color: rgba(0,0,0,0.18); font-size: 13px; cursor: grab;
+      user-select: none; opacity: 0; transition: opacity 0.15s; line-height: 1;
+    }
+    .td-task-wrap:hover .td-grip { opacity: 1; }
+    .td-order {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .td-check {
+      width: 18px; height: 18px; border: 1.5px solid rgba(0,0,0,0.2);
+      border-radius: 5px; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+    }
+    .td-check:hover { border-color: #059669; background: rgba(5,150,105,0.06); }
+    .td-check.is-done {
+      background: #059669; border-color: #059669;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'><path d='M1 4l3 3 5-6' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat; background-position: center;
+    }
+    .td-text { font-size: 14px; color: #111827; cursor: pointer; line-height: 1.4; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .td-text:hover { color: #7c3aed; }
+    .td-text.is-done { text-decoration: line-through; color: #9ca3af !important; }
+    .td-meta { display: flex; align-items: center; gap: 8px; }
+    .td-chips { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+    .td-chip {
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+      white-space: nowrap; letter-spacing: 0.3px; display: inline-flex; align-items: center;
+    }
+    .td-chip-due { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; white-space: nowrap; background: rgba(217,119,6,0.1); color: #d97706; }
+    .td-chip-due.overdue { background: rgba(220,38,38,0.1); color: #dc2626; }
+    .td-chip-due.today   { background: rgba(37,99,235,0.1); color: #2563eb; }
+    .td-delete {
+      opacity: 0; font-size: 16px; color: #9ca3af; cursor: pointer; line-height: 1;
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; transition: all 0.12s; flex-shrink: 0;
+    }
+    .td-task-wrap:hover .td-delete { opacity: 1; }
+    .td-delete:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
+    .td-done-when { font-size: 11px; color: #9ca3af; font-weight: 600; }
+
+    .td-notes { display: none; padding: 0 18px 16px 80px; }
+    .td-task-wrap.expanded .td-notes { display: block; }
+    .td-notes-text {
+      width: 100%; min-height: 64px; padding: 10px 12px;
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 10px;
+      font-family: inherit; font-size: 13px; color: #111827;
+      background: #f8fafc; resize: vertical; outline: none; margin-bottom: 8px;
+    }
+    .td-notes-text:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.07); }
+    .td-notes-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #6b7280;
+    }
+    .td-notes-sel, .td-notes-date {
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 7px; background: #f8fafc;
+      padding: 5px 9px; font-family: inherit; font-size: 12px; color: #374151; cursor: pointer;
+    }
+    .td-notes-save {
+      background: #0d2345; color: #fff; border: none; border-radius: 7px;
+      padding: 5px 12px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .td-notes-save:hover { background: #1a3560; }
+    .td-notes-del {
+      background: transparent; color: #dc2626; border: none;
+      font-family: inherit; font-size: 12px; cursor: pointer; margin-left: auto;
+      padding: 5px 8px; border-radius: 7px;
+    }
+    .td-notes-del:hover { background: rgba(220,38,38,0.08); }
+
+    .td-done-section { margin-top: 8px; }
+    .td-done-head {
+      display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 14px 20px;
+      color: #6b7280; font-size: 13px; font-weight: 600;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      transition: background 0.1s; user-select: none;
+    }
+    .td-done-head:hover { background: #f8fafc; }
+    .td-done-right { margin-left: auto; font-size: 11px; color: #9ca3af; }
+    .td-done-caret { display: inline-block; transition: transform 0.15s; font-size: 10px; }
+    .td-done-section.open .td-done-caret { transform: rotate(90deg); }
+    .td-done-list {
+      background: #fff; border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 12px 12px; margin-top: -1px; display: none; padding: 4px 18px 8px;
+    }
+    .td-done-section.open .td-done-list { display: block; }
+    .td-done-section.open .td-done-head { border-radius: 12px 12px 0 0; }
+
+    .td-empty { padding: 36px 20px; text-align: center; color: #9ca3af; }
+    .td-empty-icon { font-size: 28px; margin-bottom: 10px; }
+    .td-empty p { font-size: 14px; }
+
+    .td-toast-stack {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 200; pointer-events: none;
+    }
+    .td-toast {
+      pointer-events: auto; background: #0d2345; color: #fff;
+      padding: 12px 16px; border-radius: 10px; box-shadow: var(--shadow-md);
+      display: flex; align-items: center; gap: 14px;
+      font-size: 13px; min-width: 260px; max-width: 400px;
+      animation: td-toast-in 0.18s ease-out;
+    }
+    .td-toast-undo {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      color: #fff; padding: 3px 10px; border-radius: 6px;
+      font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .td-toast-undo:hover { background: rgba(255,255,255,0.22); }
+    @keyframes td-toast-in {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    @media (max-width: 880px) { .td-wrap { padding: 24px 24px 80px; } }
+    @media (max-width: 640px) {
+      .td-wrap { padding: 20px 16px 80px; }
+      .td-add-bar { flex-wrap: wrap; }
+      .td-add-controls { flex-wrap: wrap; }
+      .td-task { grid-template-columns: 14px 26px 20px 1fr auto; gap: 7px; padding: 10px 14px; }
+      .td-notes { padding-left: 52px; }
+    }
   </style>
 </head>
 <body>
@@ -1425,6 +1616,30 @@
         <div class="card-divider"></div>
         <div class="card-stats" style="padding-top: 4px">
           <div class="coming-soon-pill">Coming Soon</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <!-- TO DO -->
+      <div class="section-card fu fu7" onclick="navigate('todo')"
+           style="--c-accent: #7c3aed; --c-glow: rgba(124,58,237,0.07)">
+        <div class="card-icon" style="font-size:28px">✓</div>
+        <div class="card-title">To Do</div>
+        <div class="card-subtitle">Tasks, priorities & deadlines</div>
+        <div class="card-divider"></div>
+        <div class="card-stats">
+          <div class="stat-row">
+            <span class="stat-label">Open tasks</span>
+            <span class="stat-value" style="color:#7c3aed" id="s-todo-open">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Due today</span>
+            <span class="stat-value blue" id="s-todo-today">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Done this week</span>
+            <span class="stat-value green" id="s-todo-done">—</span>
+          </div>
         </div>
         <div class="card-arrow">→</div>
       </div>
@@ -2454,6 +2669,91 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
 
 <!-- ============================================================
+     TO DO SECTION
+============================================================ -->
+<div id="view-todo" class="view">
+  <div class="section-view">
+
+    <div class="section-header">
+      <button class="back-btn" onclick="navigate('home')">←</button>
+      <div class="hdr-dot" style="background:#7c3aed"></div>
+      <div class="hdr-title">To Do</div>
+      <div class="hdr-crumb">Charles' Hub / To Do</div>
+    </div>
+
+    <div class="td-wrap">
+
+      <!-- Summary stats -->
+      <div class="td-stats-row">
+        <div class="td-stat">
+          <span class="td-stat-num" id="td-stat-open">0</span>
+          <span class="td-stat-label">Open</span>
+        </div>
+        <div class="td-stat">
+          <span class="td-stat-num" id="td-stat-today">0</span>
+          <span class="td-stat-label">Due today</span>
+        </div>
+        <div class="td-stat">
+          <span class="td-stat-num" id="td-stat-overdue">0</span>
+          <span class="td-stat-label" style="color:#dc2626">Overdue</span>
+        </div>
+        <div class="td-stat">
+          <span class="td-stat-num" id="td-stat-done7d">0</span>
+          <span class="td-stat-label">Done this week</span>
+        </div>
+      </div>
+
+      <!-- Quick add bar -->
+      <div class="td-add-bar">
+        <div class="td-add-icon">+</div>
+        <input class="td-add-input" id="td-add-input"
+               placeholder="Add a task — press Enter or click Add"
+               autocomplete="off"
+               onkeydown="if(event.key==='Enter')htd_quickAdd()">
+        <div class="td-add-controls">
+          <select class="td-quick-select" id="td-add-section">
+            <option value="primed">Primed</option>
+            <option value="personal">Personal</option>
+            <option value="admin">Admin</option>
+          </select>
+          <select class="td-quick-select" id="td-add-priority">
+            <option value="3">P3 — Medium</option>
+            <option value="5">P5 — Urgent</option>
+            <option value="4">P4 — High</option>
+            <option value="2">P2 — Low</option>
+            <option value="1">P1 — Someday</option>
+          </select>
+          <button class="td-add-btn" onclick="htd_quickAdd()">Add</button>
+        </div>
+      </div>
+
+      <!-- Toast stack -->
+      <div class="td-toast-stack" id="td-toast-stack"></div>
+
+      <!-- Tasks grouped by section -->
+      <div class="td-task-card" id="td-task-container">
+        <div class="td-empty">
+          <div class="td-empty-icon">✓</div>
+          <p>No open tasks. Add one above.</p>
+        </div>
+      </div>
+
+      <!-- Done this week -->
+      <div class="td-done-section" id="td-done-section">
+        <div class="td-done-head" onclick="this.closest('.td-done-section').classList.toggle('open')">
+          <span class="td-done-caret">▶</span>
+          <span>Done this week</span>
+          <span class="td-done-right" id="td-done-count">0 completed</span>
+        </div>
+        <div class="td-done-list" id="td-done-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
      JARVIS CHAT FAB
 ============================================================ -->
 <div class="jarvis-fab">
@@ -2540,12 +2840,288 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   /* ---------- NAVIGATION ---------- */
+  /* ============================================================
+     TO DO LIST
+  ============================================================ */
+  const HTD_KEY = 'hub_todos';
+  const HTD_SECTIONS = {
+    primed:   { label: 'Primed',   color: '#7c3aed' },
+    personal: { label: 'Personal', color: '#059669' },
+    admin:    { label: 'Admin',    color: '#2563eb' }
+  };
+  const HTD_PRIO = { 1: '#9ca3af', 2: '#3b82f6', 3: '#f59e0b', 4: '#f97316', 5: '#ef4444' };
+
+  function htd_get() {
+    try { return JSON.parse(localStorage.getItem(HTD_KEY) || '[]'); } catch { return []; }
+  }
+  function htd_save(todos) { localStorage.setItem(HTD_KEY, JSON.stringify(todos)); }
+
+  function htd_quickAdd() {
+    const input = document.getElementById('td-add-input');
+    const text = (input?.value || '').trim();
+    if (!text) { input?.focus(); return; }
+    const section = document.getElementById('td-add-section')?.value || 'primed';
+    const priority = parseInt(document.getElementById('td-add-priority')?.value || '3');
+    const todos = htd_get();
+    const sectionOpen = todos.filter(t => t.section === section && !t.done);
+    const maxOrd = sectionOpen.length ? Math.max(...sectionOpen.map(t => t.order || 0)) : 0;
+    todos.push({ id: Date.now(), text, section, priority, notes: '', due: null, done: false, doneAt: null, order: maxOrd + 1 });
+    htd_save(todos);
+    if (input) input.value = '';
+    htd_render();
+    htd_updateCard();
+    htd_toast(`Added: "${text.slice(0, 45)}"`);
+  }
+
+  function htd_toggle(id) {
+    const todos = htd_get();
+    const t = todos.find(x => x.id === id);
+    if (!t) return;
+    if (t.done) { t.done = false; t.doneAt = null; }
+    else { t.done = true; t.doneAt = new Date().toISOString(); }
+    htd_save(todos);
+    htd_render();
+    htd_updateCard();
+    if (t.done) htd_toast(`Done: "${t.text.slice(0, 45)}"`, id);
+  }
+
+  function htd_undo(id) {
+    const todos = htd_get();
+    const t = todos.find(x => x.id === id);
+    if (!t) return;
+    t.done = false; t.doneAt = null;
+    htd_save(todos);
+    htd_render();
+    htd_updateCard();
+  }
+
+  function htd_delete(id) {
+    let todos = htd_get();
+    const t = todos.find(x => x.id === id);
+    if (!t) return;
+    const text = t.text;
+    htd_save(todos.filter(x => x.id !== id));
+    htd_render();
+    htd_updateCard();
+    htd_toast(`Deleted: "${text.slice(0, 45)}"`);
+  }
+
+  function htd_expand(id) {
+    document.querySelector(`.td-task-wrap[data-id="${id}"]`)?.classList.toggle('expanded');
+  }
+
+  function htd_saveNotes(id) {
+    const wrap = document.querySelector(`.td-task-wrap[data-id="${id}"]`);
+    if (!wrap) return;
+    const todos = htd_get();
+    const t = todos.find(x => x.id === id);
+    if (!t) return;
+    t.notes    = wrap.querySelector('.td-notes-text')?.value ?? t.notes;
+    t.priority = parseInt(wrap.querySelector('.td-notes-prio')?.value) || t.priority;
+    t.section  = wrap.querySelector('.td-notes-sec')?.value || t.section;
+    const dueVal = wrap.querySelector('.td-notes-date')?.value;
+    t.due = dueVal || null;
+    htd_save(todos);
+    htd_render();
+    htd_updateCard();
+  }
+
+  function htd_dueChip(due) {
+    if (!due) return '';
+    const today = new Date().toISOString().split('T')[0];
+    const tom = new Date(); tom.setDate(tom.getDate() + 1);
+    const tomStr = tom.toISOString().split('T')[0];
+    if (due < today)    return `<span class="td-chip-due overdue">Overdue</span>`;
+    if (due === today)  return `<span class="td-chip-due today">Today</span>`;
+    if (due === tomStr) return `<span class="td-chip-due">Tomorrow</span>`;
+    const [y, m, d] = due.split('-').map(Number);
+    const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `<span class="td-chip-due">${d} ${MO[m-1]}</span>`;
+  }
+
+  function htd_render() {
+    const todos  = htd_get();
+    const open   = todos.filter(t => !t.done);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const doneRecent = todos
+      .filter(t => t.done && t.doneAt && new Date(t.doneAt) >= cutoff)
+      .sort((a, b) => new Date(b.doneAt) - new Date(a.doneAt));
+
+    const container = document.getElementById('td-task-container');
+    if (!container) return;
+
+    const SEC_ORDER = ['primed', 'personal', 'admin'];
+    let html = '';
+    let pos = 0;
+
+    SEC_ORDER.forEach(sk => {
+      const sec   = HTD_SECTIONS[sk];
+      const tasks = open.filter(t => t.section === sk).sort((a, b) => (a.order || 0) - (b.order || 0));
+      if (!tasks.length) return;
+      html += `<div class="td-sec-head" style="--sec-c:${sec.color}">
+        <span class="td-sec-name">${sec.label}</span>
+        <span class="td-sec-divider"></span>
+        <span class="td-sec-count">${tasks.length}</span>
+      </div>
+      <div class="td-section-list" data-section="${sk}">`;
+      tasks.forEach(t => {
+        pos++;
+        const pc  = HTD_PRIO[t.priority] || '#9ca3af';
+        const sc  = sec.color;
+        const sbg = sc + '18';
+        const SEC_OPTS = Object.entries(HTD_SECTIONS).map(([k, v]) =>
+          `<option value="${k}" ${k === t.section ? 'selected' : ''}>${v.label}</option>`).join('');
+        const PRIO_OPTS = [5,4,3,2,1].map(p =>
+          `<option value="${p}" ${p === t.priority ? 'selected' : ''}>${p === 5 ? 'P5 — Urgent' : p === 4 ? 'P4 — High' : p === 3 ? 'P3 — Medium' : p === 2 ? 'P2 — Low' : 'P1 — Someday'}</option>`).join('');
+        html += `<div class="td-task-wrap" data-id="${t.id}" data-section="${sk}" data-order="${t.order||0}" draggable="true">
+          <div class="td-task">
+            <div class="td-grip">⋮⋮</div>
+            <div class="td-order" style="background:${pc}">${pos}</div>
+            <div class="td-check" onclick="htd_toggle(${t.id})" title="Mark done"></div>
+            <div class="td-text" onclick="htd_expand(${t.id})">${t.text.replace(/</g,'&lt;')}</div>
+            <div class="td-meta">
+              <div class="td-chips">
+                ${htd_dueChip(t.due)}
+                <span class="td-chip" style="background:${sbg};color:${sc}">${sec.label}</span>
+              </div>
+              <span class="td-delete" onclick="htd_delete(${t.id})" title="Delete">×</span>
+            </div>
+          </div>
+          <div class="td-notes">
+            <textarea class="td-notes-text" placeholder="Add notes…">${(t.notes||'').replace(/</g,'&lt;')}</textarea>
+            <div class="td-notes-row">
+              <label>Priority</label>
+              <select class="td-notes-sel td-notes-prio">${PRIO_OPTS}</select>
+              <label>Section</label>
+              <select class="td-notes-sel td-notes-sec">${SEC_OPTS}</select>
+              <label>Due</label>
+              <input type="date" class="td-notes-date" value="${t.due||''}">
+              <button class="td-notes-save" onclick="htd_saveNotes(${t.id})">Save</button>
+              <button class="td-notes-del" onclick="htd_delete(${t.id})">Delete task</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    container.innerHTML = html || `<div class="td-empty"><div class="td-empty-icon">✓</div><p>No open tasks. Add one above.</p></div>`;
+    htd_setupDrag();
+
+    // Done list
+    const doneList  = document.getElementById('td-done-list');
+    const doneCount = document.getElementById('td-done-count');
+    if (doneList) {
+      const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      doneList.innerHTML = doneRecent.map(t => {
+        const dd = new Date(t.doneAt);
+        const now = new Date();
+        const yest = new Date(now); yest.setDate(now.getDate() - 1);
+        const when = dd.toDateString() === now.toDateString() ? 'Today'
+          : dd.toDateString() === yest.toDateString() ? 'Yesterday'
+          : DAYS[dd.getDay()];
+        return `<div class="td-task-wrap" data-id="${t.id}">
+          <div class="td-task">
+            <div class="td-grip"></div>
+            <div class="td-order" style="background:rgba(5,150,105,0.12);color:#059669;font-size:13px">✓</div>
+            <div class="td-check is-done" onclick="htd_toggle(${t.id})" title="Reopen"></div>
+            <div class="td-text is-done">${t.text.replace(/</g,'&lt;')}</div>
+            <div class="td-meta"><span class="td-done-when">${when}</span></div>
+          </div>
+        </div>`;
+      }).join('') || '<div class="td-empty" style="padding:12px 8px">Nothing finished in the last 7 days.</div>';
+    }
+    if (doneCount) doneCount.textContent = `${doneRecent.length} completed`;
+
+    // Inline stats
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nToday   = open.filter(t => t.due === todayStr).length;
+    const nOverdue = open.filter(t => t.due && t.due < todayStr).length;
+    const openEl2 = document.getElementById('td-stat-open');
+    if (openEl2) openEl2.textContent = open.length;
+    document.getElementById('td-stat-today')    && (document.getElementById('td-stat-today').textContent   = nToday);
+    document.getElementById('td-stat-overdue')  && (document.getElementById('td-stat-overdue').textContent = nOverdue);
+    document.getElementById('td-stat-done7d')   && (document.getElementById('td-stat-done7d').textContent  = doneRecent.length);
+  }
+
+  let htd_dragSrc = null;
+  function htd_setupDrag() {
+    document.querySelectorAll('#td-task-container .td-task-wrap[draggable="true"]').forEach(wrap => {
+      wrap.addEventListener('dragstart', e => {
+        htd_dragSrc = wrap;
+        wrap.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      wrap.addEventListener('dragend', () => {
+        htd_dragSrc = null;
+        document.querySelectorAll('.td-task-wrap').forEach(w => w.classList.remove('dragging','drop-over'));
+      });
+      wrap.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (htd_dragSrc && htd_dragSrc !== wrap && htd_dragSrc.dataset.section === wrap.dataset.section) {
+          wrap.classList.add('drop-over');
+        }
+      });
+      wrap.addEventListener('dragleave', () => wrap.classList.remove('drop-over'));
+      wrap.addEventListener('drop', e => {
+        e.preventDefault();
+        wrap.classList.remove('drop-over');
+        if (!htd_dragSrc || htd_dragSrc === wrap || htd_dragSrc.dataset.section !== wrap.dataset.section) return;
+        const list = wrap.closest('.td-section-list');
+        if (!list) return;
+        const all = Array.from(list.querySelectorAll('.td-task-wrap'));
+        const si  = all.indexOf(htd_dragSrc);
+        const di  = all.indexOf(wrap);
+        if (si < di) list.insertBefore(htd_dragSrc, wrap.nextSibling);
+        else         list.insertBefore(htd_dragSrc, wrap);
+        const todos = htd_get();
+        Array.from(list.querySelectorAll('.td-task-wrap')).forEach((w, i) => {
+          const td = todos.find(x => x.id === parseInt(w.dataset.id));
+          if (td) td.order = i + 1;
+        });
+        htd_save(todos);
+      });
+    });
+  }
+
+  function htd_toast(msg, undoId) {
+    const stack = document.getElementById('td-toast-stack');
+    if (!stack) return;
+    const el = document.createElement('div');
+    el.className = 'td-toast';
+    el.innerHTML = msg + (undoId ? ` <button class="td-toast-undo" onclick="htd_undo(${undoId});this.closest('.td-toast').remove()">Undo</button>` : '');
+    stack.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  function htd_updateCard() {
+    const todos   = htd_get();
+    const open    = todos.filter(t => !t.done).length;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nToday  = todos.filter(t => !t.done && t.due === todayStr).length;
+    const cutoff  = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const done7d  = todos.filter(t => t.done && t.doneAt && new Date(t.doneAt) >= cutoff).length;
+    const openEl  = document.getElementById('s-todo-open');
+    const todEl   = document.getElementById('s-todo-today');
+    const donEl   = document.getElementById('s-todo-done');
+    if (openEl) openEl.textContent = open || '—';
+    if (todEl)  todEl.textContent  = nToday || '—';
+    if (donEl)  donEl.textContent  = done7d || '—';
+  }
+
+  function htd_init() {
+    htd_render();
+    htd_updateCard();
+    setTimeout(() => document.getElementById('td-add-input')?.focus(), 80);
+  }
+
   function navigate(view) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + view);
     if (el) { el.classList.add('active'); window.scrollTo(0,0); }
     if (view === 'fitness') { loadFitness(); loadWorkouts(); }
     if (view === 'sales')   tmmb_initSales();
+    if (view === 'todo')    htd_init();
   }
 
   /* ---------- DEFAULT DATES ---------- */
@@ -3501,6 +4077,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadFitness();
     loadWorkouts();
     highlightSpainPrepToday();
+    htd_updateCard();
   });
 
   /* ===================== STRONG IMPORT ===================== */
