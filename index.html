@@ -1279,12 +1279,57 @@
 
     .tmmb-divider { height: 1px; background: var(--border); margin: 18px 0; }
 
+    /* Monthly Tracker */
+    .tmmb-month-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 24px; padding: 24px 0 20px;
+    }
+    .tmmb-month-nav span {
+      font-size: 22px; font-weight: 700; color: var(--text);
+      min-width: 180px; text-align: center;
+    }
+    .tmmb-btn-nav {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--label); font-size: 20px; width: 36px; height: 36px;
+      border-radius: 8px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .tmmb-btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+    .tmmb-charts-row {
+      display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 28px;
+    }
+    .tmmb-chart-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+    }
+    .tmmb-chart-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--label); margin-bottom: 14px;
+    }
+    .tmmb-chart-canvas-wrap { position: relative; height: 180px; }
+    .tmmb-week-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tmmb-week-table th {
+      text-align: left; padding: 10px 12px; color: var(--label);
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid var(--border); font-weight: 500;
+    }
+    .tmmb-week-table td {
+      padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text); line-height: 1.4;
+    }
+    .tmmb-week-table tbody tr:hover td { background: rgba(110,231,183,0.03); }
+    .tmmb-total-row td {
+      border-top: 1px solid rgba(110,231,183,0.2) !important;
+      background: rgba(110,231,183,0.05) !important;
+    }
+
     @media (max-width: 640px) {
       .tmmb-tabs { padding: 0 16px; }
       .tmmb-main { padding: 20px 16px 60px; }
       .tmmb-stats-grid { grid-template-columns: repeat(2,1fr); }
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
+      .tmmb-charts-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1766,6 +1811,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-scripts',this)">Scripts</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-knowledge',this)">Product Knowledge</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-objections',this)">Objections</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
     </div>
 
     <div class="tmmb-wrap">
@@ -2306,6 +2352,73 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="tmmb-obj-a">"The information is out there, yeah. What you can't find for free is the brand retainer deals, the direct product recommendations from Tom, and 20 other creators in the same room who are hitting £10k to £20k months and will tell you exactly what's working right now."</div>
             </div>
           </div>
+        </div>
+
+        <!-- ===== MONTHLY TRACKER ===== -->
+        <div id="tmmb-monthly" class="tmmb-section">
+          <div class="tmmb-section-header">
+            <h2>Monthly Tracker</h2>
+            <p>Performance breakdown — computed from your call log</p>
+          </div>
+
+          <div class="tmmb-month-nav">
+            <button class="tmmb-btn-nav" onclick="tmmb_changeMonth(-1)">&#8249;</button>
+            <span id="tmmb-month-label">June 2026</span>
+            <button class="tmmb-btn-nav" onclick="tmmb_changeMonth(1)">&#8250;</button>
+          </div>
+
+          <div class="tmmb-stats-grid" style="margin-bottom:28px">
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-label">Calls Taken</div>
+              <div class="tmmb-stat-val" id="tm-shows">0</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-label">Closes</div>
+              <div class="tmmb-stat-val" id="tm-closes">0</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-label">Close Rate</div>
+              <div class="tmmb-stat-val" id="tm-close-rate">0%</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-label">Commission</div>
+              <div class="tmmb-stat-val" style="color:var(--accent)" id="tm-commission">£0</div>
+            </div>
+          </div>
+
+          <div class="tmmb-charts-row">
+            <div class="tmmb-chart-card">
+              <div class="tmmb-chart-title">Daily Activity — Calls &amp; Closes</div>
+              <div class="tmmb-chart-canvas-wrap">
+                <canvas id="tmmb-daily-chart"></canvas>
+              </div>
+            </div>
+            <div class="tmmb-chart-card">
+              <div class="tmmb-chart-title">Objection Breakdown</div>
+              <div class="tmmb-chart-canvas-wrap">
+                <canvas id="tmmb-obj-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="tmmb-section-header" style="margin-top:4px;margin-bottom:16px">
+            <h2>Weekly Breakdown</h2>
+          </div>
+          <table class="tmmb-week-table">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Calls Taken</th>
+                <th>No Shows</th>
+                <th>Closes</th>
+                <th>Close Rate</th>
+                <th>OCC</th>
+                <th>Follow-up</th>
+                <th>Commission</th>
+              </tr>
+            </thead>
+            <tbody id="tmmb-weekly-tbody"></tbody>
+          </table>
         </div>
 
       </div><!-- /tmmb-main -->
@@ -3147,6 +3260,167 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     }
   }
 
+  /* ----- MONTHLY TRACKER ----- */
+  let tmmb_viewYear  = new Date().getFullYear();
+  let tmmb_viewMonth = new Date().getMonth();
+  let tmmb_dailyChart = null;
+  let tmmb_objChart   = null;
+
+  function tmmb_changeMonth(delta) {
+    tmmb_viewMonth += delta;
+    if (tmmb_viewMonth < 0)  { tmmb_viewMonth = 11; tmmb_viewYear--; }
+    if (tmmb_viewMonth > 11) { tmmb_viewMonth = 0;  tmmb_viewYear++; }
+    tmmb_renderMonthly();
+  }
+
+  function tmmb_renderMonthly() {
+    const year  = tmmb_viewYear;
+    const month = tmmb_viewMonth;
+    const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const labelEl = document.getElementById('tmmb-month-label');
+    if (!labelEl) return;
+    labelEl.textContent = MONTHS_LONG[month] + ' ' + year;
+
+    const calls = tmmb_getCalls().filter(c => {
+      if (!c.date) return false;
+      const d = new Date(c.date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+
+    const shows      = calls.filter(c => c.outcome !== 'noshow').length;
+    const noshows    = calls.filter(c => c.outcome === 'noshow').length;
+    const closes     = calls.filter(c => c.outcome === 'closed').length;
+    const occ        = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
+    const fup        = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
+    const closeRate  = shows > 0 ? Math.round((closes / shows) * 100) : 0;
+    const commission = closes * 400;
+
+    document.getElementById('tm-shows').textContent      = shows;
+    document.getElementById('tm-closes').textContent     = closes;
+    document.getElementById('tm-close-rate').textContent = closeRate + '%';
+    document.getElementById('tm-commission').textContent = '£' + commission.toLocaleString();
+
+    // Daily data for bar chart
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dailyShows  = Array(daysInMonth).fill(0);
+    const dailyCloses = Array(daysInMonth).fill(0);
+    calls.forEach(c => {
+      const day = new Date(c.date).getDate() - 1;
+      if (c.outcome !== 'noshow') dailyShows[day]++;
+      if (c.outcome === 'closed')  dailyCloses[day]++;
+    });
+    const dayLabels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    if (tmmb_dailyChart) { tmmb_dailyChart.destroy(); tmmb_dailyChart = null; }
+    const ctx1 = document.getElementById('tmmb-daily-chart');
+    if (ctx1) {
+      tmmb_dailyChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: dayLabels,
+          datasets: [
+            { label: 'Calls Taken', data: dailyShows, backgroundColor: 'rgba(110,231,183,0.18)', borderColor: 'rgba(110,231,183,0.45)', borderWidth: 1, borderRadius: 3 },
+            { label: 'Closes',      data: dailyCloses, backgroundColor: '#6ee7b7', borderWidth: 0, borderRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 10, padding: 12 } },
+            tooltip: { backgroundColor: '#0d1a32', borderColor: 'rgba(110,231,183,0.3)', borderWidth: 1, titleColor: '#6ee7b7', bodyColor: '#f1f5f9' }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 16 } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Objection doughnut
+    const OBJ_NAMES = {
+      'fear-money':    'Fear: Money',
+      'fear-think':    'Fear: Think About It',
+      'fear-doubt':    'Fear: Self-Doubt',
+      'tried-before':  'Tried Before',
+      'logic-time':    'Logic: Time',
+      'logic-partner': 'Logic: Partner',
+      'value':         'Value'
+    };
+    const objCounts = {};
+    calls.forEach(c => { (c.objections || []).forEach(o => { objCounts[o] = (objCounts[o] || 0) + 1; }); });
+    const objKeys      = Object.keys(objCounts);
+    const objLabelsArr = objKeys.map(k => OBJ_NAMES[k] || k);
+    const objData      = objKeys.map(k => objCounts[k]);
+    const objColors    = ['#6ee7b7','#818cf8','#fbbf24','#f87171','#34d399','#a78bfa','#fb923c'];
+
+    if (tmmb_objChart) { tmmb_objChart.destroy(); tmmb_objChart = null; }
+    const ctx2 = document.getElementById('tmmb-obj-chart');
+    if (ctx2) {
+      if (objKeys.length > 0) {
+        tmmb_objChart = new Chart(ctx2, {
+          type: 'doughnut',
+          data: { labels: objLabelsArr, datasets: [{ data: objData, backgroundColor: objColors.slice(0, objKeys.length), borderWidth: 0 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+              tooltip: { backgroundColor: '#0d1a32', titleColor: '#6ee7b7', bodyColor: '#f1f5f9' }
+            }
+          }
+        });
+      } else {
+        const c2 = ctx2.getContext('2d');
+        c2.clearRect(0, 0, ctx2.width, ctx2.height);
+        c2.fillStyle = '#64748b';
+        c2.font = '12px system-ui, sans-serif';
+        c2.textAlign = 'center';
+        c2.fillText('No objections logged this month', ctx2.width / 2, ctx2.height / 2);
+      }
+    }
+
+    // Weekly breakdown table
+    const weekData = [[], [], [], [], []];
+    calls.forEach(c => {
+      const day = new Date(c.date).getDate();
+      const wi  = Math.min(Math.floor((day - 1) / 7), 4);
+      weekData[wi].push(c);
+    });
+    const MN = MONTHS_SHORT[month];
+    const weekDates = [`1–7 ${MN}`, `8–14 ${MN}`, `15–21 ${MN}`, `22–28 ${MN}`, `29+ ${MN}`];
+
+    let rows = '';
+    weekData.forEach((wk, i) => {
+      if (wk.length === 0 && i >= 4) return;
+      const wShows  = wk.filter(c => c.outcome !== 'noshow').length;
+      const wNos    = wk.filter(c => c.outcome === 'noshow').length;
+      const wCloses = wk.filter(c => c.outcome === 'closed').length;
+      const wOcc    = wk.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
+      const wFup    = wk.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
+      const wRate   = wShows > 0 ? Math.round((wCloses / wShows) * 100) : 0;
+      const wComm   = wCloses * 400;
+      const rc = wRate >= 30 ? '#6ee7b7' : wRate >= 15 ? '#fbbf24' : wRate > 0 ? '#f87171' : '#64748b';
+      rows += `<tr>
+        <td><strong>Week ${i+1}</strong><br><span style="color:#64748b;font-size:11px">${weekDates[i]}</span></td>
+        <td>${wShows}</td><td>${wNos}</td><td>${wCloses}</td>
+        <td style="color:${rc};font-weight:600">${wRate}%</td>
+        <td>${wOcc}</td><td>${wFup}</td>
+        <td style="color:#6ee7b7">£${wComm.toLocaleString()}</td>
+      </tr>`;
+    });
+    const totalRc = closeRate >= 30 ? '#6ee7b7' : closeRate >= 15 ? '#fbbf24' : closeRate > 0 ? '#f87171' : '#64748b';
+    rows += `<tr class="tmmb-total-row">
+      <td><strong>Total</strong></td>
+      <td>${shows}</td><td>${noshows}</td><td>${closes}</td>
+      <td style="color:${totalRc};font-weight:700">${closeRate}%</td>
+      <td>${occ}</td><td>${fup}</td>
+      <td style="color:#6ee7b7;font-weight:700">£${commission.toLocaleString()}</td>
+    </tr>`;
+    document.getElementById('tmmb-weekly-tbody').innerHTML = rows;
+  }
+
   function tmmb_initSales() {
     const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('cl-date');
@@ -3154,6 +3428,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_renderCallHistory();
     tmmb_updateOverview();
     tmmb_calcCommission();
+    tmmb_renderMonthly();
   }
 
   /* ---------- JARVIS CHAT ---------- */
