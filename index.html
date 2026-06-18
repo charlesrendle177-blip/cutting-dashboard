@@ -1158,6 +1158,34 @@
     .tmmb-form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .tmmb-form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
+    /* deal section */
+    .tmmb-deal-section {
+      background: rgba(5,150,105,0.04);
+      border: 1px solid rgba(5,150,105,0.15);
+      border-radius: 12px;
+      padding: 18px 18px 4px;
+      margin-bottom: 18px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .tmmb-deal-section.active {
+      background: rgba(5,150,105,0.08);
+      border-color: rgba(5,150,105,0.35);
+    }
+    .tmmb-deal-section-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.9px; color: #059669; margin-bottom: 14px;
+    }
+    .tmmb-call-expand-row { display: none; }
+    .tmmb-call-expand-row.open { display: table-row; }
+    .tmmb-call-expand-row td {
+      background: #f8fafc; padding: 12px 16px !important;
+      font-size: 12px; color: #6b7280; line-height: 1.7;
+      border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    }
+    .tmmb-call-contact { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .tmmb-call-cash { font-weight: 700; color: #059669; }
+    .tmmb-call-comm { font-size: 11px; color: #9ca3af; }
+
     /* script steps */
     .tmmb-script-step {
       display: flex;
@@ -2133,34 +2161,86 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
           <div class="card" style="margin-bottom:20px;">
             <div class="card-label">Log a Call</div>
+
+            <!-- Row 1: Date + Outcome -->
             <div class="tmmb-form-grid" style="margin-bottom:14px;">
               <div class="tmmb-form-group">
                 <label class="tmmb-form-label">Date</label>
                 <input type="date" id="cl-date">
               </div>
               <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Prospect Name</label>
-                <input type="text" id="cl-name" placeholder="e.g. Sarah M.">
-              </div>
-            </div>
-            <div class="tmmb-form-grid" style="margin-bottom:14px;">
-              <div class="tmmb-form-group">
                 <label class="tmmb-form-label">Outcome</label>
-                <select id="cl-outcome">
+                <select id="cl-outcome" onchange="tmmb_onOutcomeChange(this.value)">
                   <option value="closed">Closed</option>
                   <option value="followup">Follow-up booked</option>
                   <option value="noclose">No close</option>
                   <option value="noshow">No show</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Row 2: Prospect Name + Email -->
+            <div class="tmmb-form-grid" style="margin-bottom:14px;">
               <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Call Type</label>
-                <select id="cl-type">
-                  <option value="call1">Call 1 (Discovery)</option>
-                  <option value="call2">Call 2 (Close)</option>
+                <label class="tmmb-form-label">Prospect Name</label>
+                <input type="text" id="cl-name" placeholder="e.g. Sarah Mitchell">
+              </div>
+              <div class="tmmb-form-group">
+                <label class="tmmb-form-label">Email</label>
+                <input type="email" id="cl-email" placeholder="prospect@email.com">
+              </div>
+            </div>
+
+            <!-- Row 3: Phone + Lead Source -->
+            <div class="tmmb-form-grid" style="margin-bottom:20px;">
+              <div class="tmmb-form-group">
+                <label class="tmmb-form-label">Phone</label>
+                <input type="tel" id="cl-phone" placeholder="+44 7700 000000">
+              </div>
+              <div class="tmmb-form-group">
+                <label class="tmmb-form-label">Lead Source</label>
+                <select id="cl-source">
+                  <option value="">— select —</option>
+                  <option value="setter">Setter booked</option>
+                  <option value="referral">Referral</option>
+                  <option value="ad">Paid ad</option>
+                  <option value="inbound">Inbound</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
+
+            <!-- Deal Details (highlighted when closed) -->
+            <div class="tmmb-deal-section active" id="tmmb-deal-section">
+              <div class="tmmb-deal-section-label">Deal Details</div>
+              <div class="tmmb-form-grid" style="margin-bottom:14px;">
+                <div class="tmmb-form-group">
+                  <label class="tmmb-form-label">Programme / Offer</label>
+                  <input type="text" id="cl-deal" placeholder="e.g. TMMB Accelerator">
+                </div>
+                <div class="tmmb-form-group">
+                  <label class="tmmb-form-label">Payment Type</label>
+                  <select id="cl-paytype">
+                    <option value="pif">Paid in Full</option>
+                    <option value="plan2">Payment Plan · 2 months</option>
+                    <option value="plan3">Payment Plan · 3 months</option>
+                    <option value="plan6">Payment Plan · 6 months</option>
+                  </select>
+                </div>
+              </div>
+              <div class="tmmb-form-grid" style="margin-bottom:4px;">
+                <div class="tmmb-form-group">
+                  <label class="tmmb-form-label">Cash Collected Today (£)</label>
+                  <input type="number" id="cl-cash" placeholder="0" min="0" step="1">
+                </div>
+                <div class="tmmb-form-group">
+                  <label class="tmmb-form-label">Total Deal Value (£)</label>
+                  <input type="number" id="cl-dealvalue" placeholder="4000" min="0" step="100" value="4000">
+                </div>
+              </div>
+            </div>
+
+            <!-- Objections -->
             <div class="tmmb-form-group" style="margin-bottom:14px;">
               <label class="tmmb-form-label">Objections Faced</label>
               <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;" id="tmmb-obj-checkboxes">
@@ -2173,11 +2253,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--label);"><input type="checkbox" value="value" style="width:auto;"> Value / not convinced</label>
               </div>
             </div>
-            <div class="tmmb-form-group">
-              <label class="tmmb-form-label">Notes (optional)</label>
+
+            <!-- Notes -->
+            <div class="tmmb-form-group" style="margin-bottom:18px;">
+              <label class="tmmb-form-label">Notes</label>
               <textarea id="cl-notes" rows="3" placeholder="What went well, what to improve, key moments..."></textarea>
             </div>
-            <button class="tmmb-btn tmmb-btn-primary" onclick="tmmb_logCall()">Log Call</button>
+
+            <button class="tmmb-btn tmmb-btn-primary" style="width:100%;justify-content:center;" onclick="tmmb_logCall()">Log Call</button>
           </div>
 
           <div class="card" style="overflow:hidden;padding:0;">
@@ -3680,24 +3763,41 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     localStorage.setItem('tmmb_calls', JSON.stringify(calls));
   }
 
+  function tmmb_onOutcomeChange(val) {
+    const el = document.getElementById('tmmb-deal-section');
+    if (el) el.classList.toggle('active', val === 'closed');
+  }
+
   function tmmb_logCall() {
-    const date = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
-    const name = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
-    const outcome = document.getElementById('cl-outcome').value;
-    const type    = document.getElementById('cl-type').value;
-    const notes   = (document.getElementById('cl-notes').value || '').trim();
+    const date      = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
+    const name      = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
+    const email     = (document.getElementById('cl-email').value || '').trim();
+    const phone     = (document.getElementById('cl-phone').value || '').trim();
+    const source    = document.getElementById('cl-source').value;
+    const outcome   = document.getElementById('cl-outcome').value;
+    const deal      = (document.getElementById('cl-deal').value || '').trim();
+    const paytype   = document.getElementById('cl-paytype').value;
+    const cash      = parseFloat(document.getElementById('cl-cash').value) || 0;
+    const dealValue = parseFloat(document.getElementById('cl-dealvalue').value) || 4000;
+    const notes     = (document.getElementById('cl-notes').value || '').trim();
     const objections = Array.from(
       document.querySelectorAll('#tmmb-obj-checkboxes input:checked')
     ).map(i => i.value);
 
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, outcome, type, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, notes, objections });
     tmmb_saveCalls(calls);
 
-    document.getElementById('cl-name').value  = '';
-    document.getElementById('cl-notes').value = '';
+    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('cl-cash').value = '';
+    document.getElementById('cl-dealvalue').value = '4000';
     document.getElementById('cl-outcome').value = 'closed';
+    document.getElementById('cl-source').value = '';
+    document.getElementById('cl-paytype').value = 'pif';
     document.querySelectorAll('#tmmb-obj-checkboxes input').forEach(i => i.checked = false);
+    tmmb_onOutcomeChange('closed');
 
     tmmb_renderCallHistory();
     tmmb_updateOverview();
@@ -3725,18 +3825,42 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       el.innerHTML = '<div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>';
       return;
     }
+    const paytypeLabel = { pif:'PIF', plan2:'Plan·2m', plan3:'Plan·3m', plan6:'Plan·6m' };
+    const sourceLabel  = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
     el.innerHTML = '<div style="overflow-x:auto;"><table class="tmmb-call-table"><thead><tr>' +
-      '<th>Date</th><th>Name</th><th>Type</th><th>Outcome</th><th>Objections</th><th></th>' +
+      '<th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
       '</tr></thead><tbody>' +
-      calls.map(c => `<tr>
-        <td>${c.date || '—'}</td>
-        <td style="color:var(--text);font-weight:500;">${c.name || '—'}</td>
-        <td>${c.type === 'call1' ? 'Discovery' : 'Close'}</td>
-        <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
-        <td style="font-size:12px;">${(c.objections||[]).length ? c.objections.join(', ').replace(/-/g,' ') : '—'}</td>
-        <td><button onclick="tmmb_deleteCall(${c.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;" title="Delete">×</button></td>
-      </tr>`).join('') +
+      calls.map(c => {
+        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        const contactLine = [c.email, c.phone].filter(Boolean).join(' · ');
+        const sourceBit   = c.source ? ` <span style="color:#9ca3af;font-size:10px;">${sourceLabel[c.source]||c.source}</span>` : '';
+        const dealBit     = c.deal ? c.deal : '—';
+        const paytypeBit  = c.paytype && c.paytype !== 'pif' ? ` <span style="font-size:10px;color:#9ca3af;">${paytypeLabel[c.paytype]||c.paytype}</span>` : '';
+        const objStr      = (c.objections||[]).length ? c.objections.map(o=>o.replace(/-/g,' ')).join(', ') : '';
+        return `<tr style="cursor:pointer;" onclick="tmmb_toggleCallExpand(${c.id})">
+          <td style="white-space:nowrap;">${c.date || '—'}</td>
+          <td>
+            <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}</div>
+            ${contactLine ? `<div class="tmmb-call-contact">${contactLine}</div>` : ''}
+          </td>
+          <td>${dealBit}${paytypeBit}</td>
+          <td>${c.outcome === 'closed' ? `<div class="tmmb-call-cash">£${(c.cash||0).toLocaleString()}</div><div class="tmmb-call-comm">comm £${comm.toLocaleString()}</div>` : '<span style="color:#9ca3af;">—</span>'}</td>
+          <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
+          <td><button onclick="event.stopPropagation();tmmb_deleteCall(${c.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;" title="Delete">×</button></td>
+        </tr>
+        <tr id="call-exp-${c.id}" class="tmmb-call-expand-row">
+          <td colspan="6">
+            ${objStr ? `<strong>Objections:</strong> ${objStr}<br>` : ''}
+            ${c.notes ? `<strong>Notes:</strong> ${c.notes}` : (!objStr ? '<em>No notes recorded.</em>' : '')}
+          </td>
+        </tr>`;
+      }).join('') +
       '</tbody></table></div>';
+  }
+
+  function tmmb_toggleCallExpand(id) {
+    const row = document.getElementById('call-exp-' + id);
+    if (row) row.classList.toggle('open');
   }
 
   function tmmb_updateOverview() {
@@ -3752,7 +3876,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('tmmb-stat-calls', shown);
     set('tmmb-stat-shows', total  ? Math.round(shown/total*100)  + '%' : '—');
     set('tmmb-stat-close', shown  ? Math.round(closed/shown*100) + '%' : '—');
-    set('tmmb-stat-earn',  '£' + (closed * 400).toLocaleString());
+    const earned = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    set('tmmb-stat-earn',  '£' + earned.toLocaleString());
     set('tmmb-ov-calendar', total);
     set('tmmb-ov-noshow',   noshow);
     set('tmmb-ov-occ',      occ);
@@ -3893,7 +4018,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const occ        = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
     const fup        = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
     const closeRate  = shows > 0 ? Math.round((closes / shows) * 100) : 0;
-    const commission = closes * 400;
+    const commission = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const cashIn     = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
 
     document.getElementById('tm-shows').textContent      = shows;
     document.getElementById('tm-closes').textContent     = closes;
@@ -3998,14 +4124,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const wOcc    = wk.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
       const wFup    = wk.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
       const wRate   = wShows > 0 ? Math.round((wCloses / wShows) * 100) : 0;
-      const wComm   = wCloses * 400;
+      const wComm   = wk.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+      const wCash   = wk.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
       const rc = wRate >= 30 ? '#059669' : wRate >= 15 ? '#d97706' : wRate > 0 ? '#ef4444' : '#9ca3af';
       rows += `<tr>
         <td><strong>Week ${i+1}</strong><br><span style="color:#9ca3af;font-size:11px">${weekDates[i]}</span></td>
         <td>${wShows}</td><td>${wNos}</td><td>${wCloses}</td>
         <td style="color:${rc};font-weight:600">${wRate}%</td>
         <td>${wOcc}</td><td>${wFup}</td>
-        <td style="color:#059669;font-weight:600">£${wComm.toLocaleString()}</td>
+        <td><div style="color:#059669;font-weight:600">£${wComm.toLocaleString()}</div><div style="font-size:10px;color:#9ca3af">£${wCash.toLocaleString()} in</div></td>
       </tr>`;
     });
     const totalRc = closeRate >= 30 ? '#059669' : closeRate >= 15 ? '#d97706' : closeRate > 0 ? '#ef4444' : '#9ca3af';
@@ -4014,7 +4141,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <td>${shows}</td><td>${noshows}</td><td>${closes}</td>
       <td style="color:${totalRc};font-weight:700">${closeRate}%</td>
       <td>${occ}</td><td>${fup}</td>
-      <td style="color:#059669;font-weight:700">£${commission.toLocaleString()}</td>
+      <td><div style="color:#059669;font-weight:700">£${commission.toLocaleString()}</div><div style="font-size:10px;color:#9ca3af">£${cashIn.toLocaleString()} in</div></td>
     </tr>`;
     document.getElementById('tmmb-weekly-tbody').innerHTML = rows;
   }
