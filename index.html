@@ -2072,9 +2072,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     <div class="tmmb-tabs">
       <button class="tmmb-tab active" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-scripts',this)">Scripts</button>
+      <button class="tmmb-tab" id="tmmb-tab-calllog" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
+      <button class="tmmb-tab" id="tmmb-tab-analyser" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-knowledge',this)">Product Knowledge</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-objections',this)">Objections</button>
     </div>
@@ -2258,9 +2257,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
 
             <!-- Notes -->
-            <div class="tmmb-form-group" style="margin-bottom:18px;">
+            <div class="tmmb-form-group" style="margin-bottom:14px;">
               <label class="tmmb-form-label">Notes</label>
               <textarea id="cl-notes" rows="3" placeholder="What went well, what to improve, key moments..."></textarea>
+            </div>
+
+            <!-- Fathom -->
+            <div class="tmmb-form-group" style="margin-bottom:18px;">
+              <label class="tmmb-form-label">Fathom Recording Link</label>
+              <input type="url" id="cl-fathom" placeholder="https://fathom.video/calls/...">
             </div>
 
             <button class="tmmb-btn tmmb-btn-primary" style="width:100%;justify-content:center;" onclick="tmmb_logCall()">Log Call</button>
@@ -2280,13 +2285,31 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div id="tmmb-analyser" class="tmmb-section">
           <div class="tmmb-section-header">
             <h2>Call Analyser</h2>
-            <p>Paste a call transcript and get instant AI coaching feedback</p>
+            <p>Select a call from the log, paste the Fathom transcript, and get instant AI coaching feedback</p>
+          </div>
+
+          <!-- Call context banner — populated by tmmb_analyseFromCall() -->
+          <div id="tmmb-analyser-ctx" style="display:none;margin-bottom:16px;background:#fff;border:1px solid rgba(5,150,105,0.25);border-radius:14px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:#059669;margin-bottom:4px;">Analysing call</div>
+                <div style="font-weight:700;color:#111827;font-size:15px;" id="tmmb-ctx-name"></div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;" id="tmmb-ctx-meta"></div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <a id="tmmb-ctx-fathom" href="#" target="_blank" rel="noopener"
+                   style="display:none;background:#f0fdf4;border:1px solid rgba(5,150,105,0.3);color:#059669;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
+                  Open Fathom Recording →
+                </a>
+                <button onclick="tmmb_clearAnalyserCtx()" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:12px;padding:4px 8px;">Clear</button>
+              </div>
+            </div>
           </div>
 
           <div class="card">
             <div class="card-label">Transcript Input</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Open Fathom, copy the full transcript, and paste it below.</div>
             <div class="tmmb-form-group">
-              <label class="tmmb-form-label">Paste your call transcript</label>
               <textarea id="tmmb-transcript-input" rows="10" placeholder="Paste the full call transcript here — include both sides of the conversation. The more detail, the better the feedback."></textarea>
             </div>
             <button class="tmmb-btn tmmb-btn-primary" onclick="tmmb_analyseCall()" id="tmmb-analyse-btn">
@@ -2299,190 +2322,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
         </div>
 
-        <!-- ===== SCRIPTS ===== -->
-        <div id="tmmb-scripts" class="tmmb-section">
-          <div class="tmmb-section-header">
-            <h2>Call Scripts</h2>
-            <p>Your framework for every call. Read before you dial.</p>
-          </div>
-
-          <div class="tmmb-sub-tabs">
-            <button class="tmmb-sub-tab active" onclick="tmmb_showSubTab('tmmb-script-call1',this)">Call 1 — Discovery</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-call2',this)">Call 2 — Close</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-opening',this)">Opening Lines</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-questions',this)">Diagnostic Questions</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('tmmb-script-closing',this)">Close Sequence</button>
-          </div>
-
-          <div id="tmmb-script-call1" class="tmmb-sub-section active">
-            <div class="card">
-              <div class="card-label">Call 1 — Discovery Framework</div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">1</div>
-                <div class="tmmb-step-content">
-                  <h4>Pre-Call Research</h4>
-                  <p>Before the call, find out what they've said publicly about their situation. Social media, comments, posts in the TMMB community. Come in with one specific observation so they know you've done your homework.</p>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">2</div>
-                <div class="tmmb-step-content">
-                  <h4>Opening — Put Them at Ease</h4>
-                  <p>This is not a sales call in their mind yet. Keep it conversational. Find out where they are right now before you do anything else.</p>
-                  <div class="tmmb-quote">"Hey [name], good to speak. So I've got a bit of context from the form you filled in — but I'd rather just hear it from you. Where are you at right now with TikTok Shop?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">3</div>
-                <div class="tmmb-step-content">
-                  <h4>Diagnose — Surface the Gap</h4>
-                  <p>Let them talk. You're listening for the gap between where they are and where they want to be. Probe on the emotional side, not just the practical.</p>
-                  <div class="tmmb-quote">"And what's the dream with this? Like if TikTok Shop is working properly for you in 6 months — what does that actually look like for your life?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">4</div>
-                <div class="tmmb-step-content">
-                  <h4>Amplify the Pain</h4>
-                  <p>Get them to articulate what staying where they are actually costs them. Not just money — time, opportunity, the life they're not living.</p>
-                  <div class="tmmb-quote">"So if nothing changes in the next 6 months — what does that look like for you practically?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">5</div>
-                <div class="tmmb-step-content">
-                  <h4>Give Value Before You Leave</h4>
-                  <p>Drop something specific and useful based on what they've told you. A product angle, a content tip, something that proves you know the space. This is the moment that builds trust.</p>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">6</div>
-                <div class="tmmb-step-content">
-                  <h4>BAMFAM — Book a Meeting From a Meeting</h4>
-                  <p>Never leave without a booked call 2. Get them to commit to the next step before they hang up.</p>
-                  <div class="tmmb-quote">"Right, based on everything you've told me I think there's a real fit here. What I want to do is get you on a call with [Tom/Aaron] to go through the full Academy and see if it makes sense for you. Are you around Thursday or Friday?"</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="tmmb-script-call2" class="tmmb-sub-section">
-            <div class="card">
-              <div class="card-label">Call 2 — Close Framework</div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">1</div>
-                <div class="tmmb-step-content">
-                  <h4>Recap Their Pain in Their Words</h4>
-                  <p>Open by reflecting back what they told you on call 1. Use their exact language. This shows you listened and re-anchors them to why they booked the second call.</p>
-                  <div class="tmmb-quote">"So when we last spoke, you said [their words]. Has anything changed since then, or is that still where you're at?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">2</div>
-                <div class="tmmb-step-content">
-                  <h4>Present the Solution</h4>
-                  <p>Walk through the Academy specifically as the answer to the gap they described. Not a generic pitch — connect each element to what they told you they need.</p>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">3</div>
-                <div class="tmmb-step-content">
-                  <h4>Case Studies — Make It Real</h4>
-                  <p>Drop Caleb or Kelly at the right moment. Pick the one closest to their situation. Don't recite it — weave it in naturally.</p>
-                  <div class="tmmb-quote">"We had someone in a really similar position — [Caleb/Kelly] — [their situation]. Within [timeframe], they were doing [result]. That's what this looks like when it works."</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">4</div>
-                <div class="tmmb-step-content">
-                  <h4>Handle Objections — Then Ask for the Decision</h4>
-                  <p>When they raise something, address it directly and return to the question. Never let an objection become the end of the conversation.</p>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">5</div>
-                <div class="tmmb-step-content">
-                  <h4>The Close</h4>
-                  <div class="tmmb-quote">"Based on everything we've talked about — this clearly makes sense for where you're trying to get to. What's stopping you from getting started today?"</div>
-                  <p style="margin-top:10px;">Then shut up. Whoever speaks next loses. Let the silence do the work.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="tmmb-script-opening" class="tmmb-sub-section">
-            <div class="card">
-              <div class="card-label">Opening Lines — Use These</div>
-              <div class="tmmb-quote" style="margin-bottom:10px;">"Hey [name], how are you getting on? So before I go into anything — where are you at right now? What made you book this call?"</div>
-              <div class="tmmb-quote" style="margin-bottom:10px;">"Good to meet you. I've had a quick look at your profile — [specific observation]. Tell me more about where you're at."</div>
-              <div class="tmmb-quote">"So you've been in the TMMB community for a bit — what's been the main sticking point for you so far?"</div>
-            </div>
-            <div class="card gold">
-              <div class="card-label">What NOT to Open With</div>
-              <ul>
-                <li>Don't open with the pitch — ever</li>
-                <li>Don't ask "so what do you know about the Academy?" — it sounds scripted</li>
-                <li>Don't jump to price before you've surfaced the gap</li>
-                <li>Don't talk more than them in the first 5 minutes</li>
-              </ul>
-            </div>
-          </div>
-
-          <div id="tmmb-script-questions" class="tmmb-sub-section">
-            <div class="card">
-              <div class="card-label">Diagnostic Questions — Discovery</div>
-              <ul>
-                <li>"Where are you at right now with TikTok Shop — have you started, or still exploring?"</li>
-                <li>"What's working, and what's feeling like the sticking point?"</li>
-                <li>"What does your content output look like right now — how many videos a week?"</li>
-                <li>"Have you found any products that have converted well, or is that still the challenge?"</li>
-                <li>"What's the dream with this — if it's working in 6 months, what does that look like for you?"</li>
-                <li>"Is there a number that would change things for you? Like a monthly income that would actually shift your situation?"</li>
-                <li>"What's held you back from getting there so far — is it knowledge, time, knowing what products to focus on?"</li>
-                <li>"If nothing changes in the next 6 months, what does that actually cost you?"</li>
-              </ul>
-            </div>
-            <div class="card purple">
-              <div class="card-label">B2C Mindset Shift</div>
-              <p>These buyers are investing in themselves, not their business. The hesitation is almost never logical — it's fear, self-doubt, or past failure. Your job is to find the emotional blocker and remove it. Logic closes B2B. Emotion closes B2C.</p>
-            </div>
-          </div>
-
-          <div id="tmmb-script-closing" class="tmmb-sub-section">
-            <div class="card">
-              <div class="card-label">Close Sequence</div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">1</div>
-                <div class="tmmb-step-content">
-                  <h4>Trial Close — Test the Temperature</h4>
-                  <div class="tmmb-quote">"Does this feel like it could be the right move for you?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">2</div>
-                <div class="tmmb-step-content">
-                  <h4>The Assumptive Close</h4>
-                  <div class="tmmb-quote">"So in terms of getting started — are you looking at getting in straight away, or is there something specific we need to work through first?"</div>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">3</div>
-                <div class="tmmb-step-content">
-                  <h4>The Direct Close</h4>
-                  <div class="tmmb-quote">"Based on everything you've told me — this is clearly the right move. What's stopping you from getting started today?"</div>
-                  <p style="margin-top:8px;color:var(--red);font-size:12px;font-weight:600;">SHUT UP AFTER THIS. Do not fill the silence.</p>
-                </div>
-              </div>
-              <div class="tmmb-script-step">
-                <div class="tmmb-step-num">4</div>
-                <div class="tmmb-step-content">
-                  <h4>After a "Think About It"</h4>
-                  <div class="tmmb-quote">"What specifically do you need to think about? Let's think through it now — I'd rather you make a decision you're confident in on this call than leave with uncertainty."</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div id="tmmb-scripts" class="tmmb-section" style="display:none;"></div>
 
         <!-- ===== PRODUCT KNOWLEDGE ===== -->
         <div id="tmmb-knowledge" class="tmmb-section">
@@ -3787,11 +3627,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       document.querySelectorAll('#tmmb-obj-checkboxes input:checked')
     ).map(i => i.value);
 
+    const fathom    = (document.getElementById('cl-fathom').value || '').trim();
+
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, notes, objections });
     tmmb_saveCalls(calls);
 
-    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal'].forEach(id => {
+    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal','cl-fathom'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     document.getElementById('cl-cash').value = '';
@@ -3849,12 +3691,17 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <td>${dealBit}${paytypeBit}</td>
           <td>${c.outcome === 'closed' ? `<div class="tmmb-call-cash">£${(c.cash||0).toLocaleString()}</div><div class="tmmb-call-comm">comm £${comm.toLocaleString()}</div>` : '<span style="color:#9ca3af;">—</span>'}</td>
           <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
-          <td><button onclick="event.stopPropagation();tmmb_deleteCall(${c.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;" title="Delete">×</button></td>
+          <td style="white-space:nowrap;">
+            <button onclick="event.stopPropagation();tmmb_analyseFromCall(${c.id})"
+              style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);color:#059669;cursor:pointer;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;margin-right:4px;" title="Analyse this call">Analyse</button>
+            <button onclick="event.stopPropagation();tmmb_deleteCall(${c.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;" title="Delete">×</button>
+          </td>
         </tr>
         <tr id="call-exp-${c.id}" class="tmmb-call-expand-row">
           <td colspan="6">
+            ${c.fathom ? `<a href="${c.fathom}" target="_blank" rel="noopener" style="color:#059669;font-weight:600;font-size:12px;text-decoration:none;" onclick="event.stopPropagation()">▶ Open Fathom Recording</a><br>` : ''}
             ${objStr ? `<strong>Objections:</strong> ${objStr}<br>` : ''}
-            ${c.notes ? `<strong>Notes:</strong> ${c.notes}` : (!objStr ? '<em>No notes recorded.</em>' : '')}
+            ${c.notes ? `<strong>Notes:</strong> ${c.notes}` : (!objStr && !c.fathom ? '<em>No details recorded.</em>' : '')}
           </td>
         </tr>`;
       }).join('') +
@@ -3864,6 +3711,52 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_toggleCallExpand(id) {
     const row = document.getElementById('call-exp-' + id);
     if (row) row.classList.toggle('open');
+  }
+
+  function tmmb_analyseFromCall(id) {
+    const c = tmmb_getCalls().find(x => x.id === id);
+    if (!c) return;
+
+    // Switch to analyser tab
+    document.querySelectorAll('.tmmb-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tmmb-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tmmb-analyser').classList.add('active');
+    const tabBtn = document.getElementById('tmmb-tab-analyser');
+    if (tabBtn) tabBtn.classList.add('active');
+
+    // Populate context banner
+    const ctx = document.getElementById('tmmb-analyser-ctx');
+    if (ctx) {
+      ctx.style.display = 'block';
+      document.getElementById('tmmb-ctx-name').textContent = c.name || 'Unknown';
+      const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan·2m', plan3:'Plan·3m', plan4:'Plan·4m', plan6:'Plan·6m', plan12:'Plan·12m' };
+      const metaParts = [
+        c.date,
+        c.deal || null,
+        c.outcome ? ({closed:'Closed',followup:'Follow-up',noclose:'No Close',noshow:'No Show'}[c.outcome]) : null,
+        c.cash ? `£${c.cash.toLocaleString()} collected` : null,
+        c.paytype ? paytypeLabel[c.paytype] : null
+      ].filter(Boolean);
+      document.getElementById('tmmb-ctx-meta').textContent = metaParts.join(' · ');
+      const fathomLink = document.getElementById('tmmb-ctx-fathom');
+      if (c.fathom) {
+        fathomLink.href = c.fathom;
+        fathomLink.style.display = 'inline-block';
+      } else {
+        fathomLink.style.display = 'none';
+      }
+    }
+
+    // Clear previous output and scroll up
+    document.getElementById('tmmb-transcript-input').value = '';
+    const out = document.getElementById('tmmb-analyser-out');
+    if (out) out.classList.remove('visible');
+    ctx.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function tmmb_clearAnalyserCtx() {
+    const ctx = document.getElementById('tmmb-analyser-ctx');
+    if (ctx) ctx.style.display = 'none';
   }
 
   function tmmb_updateOverview() {
