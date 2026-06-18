@@ -2221,10 +2221,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <div class="tmmb-form-group">
                   <label class="tmmb-form-label">Payment Type</label>
                   <select id="cl-paytype">
-                    <option value="pif">Paid in Full</option>
+                    <option value="pif">Paid in Full (PIF)</option>
+                    <option value="deposit">Deposit + Balance</option>
                     <option value="plan2">Payment Plan · 2 months</option>
                     <option value="plan3">Payment Plan · 3 months</option>
+                    <option value="plan4">Payment Plan · 4 months</option>
                     <option value="plan6">Payment Plan · 6 months</option>
+                    <option value="plan12">Payment Plan · 12 months</option>
                   </select>
                 </div>
               </div>
@@ -3825,7 +3828,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       el.innerHTML = '<div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>';
       return;
     }
-    const paytypeLabel = { pif:'PIF', plan2:'Plan·2m', plan3:'Plan·3m', plan6:'Plan·6m' };
+    const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan·2m', plan3:'Plan·3m', plan4:'Plan·4m', plan6:'Plan·6m', plan12:'Plan·12m' };
     const sourceLabel  = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
     el.innerHTML = '<div style="overflow-x:auto;"><table class="tmmb-call-table"><thead><tr>' +
       '<th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
