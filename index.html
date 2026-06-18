@@ -2042,20 +2042,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     <!-- TMMB internal tab bar -->
     <div class="tmmb-tabs">
-      <button class="tmmb-tab active" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
+      <button class="tmmb-tab active" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-scripts',this)">Scripts</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-knowledge',this)">Product Knowledge</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-objections',this)">Objections</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
     </div>
 
     <div class="tmmb-wrap">
       <div class="tmmb-main">
 
         <!-- ===== OVERVIEW ===== -->
-        <div id="tmmb-overview" class="tmmb-section active">
+        <div id="tmmb-overview" class="tmmb-section">
           <div class="tmmb-section-header">
             <h2>Your Numbers</h2>
             <p>Live performance at a glance</p>
@@ -2592,7 +2592,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         </div>
 
         <!-- ===== MONTHLY TRACKER ===== -->
-        <div id="tmmb-monthly" class="tmmb-section">
+        <div id="tmmb-monthly" class="tmmb-section active">
           <div class="tmmb-section-header">
             <h2>Monthly Tracker</h2>
             <p>Performance breakdown — computed from your call log</p>
