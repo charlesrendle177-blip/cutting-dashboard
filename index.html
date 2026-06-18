@@ -1029,7 +1029,7 @@
     /* stats grid */
     .tmmb-stats-grid {
       display: grid;
-      grid-template-columns: repeat(4,1fr);
+      grid-template-columns: repeat(5,1fr);
       gap: 14px;
       margin-bottom: 28px;
     }
@@ -1423,7 +1423,7 @@
     @media (max-width: 640px) {
       .tmmb-tabs { padding: 0 16px; }
       .tmmb-main { padding: 20px 16px 60px; }
-      .tmmb-stats-grid { grid-template-columns: repeat(2,1fr); }
+      .tmmb-stats-grid { grid-template-columns: repeat(3,1fr); }
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
       .tmmb-charts-row { grid-template-columns: 1fr; }
@@ -2118,10 +2118,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     <!-- TMMB internal tab bar -->
     <div class="tmmb-tabs">
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
       <button class="tmmb-tab active" id="tmmb-tab-calllog" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-vault',this);tmmb_initVault()">Call Vault</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
       <button class="tmmb-tab" id="tmmb-tab-analyser" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-knowledge',this)">Product Knowledge</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-objections',this)">Objections</button>
@@ -2153,6 +2153,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div class="tmmb-stat-box">
               <div class="tmmb-stat-num" id="tmmb-stat-earn">£0</div>
               <div class="tmmb-stat-label">Commission Earned</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-num green" id="tmmb-stat-cash">£15,000</div>
+              <div class="tmmb-stat-label">Cash Collected (Lifetime)</div>
             </div>
           </div>
 
@@ -3702,6 +3706,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (el) el.textContent = '£' + (closes * 4000 * 0.10).toLocaleString();
   }
 
+  const TMMB_CASH_OFFSET = 15000; // cash collected before this system was used
+
   function tmmb_getCalls() {
     try { return JSON.parse(localStorage.getItem('tmmb_calls') || '[]'); } catch { return []; }
   }
@@ -3988,8 +3994,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('tmmb-stat-calls', shown);
     set('tmmb-stat-shows', total  ? Math.round(shown/total*100)  + '%' : '—');
     set('tmmb-stat-close', shown  ? Math.round(closed/shown*100) + '%' : '—');
-    const earned = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const earned   = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const cashLive = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
     set('tmmb-stat-earn',  '£' + earned.toLocaleString());
+    set('tmmb-stat-cash',  '£' + (TMMB_CASH_OFFSET + cashLive).toLocaleString());
     set('tmmb-ov-calendar', total);
     set('tmmb-ov-noshow',   noshow);
     set('tmmb-ov-occ',      occ);
