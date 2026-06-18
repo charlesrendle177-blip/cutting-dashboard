@@ -2243,12 +2243,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               </div>
             </div>
 
-            <!-- Row 3: Phone + Lead Source -->
+            <!-- Row 3: Lead Source -->
             <div class="tmmb-form-grid" style="margin-bottom:20px;">
-              <div class="tmmb-form-group">
-                <label class="tmmb-form-label">Phone</label>
-                <input type="tel" id="cl-phone" placeholder="+44 7700 000000">
-              </div>
               <div class="tmmb-form-group">
                 <label class="tmmb-form-label">Lead Source</label>
                 <select id="cl-source">
@@ -3725,7 +3721,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const date      = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
     const name      = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
     const email     = (document.getElementById('cl-email').value || '').trim();
-    const phone     = (document.getElementById('cl-phone').value || '').trim();
     const source    = document.getElementById('cl-source').value;
     const outcome   = document.getElementById('cl-outcome').value;
     const deal      = (document.getElementById('cl-deal').value || '').trim();
@@ -3741,10 +3736,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const prosvideo = (document.getElementById('cl-prosvideo').value || '').trim();
 
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
     tmmb_saveCalls(calls);
 
-    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal','cl-fathom','cl-prosvideo'].forEach(id => {
+    ['cl-name','cl-email','cl-notes','cl-deal','cl-fathom','cl-prosvideo'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     document.getElementById('cl-cash').value = '';
@@ -3788,7 +3783,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       '</tr></thead><tbody>' +
       calls.map(c => {
         const comm = Math.round((c.dealValue || 4000) * 0.1);
-        const contactLine = [c.email, c.phone].filter(Boolean).join(' · ');
+        const contactLine = c.email || '';
         const sourceBit   = c.source ? ` <span style="color:#9ca3af;font-size:10px;">${sourceLabel[c.source]||c.source}</span>` : '';
         const dealBit     = c.deal ? c.deal : '—';
         const paytypeBit  = c.paytype && c.paytype !== 'pif' ? ` <span style="font-size:10px;color:#9ca3af;">${paytypeLabel[c.paytype]||c.paytype}</span>` : '';
@@ -3928,7 +3923,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     grid.innerHTML = calls.map(c => {
       const accent  = outcomeAccent[c.outcome] || '#9ca3af';
       const comm    = Math.round((c.dealValue||4000)*0.1);
-      const contact = [c.email, c.phone].filter(Boolean).join(' · ');
+      const contact = c.email || '';
       const src     = c.source ? sourceLabel[c.source] || c.source : '';
 
       const dealBlock = c.outcome === 'closed' ? `
