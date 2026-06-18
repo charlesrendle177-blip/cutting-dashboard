@@ -1186,6 +1186,53 @@
     .tmmb-call-cash { font-weight: 700; color: #059669; }
     .tmmb-call-comm { font-size: 11px; color: #9ca3af; }
 
+    /* ── Call Vault ───────────────────────────────────────────── */
+    .tmmb-vault-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .tmmb-vault-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px;
+      overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .tmmb-vault-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .tmmb-vault-card-accent { height: 4px; }
+    .tmmb-vault-card-body { padding: 18px 20px; }
+    .tmmb-vault-card-name { font-size: 16px; font-weight: 700; color: #111827; }
+    .tmmb-vault-card-date { font-size: 11px; color: #9ca3af; margin: 3px 0 14px; }
+    .tmmb-vault-amount { font-size: 22px; font-weight: 800; color: #059669; letter-spacing: -0.5px; }
+    .tmmb-vault-paytype {
+      font-size: 11px; font-weight: 600; background: rgba(5,150,105,0.08);
+      color: #059669; padding: 3px 9px; border-radius: 20px;
+    }
+    .tmmb-vault-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .tmmb-vault-link-btn {
+      display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
+      border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;
+      border: 1px solid; transition: opacity 0.15s; white-space: nowrap;
+    }
+    .tmmb-vault-link-btn:hover { opacity: 0.75; }
+    .tmmb-vault-link-fathom { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.2); color: #7c3aed; }
+    .tmmb-vault-link-video  { background: rgba(239,68,68,0.07);  border-color: rgba(239,68,68,0.2);  color: #dc2626; }
+    .tmmb-vault-obj-pill {
+      font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+      background: rgba(107,114,128,0.1); color: #6b7280;
+    }
+    .tmmb-vault-notes {
+      font-size: 12px; color: #6b7280; line-height: 1.65;
+      border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; margin-top: 10px;
+    }
+    .tmmb-vault-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; margin-top: 12px;
+      font-size: 11px; color: #9ca3af;
+    }
+    .tmmb-vault-filter {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1px solid rgba(0,0,0,0.1); background: transparent; color: #6b7280;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .tmmb-vault-filter.active { background: #0d2345; color: #fff; border-color: #0d2345; }
+    .tmmb-vault-filter:hover:not(.active) { background: rgba(0,0,0,0.04); }
+
     /* script steps */
     .tmmb-script-step {
       display: flex;
@@ -1380,6 +1427,7 @@
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
       .tmmb-charts-row { grid-template-columns: 1fr; }
+      .tmmb-vault-grid { grid-template-columns: 1fr; }
     }
 
     /* ============================================================
@@ -2071,6 +2119,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     <!-- TMMB internal tab bar -->
     <div class="tmmb-tabs">
       <button class="tmmb-tab active" id="tmmb-tab-calllog" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-vault',this);tmmb_initVault()">Call Vault</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-overview',this)">Overview</button>
       <button class="tmmb-tab" id="tmmb-tab-analyser" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
@@ -2262,10 +2311,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <textarea id="cl-notes" rows="3" placeholder="What went well, what to improve, key moments..."></textarea>
             </div>
 
-            <!-- Fathom -->
-            <div class="tmmb-form-group" style="margin-bottom:18px;">
-              <label class="tmmb-form-label">Fathom Recording Link</label>
-              <input type="url" id="cl-fathom" placeholder="https://fathom.video/calls/...">
+            <!-- Recording + Video row -->
+            <div class="tmmb-form-grid" style="margin-bottom:18px;">
+              <div class="tmmb-form-group">
+                <label class="tmmb-form-label">Fathom Recording Link</label>
+                <input type="url" id="cl-fathom" placeholder="https://fathom.video/calls/...">
+              </div>
+              <div class="tmmb-form-group">
+                <label class="tmmb-form-label">Prospect Video Link (Loom)</label>
+                <input type="url" id="cl-prosvideo" placeholder="https://loom.com/share/...">
+              </div>
             </div>
 
             <button class="tmmb-btn tmmb-btn-primary" style="width:100%;justify-content:center;" onclick="tmmb_logCall()">Log Call</button>
@@ -2277,6 +2332,55 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div id="tmmb-call-history">
               <div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CALL VAULT ===== -->
+        <div id="tmmb-vault" class="tmmb-section">
+          <div class="tmmb-section-header">
+            <h2>Call Vault</h2>
+            <p>Every prospect. Every deal. Every recording. All in one place.</p>
+          </div>
+
+          <!-- Summary stats -->
+          <div class="tmmb-stats-grid" style="margin-bottom:24px;">
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-num" id="vault-stat-total">—</div>
+              <div class="tmmb-stat-label">Total Calls</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-num green" id="vault-stat-closed">—</div>
+              <div class="tmmb-stat-label">Closed</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-num gold" id="vault-stat-cash">—</div>
+              <div class="tmmb-stat-label">Cash In</div>
+            </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-num purple" id="vault-stat-comm">—</div>
+              <div class="tmmb-stat-label">Commission</div>
+            </div>
+          </div>
+
+          <!-- Search + filters -->
+          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="vault-search" placeholder="Search by name, deal, notes…"
+              style="flex:1;min-width:180px;" oninput="tmmb_renderVault()">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="tmmb-vault-filter active" onclick="tmmb_setVaultFilter('all',this)">All</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('closed',this)">Closed</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('followup',this)">Follow-up</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noclose',this)">No Close</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noshow',this)">No Show</button>
+            </div>
+          </div>
+
+          <!-- Card grid -->
+          <div class="tmmb-vault-grid" id="tmmb-vault-grid">
+            <div class="tmmb-empty" style="grid-column:1/-1;">
+              <div class="icon">🗄️</div>
+              <p>No calls logged yet. Log your first call to fill the vault.</p>
             </div>
           </div>
         </div>
@@ -3628,12 +3732,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     ).map(i => i.value);
 
     const fathom    = (document.getElementById('cl-fathom').value || '').trim();
+    const prosvideo = (document.getElementById('cl-prosvideo').value || '').trim();
 
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, phone, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
     tmmb_saveCalls(calls);
 
-    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal','cl-fathom'].forEach(id => {
+    ['cl-name','cl-email','cl-phone','cl-notes','cl-deal','cl-fathom','cl-prosvideo'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     document.getElementById('cl-cash').value = '';
@@ -3757,6 +3862,117 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_clearAnalyserCtx() {
     const ctx = document.getElementById('tmmb-analyser-ctx');
     if (ctx) ctx.style.display = 'none';
+  }
+
+  // ── Call Vault ────────────────────────────────────────────────
+  let tmmb_vaultFilter = 'all';
+
+  function tmmb_initVault() {
+    tmmb_vaultFilter = 'all';
+    document.querySelectorAll('.tmmb-vault-filter').forEach((b,i) => b.classList.toggle('active', i === 0));
+    const s = document.getElementById('vault-search');
+    if (s) s.value = '';
+    tmmb_renderVault();
+  }
+
+  function tmmb_setVaultFilter(filter, el) {
+    tmmb_vaultFilter = filter;
+    document.querySelectorAll('.tmmb-vault-filter').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    tmmb_renderVault();
+  }
+
+  function tmmb_renderVault() {
+    const all = tmmb_getCalls();
+
+    // Stats always from full set
+    const closed = all.filter(c => c.outcome === 'closed');
+    const totalCash = closed.reduce((s,c) => s + (c.cash||0), 0);
+    const totalComm = closed.reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('vault-stat-total',  all.length || '—');
+    set('vault-stat-closed', closed.length || '—');
+    set('vault-stat-cash',   closed.length ? '£'+totalCash.toLocaleString() : '—');
+    set('vault-stat-comm',   closed.length ? '£'+totalComm.toLocaleString() : '—');
+
+    // Filter + search
+    let calls = tmmb_vaultFilter === 'all' ? all : all.filter(c => c.outcome === tmmb_vaultFilter);
+    const q = (document.getElementById('vault-search')?.value || '').toLowerCase().trim();
+    if (q) calls = calls.filter(c =>
+      (c.name||'').toLowerCase().includes(q) ||
+      (c.deal||'').toLowerCase().includes(q) ||
+      (c.email||'').toLowerCase().includes(q) ||
+      (c.notes||'').toLowerCase().includes(q)
+    );
+
+    const grid = document.getElementById('tmmb-vault-grid');
+    if (!grid) return;
+
+    if (!calls.length) {
+      grid.innerHTML = `<div class="tmmb-empty" style="grid-column:1/-1;"><div class="icon">🗄️</div><p>${q || tmmb_vaultFilter !== 'all' ? 'No calls match your filter.' : 'No calls logged yet.'}</p></div>`;
+      return;
+    }
+
+    const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan · 2m', plan3:'Plan · 3m', plan4:'Plan · 4m', plan6:'Plan · 6m', plan12:'Plan · 12m' };
+    const outcomeAccent = { closed:'#059669', followup:'#d97706', noclose:'#9ca3af', noshow:'#ef4444' };
+    const outcomeLabel  = { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show' };
+    const outcomeClass  = { closed:'closed', followup:'followup', noclose:'noclose', noshow:'noshow' };
+    const sourceLabel   = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
+
+    grid.innerHTML = calls.map(c => {
+      const accent  = outcomeAccent[c.outcome] || '#9ca3af';
+      const comm    = Math.round((c.dealValue||4000)*0.1);
+      const contact = [c.email, c.phone].filter(Boolean).join(' · ');
+      const src     = c.source ? sourceLabel[c.source] || c.source : '';
+
+      const dealBlock = c.outcome === 'closed' ? `
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+          <span class="tmmb-vault-amount">£${(c.cash||0).toLocaleString()}</span>
+          ${c.paytype ? `<span class="tmmb-vault-paytype">${paytypeLabel[c.paytype]||c.paytype}</span>` : ''}
+          ${c.deal ? `<span style="font-size:12px;color:#6b7280;">${c.deal}</span>` : ''}
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;">
+          Commission <strong style="color:#059669;">£${comm.toLocaleString()}</strong>
+          ${c.dealValue && c.dealValue !== 4000 ? ` · Deal value £${Number(c.dealValue).toLocaleString()}` : ''}
+        </div>` :
+        (c.deal ? `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;">${c.deal}</div>` : '');
+
+      const links = (c.fathom || c.prosvideo) ? `
+        <div class="tmmb-vault-links">
+          ${c.fathom    ? `<a href="${c.fathom}"    target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-fathom">▶ Fathom Recording</a>` : ''}
+          ${c.prosvideo ? `<a href="${c.prosvideo}" target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-video">🎥 Prospect Video</a>` : ''}
+        </div>` : '';
+
+      const objs = (c.objections||[]).length ? `
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+          ${(c.objections||[]).map(o=>`<span class="tmmb-vault-obj-pill">${o.replace(/-/g,' ')}</span>`).join('')}
+        </div>` : '';
+
+      const notes = c.notes ? `<div class="tmmb-vault-notes">${c.notes}</div>` : '';
+
+      return `
+      <div class="tmmb-vault-card">
+        <div class="tmmb-vault-card-accent" style="background:${accent};"></div>
+        <div class="tmmb-vault-card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:2px;">
+            <div class="tmmb-vault-card-name">${c.name||'Unknown'}</div>
+            <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}" style="flex-shrink:0;margin-top:2px;">${outcomeLabel[c.outcome]||c.outcome}</span>
+          </div>
+          <div class="tmmb-vault-card-date">${c.date||'—'}${src ? ' · '+src : ''}</div>
+          ${dealBlock}
+          ${links}
+          ${objs}
+          ${notes}
+          <div class="tmmb-vault-footer">
+            <span style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${contact||'&nbsp;'}</span>
+            <button onclick="tmmb_analyseFromCall(${c.id})"
+              style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);color:#059669;cursor:pointer;font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;white-space:nowrap;">
+              Analyse →
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function tmmb_updateOverview() {
