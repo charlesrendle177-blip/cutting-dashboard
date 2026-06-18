@@ -2766,7 +2766,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <select class="td-quick-select" id="td-add-section">
             <option value="primed">Primed</option>
             <option value="personal">Personal</option>
-            <option value="admin">Admin</option>
             <option value="tmmb">TMMB</option>
           </select>
           <select class="td-quick-select" id="td-add-priority">
@@ -2900,7 +2899,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   const HTD_SECTIONS = {
     primed:   { label: 'Primed',   color: '#7c3aed' },
     personal: { label: 'Personal', color: '#059669' },
-    admin:    { label: 'Admin',    color: '#2563eb' },
     tmmb:     { label: 'TMMB',     color: '#d97706' }
   };
   const HTD_PRIO = { 1: '#9ca3af', 2: '#3b82f6', 3: '#f59e0b', 4: '#f97316', 5: '#ef4444' };
@@ -3004,7 +3002,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const container = document.getElementById('td-task-container');
     if (!container) return;
 
-    const SEC_ORDER = ['primed', 'tmmb', 'personal', 'admin'];
+    const SEC_ORDER = ['primed', 'tmmb', 'personal'];
     let html = '';
     let pos = 0;
 
