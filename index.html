@@ -2910,7 +2910,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function htd_get() {
     try { return JSON.parse(localStorage.getItem(HTD_KEY) || '[]'); } catch { return []; }
   }
-  function htd_save(todos) { localStorage.setItem(HTD_KEY, JSON.stringify(todos)); }
+  function htd_save(todos) {
+    localStorage.setItem(HTD_KEY, JSON.stringify(todos));
+    if (sb) sb.from('hub_data').upsert({ key: 'hub_todos', value: todos, updated_at: new Date().toISOString() });
+  }
 
   function htd_quickAdd() {
     const input = document.getElementById('td-add-input');
@@ -3716,6 +3719,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   function tmmb_saveCalls(calls) {
     localStorage.setItem('tmmb_calls', JSON.stringify(calls));
+    if (sb) sb.from('hub_data').upsert({ key: 'tmmb_calls', value: calls, updated_at: new Date().toISOString() });
   }
 
   function tmmb_onOutcomeChange(val) {
@@ -4339,6 +4343,45 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return el;
   }
 
+  /* ---------- SUPABASE SYNC ---------- */
+  async function hub_initSync() {
+    if (!sb) return;
+    try {
+      const { data: rows } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls']);
+      if (rows) {
+        for (const row of rows) {
+          const remote = row.value || [];
+          const local  = JSON.parse(localStorage.getItem(row.key) || '[]');
+          if (remote.length === 0 && local.length > 0) {
+            // First-time setup: push existing local data up to Supabase
+            await sb.from('hub_data').upsert({ key: row.key, value: local, updated_at: new Date().toISOString() });
+          } else if (remote.length > 0) {
+            localStorage.setItem(row.key, JSON.stringify(remote));
+          }
+        }
+        htd_render();
+        htd_updateCard();
+      }
+
+      // Real-time: refresh when another device saves
+      sb.channel('hub_sync')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hub_data' }, payload => {
+          const { key, value } = payload.new;
+          if (key === 'hub_todos') {
+            localStorage.setItem(HTD_KEY, JSON.stringify(value));
+            htd_render();
+            htd_updateCard();
+          }
+          if (key === 'tmmb_calls') {
+            localStorage.setItem('tmmb_calls', JSON.stringify(value));
+            tmmb_updateOverview();
+            tmmb_renderVault();
+          }
+        })
+        .subscribe();
+    } catch(e) { console.warn('Supabase sync error:', e); }
+  }
+
   /* ---------- INIT ---------- */
   document.addEventListener('DOMContentLoaded', () => {
     // Migrate any old 'admin' tasks to 'personal'
@@ -4354,6 +4397,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadWorkouts();
     highlightSpainPrepToday();
     htd_updateCard();
+    hub_initSync();
   });
 
   if ('serviceWorker' in navigator) {
