@@ -3003,6 +3003,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!container) return;
 
     const SEC_ORDER = ['primed', 'tmmb', 'personal'];
+    // Collect any tasks whose section is no longer in SEC_ORDER and re-assign to personal
+    open.filter(t => !SEC_ORDER.includes(t.section)).forEach(t => { t.section = 'personal'; });
     let html = '';
     let pos = 0;
 
