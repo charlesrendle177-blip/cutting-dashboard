@@ -4335,6 +4335,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   /* ---------- INIT ---------- */
   document.addEventListener('DOMContentLoaded', () => {
+    // Migrate any old 'admin' tasks to 'personal'
+    const _todos = htd_get();
+    if (_todos.some(t => t.section === 'admin')) {
+      htd_save(_todos.map(t => t.section === 'admin' ? { ...t, section: 'personal' } : t));
+    }
+
     initGreeting();
     setDates();
     navigate('home');
@@ -4343,6 +4349,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     highlightSpainPrepToday();
     htd_updateCard();
   });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/cutting-dashboard/sw.js');
+  }
 
   /* ===================== STRONG IMPORT ===================== */
   function openStrongImport() {
