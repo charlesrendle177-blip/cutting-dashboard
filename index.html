@@ -2912,7 +2912,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
   function htd_save(todos) {
     localStorage.setItem(HTD_KEY, JSON.stringify(todos));
-    if (sb) sb.from('hub_data').upsert({ key: 'hub_todos', value: todos, updated_at: new Date().toISOString() });
+    if (sb) sb.from('hub_data')
+      .upsert({ key: 'hub_todos', value: todos, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .then(({ error }) => { if (error) console.error('[hub_sync] htd_save failed:', error); });
   }
 
   function htd_quickAdd() {
@@ -3719,7 +3721,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   function tmmb_saveCalls(calls) {
     localStorage.setItem('tmmb_calls', JSON.stringify(calls));
-    if (sb) sb.from('hub_data').upsert({ key: 'tmmb_calls', value: calls, updated_at: new Date().toISOString() });
+    if (sb) sb.from('hub_data')
+      .upsert({ key: 'tmmb_calls', value: calls, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .then(({ error }) => { if (error) console.error('[hub_sync] tmmb_saveCalls failed:', error); });
   }
 
   function tmmb_onOutcomeChange(val) {
@@ -4365,8 +4369,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
       // Real-time: refresh when another device saves
       sb.channel('hub_sync')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hub_data' }, payload => {
-          const { key, value } = payload.new;
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hub_data' }, payload => {
+          const row = payload.new || {};
+          const key = row.key;
+          const value = typeof row.value === 'string' ? JSON.parse(row.value) : (row.value || []);
           if (key === 'hub_todos') {
             localStorage.setItem(HTD_KEY, JSON.stringify(value));
             htd_render();
@@ -4378,7 +4384,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             tmmb_renderVault();
           }
         })
-        .subscribe();
+        .subscribe(status => console.log('[hub_sync] realtime status:', status));
     } catch(e) { console.warn('Supabase sync error:', e); }
   }
 
