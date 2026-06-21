@@ -4396,6 +4396,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       htd_save(_todos.map(t => t.section === 'admin' ? { ...t, section: 'personal' } : t));
     }
 
+    // Re-sync when app comes back to foreground (covers iOS backgrounding)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && sb) hub_initSync();
+    });
+
     initGreeting();
     setDates();
     navigate('home');
