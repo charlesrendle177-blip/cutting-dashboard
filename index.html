@@ -1661,8 +1661,32 @@
     <div class="sections-label fu fu4">Your dashboard</div>
     <div class="sections-grid">
 
+      <!-- TO DO -->
+      <div class="section-card fu fu4" onclick="navigate('todo')"
+           style="--c-accent: #7c3aed; --c-glow: rgba(124,58,237,0.07)">
+        <div class="card-icon" style="font-size:28px">✓</div>
+        <div class="card-title">To Do</div>
+        <div class="card-subtitle">Tasks, priorities & deadlines</div>
+        <div class="card-divider"></div>
+        <div class="card-stats">
+          <div class="stat-row">
+            <span class="stat-label">Open tasks</span>
+            <span class="stat-value" style="color:#7c3aed" id="s-todo-open">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Due today</span>
+            <span class="stat-value blue" id="s-todo-today">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Done this week</span>
+            <span class="stat-value green" id="s-todo-done">—</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
       <!-- FITNESS -->
-      <div class="section-card fu fu4" onclick="navigate('fitness')"
+      <div class="section-card fu fu5" onclick="navigate('fitness')"
            style="--c-accent: var(--accent); --c-glow: rgba(65,145,255,0.08)">
         <div class="card-icon fitness">🏋️</div>
         <div class="card-title">Fitness</div>
@@ -1686,7 +1710,7 @@
       </div>
 
       <!-- SALES SKILLS -->
-      <div class="section-card fu fu5" onclick="navigate('sales')"
+      <div class="section-card fu fu6" onclick="navigate('sales')"
            style="--c-accent: var(--green); --c-glow: rgba(0,212,160,0.07)">
         <div class="card-icon sales">📞</div>
         <div class="card-title">Sales Skills</div>
@@ -1710,7 +1734,7 @@
       </div>
 
       <!-- BUSINESS -->
-      <div class="section-card fu fu6" onclick="navigate('business')"
+      <div class="section-card fu fu7" onclick="navigate('business')"
            style="--c-accent: var(--amber); --c-glow: rgba(245,158,11,0.06)">
         <div class="card-icon business">🏢</div>
         <div class="card-title">Business</div>
@@ -1718,30 +1742,6 @@
         <div class="card-divider"></div>
         <div class="card-stats" style="padding-top: 4px">
           <div class="coming-soon-pill">Coming Soon</div>
-        </div>
-        <div class="card-arrow">→</div>
-      </div>
-
-      <!-- TO DO -->
-      <div class="section-card fu fu7" onclick="navigate('todo')"
-           style="--c-accent: #7c3aed; --c-glow: rgba(124,58,237,0.07)">
-        <div class="card-icon" style="font-size:28px">✓</div>
-        <div class="card-title">To Do</div>
-        <div class="card-subtitle">Tasks, priorities & deadlines</div>
-        <div class="card-divider"></div>
-        <div class="card-stats">
-          <div class="stat-row">
-            <span class="stat-label">Open tasks</span>
-            <span class="stat-value" style="color:#7c3aed" id="s-todo-open">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Due today</span>
-            <span class="stat-value blue" id="s-todo-today">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Done this week</span>
-            <span class="stat-value green" id="s-todo-done">—</span>
-          </div>
         </div>
         <div class="card-arrow">→</div>
       </div>
