@@ -1979,7 +1979,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div class="form-group">
               <label>Exercise</label>
-              <input type="text" id="w-exercise" placeholder="e.g. Bench Press" list="w-exercise-list" autocomplete="off">
+              <input type="text" id="w-exercise" placeholder="e.g. Bench Press" list="w-exercise-list" autocomplete="off" oninput="wk_showHint(this.value)">
               <datalist id="w-exercise-list"></datalist>
             </div>
             <div class="form-group">
@@ -1999,6 +1999,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <input type="text" id="w-notes" placeholder="e.g. felt strong, slight form break">
             </div>
           </div>
+          <!-- Exercise hint panel -->
+          <div id="w-exercise-hint" style="display:none;background:#f8fafc;border:1.5px solid rgba(0,0,0,0.08);border-radius:12px;padding:16px;margin-bottom:16px;"></div>
+
           <button class="btn-save" onclick="logWorkout()">Log Set</button>
         </div>
 
@@ -3461,6 +3464,57 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     dl.innerHTML = exercises.map(e => `<option value="${e}">`).join('');
   }
 
+  function wk_showHint(val) {
+    const hint = document.getElementById('w-exercise-hint');
+    if (!hint) return;
+    const trimmed = val.trim().toLowerCase();
+    if (!trimmed || !workoutData.length) { hint.style.display = 'none'; return; }
+
+    const overload = computeOverloadData();
+    const data = overload.find(o => o.exercise.toLowerCase() === trimmed);
+    if (!data) { hint.style.display = 'none'; return; }
+
+    // Last session sets grouped by most recent date
+    const exSets = workoutData
+      .filter(w => w.exercise.toLowerCase() === trimmed)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const lastDate = exSets[0]?.date;
+    const lastSets = exSets.filter(w => w.date === lastDate);
+    const lastDateLabel = lastDate
+      ? new Date(lastDate + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
+      : '';
+    const lastSummary = lastSets.map(s => `${s.sets ?? '?'}×${s.reps ?? '?'} @ ${s.weight_kg ?? '?'}kg`).join(' · ') || '—';
+
+    // Target weight: increase if ready
+    const shouldIncrease = (data.sessionsAtWeight >= 3 && data.bestReps >= data.repTarget) || data.sessionsAtWeight >= 6;
+    const targetWeight = shouldIncrease ? Math.round((data.currentWeight + 2.5) * 2) / 2 : data.currentWeight;
+    const isIncrease = targetWeight > data.currentWeight;
+
+    const targetColour = isIncrease ? '#059669' : '#2563eb';
+    const targetBg    = isIncrease ? '#f0fdf4' : '#eff6ff';
+    const targetBorder= isIncrease ? '#bbf7d0' : '#bfdbfe';
+
+    hint.style.display = 'block';
+    hint.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:13px;color:#0d2345;">${data.exercise}</div>
+        <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;${data.badgeStyle}">${data.badge}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${isIncrease ? '12px' : '0'};">
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:12px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;margin-bottom:5px;">Last session · ${lastDateLabel}</div>
+          <div style="font-size:15px;font-weight:800;color:#111827;line-height:1.3;">${lastSummary}</div>
+        </div>
+        <div style="background:${targetBg};border:1.5px solid ${targetBorder};border-radius:10px;padding:12px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:${targetColour};margin-bottom:5px;">Today's target</div>
+          <div style="font-size:22px;font-weight:800;color:${targetColour};">${targetWeight}kg${isIncrease ? ' ↑' : ''}</div>
+          <div style="font-size:11px;color:${targetColour};opacity:0.8;margin-top:2px;">${data.nextTarget}</div>
+        </div>
+      </div>
+      ${isIncrease ? `<button onclick="document.getElementById('w-weight').value='${targetWeight}';this.textContent='✓ Weight set to ${targetWeight}kg';this.style.background='#059669';" style="width:100%;background:#0d2345;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">↑ Use target weight — ${targetWeight}kg</button>` : ''}
+    `;
+  }
+
   // ── Dr Mike progressive overload logic ──────────────────────────
   // Framework: 4-6 week mesocycle. At ~2x/week = 8-12 sessions per block.
   // Stall = same weight for 3+ sessions with reps not going up.
@@ -3616,6 +3670,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('w-reps').value = '';
     document.getElementById('w-weight').value = '';
     document.getElementById('w-notes').value = '';
+    // Refresh hint with updated data after log
+    setTimeout(() => wk_showHint(document.getElementById('w-exercise').value), 600);
 
     await loadWorkouts();
 
