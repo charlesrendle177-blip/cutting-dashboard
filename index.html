@@ -625,6 +625,26 @@
     .badge.loss    { background: rgba(239,68,68,0.1); color: var(--danger); }
     .badge.pending { background: var(--amber-dim); color: var(--amber); }
 
+    /* ── Overload cards ── */
+    .wo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; padding:16px; }
+    .wo-card { background:#fff; border-radius:16px; border:1.5px solid rgba(0,0,0,0.07); overflow:hidden; display:flex; flex-direction:column; }
+    .wo-card-top { padding:15px 16px 12px; flex:1; }
+    .wo-name { font-size:13px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    .wo-meta { font-size:11px; color:#9ca3af; margin-bottom:10px; }
+    .wo-weight { font-size:32px; font-weight:800; color:#111827; letter-spacing:-1.5px; line-height:1; }
+    .wo-weight span { font-size:15px; font-weight:600; color:#6b7280; margin-left:2px; }
+    .wo-reps { font-size:12px; color:#6b7280; margin-top:4px; }
+    .wo-bar { padding:11px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .wo-bar-text { min-width:0; }
+    .wo-bar-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.7px; }
+    .wo-bar-note { font-size:11px; font-weight:600; margin-top:1px; opacity:0.8; }
+    .wo-bar-btn { flex-shrink:0; border:none; border-radius:8px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; white-space:nowrap; }
+    @media (max-width:600px) {
+      .wo-grid { grid-template-columns:1fr 1fr; gap:10px; padding:12px; }
+      .wo-weight { font-size:28px; }
+    }
+    @media (max-width:360px) { .wo-grid { grid-template-columns:1fr; } }
+
     /* ============================================================
        BUSINESS COMING SOON
     ============================================================ */
@@ -2013,22 +2033,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div style="font-size:11px;color:var(--white-40);margin-top:3px;">Dr Mike: <em>"Stalled lifts = stalled physique"</em> — increase 2.5–5kg when ready</div>
             </div>
           </div>
-          <div class="table-scroll"><table>
-            <thead>
-              <tr>
-                <th>Exercise</th>
-                <th>Weight</th>
-                <th>Best Reps</th>
-                <th style="text-align:center;">Sessions</th>
-                <th>Status</th>
-                <th>Next Target</th>
-                <th>Coaching Note</th>
-              </tr>
-            </thead>
-            <tbody id="w-overload-body">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>
-            </tbody>
-          </table></div>
+          <div id="w-overload-body" class="wo-grid"></div>
         </div>
 
         <!-- Recent Sessions -->
@@ -3558,78 +3563,88 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const isCompound = ['squat','deadlift','bench','press','row','pull','dip'].some(k => exercise.toLowerCase().includes(k));
       const repTarget = isCompound ? 8 : 10; // minimum reps before weight increase
 
-      let badge, badgeStyle, nextTarget, advice;
+      let state, badge, badgeStyle, nextTarget, advice;
 
       if (!currentWeight || currentWeight === 0) {
-        // Bodyweight / timed exercise
-        badge = '⚪ Tracked';
-        badgeStyle = 'background:rgba(0,0,0,0.05);color:#6b7280;border:1px solid rgba(0,0,0,0.1);';
-        nextTarget = '—';
-        advice = 'Track consistently';
+        state = 'hold';
+        badge = 'HOLD'; badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
+        nextTarget = 'Track consistently'; advice = 'Bodyweight / timed';
 
       } else if (sessionsAtWeight === 1) {
-        badge = '🆕 New weight';
-        badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
-        nextTarget = `Hit ${repTarget}+ reps`;
-        advice = 'Build consistency before adding load';
+        state = 'hold';
+        badge = 'HOLD'; badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
+        nextTarget = `Hit ${repTarget}+ reps`; advice = 'New weight — build consistency';
 
       } else if (sessionsAtWeight <= 2 && bestReps && bestReps < repTarget) {
-        badge = '🟢 Building reps';
-        badgeStyle = 'background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.18);';
-        nextTarget = `${repTarget - bestReps} more reps then ↑`;
-        advice = `Hit ${repTarget} reps, then add 2.5kg`;
+        state = 'hold';
+        badge = 'HOLD'; badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
+        nextTarget = `${repTarget - bestReps} more reps, then increase`; advice = `Hit ${repTarget} reps, then add 2.5kg`;
 
-      } else if (sessionsAtWeight <= 3 && bestReps && bestReps >= repTarget) {
-        badge = '🟢 Ready to increase';
-        badgeStyle = 'background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);';
-        nextTarget = `↑ +2.5kg next session`;
-        advice = `Hitting ${bestReps} reps — add 2.5kg`;
+      } else if (bestReps && bestReps >= repTarget) {
+        state = 'increase';
+        badge = '↑ INCREASE'; badgeStyle = 'background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);';
+        nextTarget = `+2.5kg next session`; advice = `Hitting ${bestReps} reps — ready to go up`;
 
-      } else if (sessionsAtWeight <= 3) {
-        badge = '🟢 On track';
-        badgeStyle = 'background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.18);';
-        nextTarget = `+1 rep or +2.5kg`;
-        advice = 'Dr Mike: add a rep or small load';
-
-      } else if (sessionsAtWeight <= 5) {
-        badge = '🟡 Add weight now';
-        badgeStyle = 'background:rgba(217,119,6,0.1);color:#d97706;border:1px solid rgba(217,119,6,0.2);';
-        nextTarget = `↑ +2.5kg next session`;
-        advice = `${sessionsAtWeight} sessions at ${currentWeight}kg — time to progress`;
+      } else if (sessionsAtWeight <= 4) {
+        state = 'hold';
+        badge = 'HOLD'; badgeStyle = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.18);';
+        nextTarget = `Hit ${repTarget}+ reps`; advice = 'Keep building reps';
 
       } else {
-        // 6+ sessions = stalled. Dr Mike: "Stalled lifts = stalled physique."
-        badge = '🔴 Stalled';
-        badgeStyle = 'background:rgba(220,38,38,0.1);color:#dc2626;border:1px solid rgba(220,38,38,0.2);';
-        nextTarget = `↑ +2.5–5kg NOW`;
-        advice = `Dr Mike: "Stalled lifts = stalled physique" — ${daysSinceWeightSet}d at ${currentWeight}kg`;
+        state = 'overdue';
+        badge = '↑ OVERDUE'; badgeStyle = 'background:rgba(217,119,6,0.1);color:#d97706;border:1px solid rgba(217,119,6,0.2);';
+        nextTarget = `Increase now`; advice = `${sessionsAtWeight} sessions at ${currentWeight}kg — time to progress`;
       }
 
       const lastDateLabel = dates[0]
         ? new Date(dates[0]).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
         : '—';
 
-      return { exercise, currentWeight, bestReps, sessionsAtWeight, badge, badgeStyle, nextTarget, advice, lastDateLabel, repTarget, daysSinceWeightSet };
+      return { exercise, currentWeight, bestReps, sessionsAtWeight, state, badge, badgeStyle, nextTarget, advice, lastDateLabel, repTarget, daysSinceWeightSet };
     });
   }
 
   function renderOverloadStatus() {
-    const tbody = document.getElementById('w-overload-body');
+    const el = document.getElementById('w-overload-body');
     const overload = computeOverloadData();
     if (!overload.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">No workout data yet — log your first set above</td></tr>';
+      el.style.display = 'block';
+      el.innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">No workout data yet — log your first set above</div>';
       return;
     }
+    el.style.display = '';
 
-    tbody.innerHTML = overload.map(r => `<tr>
-        <td style="font-weight:600;color:var(--white);font-size:13px;">${r.exercise}</td>
-        <td style="font-weight:800;color:var(--accent);font-size:14px;">${r.currentWeight ? r.currentWeight + ' kg' : '—'}</td>
-        <td style="color:var(--white-70);">${r.bestReps ? r.bestReps + ' reps' : '—'}</td>
-        <td style="color:var(--white-70);text-align:center;">${r.sessionsAtWeight}</td>
-        <td><span style="padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;${r.badgeStyle}">${r.badge}</span></td>
-        <td style="font-size:12px;font-weight:600;color:${r.sessionsAtWeight >= 6 ? '#dc2626' : r.sessionsAtWeight >= 4 ? '#d97706' : '#059669'};">${r.nextTarget}</td>
-        <td style="font-size:11px;color:var(--white-40);max-width:180px;">${r.advice}</td>
-      </tr>`).join('');
+    const THEME = {
+      hold:     { bg:'#eff6ff', accent:'#2563eb', border:'#bfdbfe' },
+      increase: { bg:'#f0fdf4', accent:'#059669', border:'#bbf7d0' },
+      overdue:  { bg:'#fff7ed', accent:'#d97706', border:'#fed7aa' },
+    };
+
+    el.innerHTML = overload.map(r => {
+      const t = THEME[r.state] || THEME.hold;
+      const targetWeight = (r.state === 'increase' || r.state === 'overdue')
+        ? Math.round((r.currentWeight + 2.5) * 2) / 2 : null;
+      const useBtn = targetWeight
+        ? `<button class="wo-bar-btn" style="background:${t.accent};color:#fff;"
+             onclick="document.getElementById('w-exercise').value=${JSON.stringify(r.exercise)};document.getElementById('w-weight').value='${targetWeight}';wk_showHint(${JSON.stringify(r.exercise)});switchFitnessTab('workouts');">
+             Use →</button>` : '';
+      return `
+        <div class="wo-card" style="border-color:${t.border};">
+          <div class="wo-card-top">
+            <div class="wo-name" title="${r.exercise}">${r.exercise}</div>
+            <div class="wo-meta">${r.sessionsAtWeight} session${r.sessionsAtWeight!==1?'s':''} · last ${r.lastDateLabel}</div>
+            <div class="wo-weight">${r.currentWeight||'—'}<span>${r.currentWeight?'kg':''}</span></div>
+            <div class="wo-reps">${r.bestReps ? 'Best: '+r.bestReps+' reps' : 'No rep data'}</div>
+          </div>
+          <div class="wo-bar" style="background:${t.bg};">
+            <div class="wo-bar-text">
+              <div class="wo-bar-label" style="color:${t.accent};">${r.badge}</div>
+              <div class="wo-bar-note" style="color:${t.accent};">${targetWeight ? '→ '+targetWeight+'kg next session' : r.nextTarget}</div>
+            </div>
+            ${useBtn}
+          </div>
+        </div>`;
+    }).join('');
   }
 
   function renderWorkoutLog() {
