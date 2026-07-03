@@ -1388,6 +1388,25 @@
     .tmmb-sub-section { display: none; }
     .tmmb-sub-section.active { display: block; }
 
+    /* Dev pipeline kanban */
+    .dev-col-btn { background:#f9fafb; border:1.5px solid #e5e7eb; border-radius:10px; padding:7px 14px; font-size:12px; font-weight:700; color:#6b7280; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
+    .dev-col-btn.active.red   { background:#fef2f2; border-color:#fecaca; color:#dc2626; }
+    .dev-col-btn.active.orange{ background:#fffbeb; border-color:#fde68a; color:#d97706; }
+    .dev-col-btn.active.green { background:#f0fdf4; border-color:#a7f3d0; color:#059669; }
+    .dev-cnt { background:rgba(0,0,0,0.08); border-radius:20px; padding:1px 7px; font-size:11px; font-weight:800; }
+    .dev-column { display:none; flex-direction:column; gap:10px; }
+    .dev-column.active { display:flex; }
+    .dev-card { background:#fff; border:1.5px solid #e5e7eb; border-radius:14px; padding:14px 16px; }
+    .dev-card-label { font-weight:700; font-size:13px; margin-bottom:5px; }
+    .dev-card-detail { font-size:12px; color:#6b7280; line-height:1.55; margin-bottom:12px; }
+    .dev-card-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .dev-move-btn { background:none; border:1.5px solid currentColor; border-radius:8px; padding:5px 11px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity 0.15s; }
+    .dev-move-btn:hover { opacity:0.75; }
+    @media (min-width:700px) {
+      #dev-board { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; align-items:start; }
+      .dev-column { display:flex !important; }
+    }
+
     .tmmb-hl { color: var(--accent); font-weight: 600; }
     .tmmb-hl.gold   { color: var(--gold); }
     .tmmb-hl.purple { color: var(--accent2); }
@@ -2136,7 +2155,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-vault',this);tmmb_initVault()">Call Vault</button>
       <button class="tmmb-tab" id="tmmb-tab-analyser" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this)">My Development</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this);dev_render()">My Development</button>
     </div>
 
     <div class="tmmb-wrap">
@@ -2444,134 +2463,19 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div id="tmmb-development" class="tmmb-section">
           <div class="tmmb-section-header">
             <h2>My Development</h2>
-            <p>Aaron's review — July 2026. Read before every close call.</p>
+            <p>Move cards up as you prove the skill. Analyse a transcript to get AI-suggested moves.</p>
           </div>
-
-          <!-- Sub-tab nav -->
-          <div class="tmmb-sub-tabs">
-            <button class="tmmb-sub-tab active" onclick="tmmb_showSubTab('dev-red',this)" style="border-color:#dc2626;color:#dc2626;">🔴 Fix Now</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-orange',this)" style="border-color:#d97706;color:#d97706;">🟠 Work On</button>
-            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-green',this)" style="border-color:#059669;color:#059669;">🟢 Doing Well</button>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+            <button id="dev-btn-red" class="dev-col-btn active red" onclick="dev_showCol('red',this)">🔴 Fix Now <span class="dev-cnt" id="dev-cnt-red"></span></button>
+            <button id="dev-btn-orange" class="dev-col-btn orange" onclick="dev_showCol('orange',this)">🟠 Work On <span class="dev-cnt" id="dev-cnt-orange"></span></button>
+            <button id="dev-btn-green" class="dev-col-btn green" onclick="dev_showCol('green',this)">🟢 Doing Well <span class="dev-cnt" id="dev-cnt-green"></span></button>
+            <button onclick="dev_openAnalyse()" style="margin-left:auto;background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.25);color:#7c3aed;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">✦ Analyse call</button>
           </div>
-
-          <!-- RED: Fix Now -->
-          <div id="dev-red" class="tmmb-sub-section active">
-            <div style="background:#fef2f2;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#dc2626;font-weight:600;">Needs attention on the next call — these are the patterns Aaron flagged most urgently.</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="background:#fff;border:1.5px solid #fecaca;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:6px;">Stop saying "100%"</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">It's a filler that makes you sound like you're agreeing rather than leading. Replace with silence or <span style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;">"that makes sense."</span></div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fecaca;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:6px;">Stop over-validating</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">"Amazing, totally, absolutely, yeah, 100%" on every response pushes away type-A personalities and men. Stay warm — calibrate the intensity to the prospect.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fecaca;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:6px;">Stop cushioning the price</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">Don't say "obviously we do charge a fee." Say the number and stop.</div>
-                <div style="background:#fef2f2;border-left:3px solid #dc2626;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"The investment for the full 12 months is £4,000." — silence.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fecaca;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:6px;">Add the recap bridge before the pitch</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">You're going straight from discovery into pitch. Summarise everything back first — builds trust and frames the pitch as the direct answer to their situation.</div>
-                <div style="background:#fef2f2;border-left:3px solid #dc2626;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"Just to make sure I'm on the exact same page — let me relay what I understand about your situation. Anything I've missed, let me know."</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fecaca;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:6px;">Pre-close check before price — non-negotiable</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">You did it on Chloe's call and it worked. You didn't do it on Ellie's. Every single time, before £4,000.</div>
-                <div style="background:#fef2f2;border-left:3px solid #dc2626;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"In your honest opinion, do you feel like what we do can get you to [their number]?"</div>
-              </div>
-              <div style="background:#fff5f5;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">🚫</span>
-                <div><div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:4px;">Never mention the coach pathway on a close call</div><div style="font-size:13px;color:#374151;line-height:1.6;">Aaron was explicit — get them through the programme first. It undermines the pitch.</div></div>
-              </div>
-              <div style="background:#fff5f5;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">🚫</span>
-                <div><div style="font-weight:700;color:#dc2626;font-size:13px;margin-bottom:4px;">Don't use the China point for experienced prospects</div><div style="font-size:13px;color:#374151;line-height:1.6;">Only for complete beginners who need convincing the opportunity is real. For anyone already doing TikTok Shop, it wastes time.</div></div>
-              </div>
-            </div>
+          <div id="dev-board">
+            <div id="dev-col-red" class="dev-column active"></div>
+            <div id="dev-col-orange" class="dev-column"></div>
+            <div id="dev-col-green" class="dev-column"></div>
           </div>
-
-          <!-- ORANGE: Work On -->
-          <div id="dev-orange" class="tmmb-sub-section">
-            <div style="background:#fffbeb;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#d97706;font-weight:600;">Important but developmental — build these habits over the coming weeks.</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Press vague answers — every time</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">Aaron praised you doing it once with Chloe's daughter moment. Do it every single time a prospect gives a surface-level answer.</div>
-                <div style="background:#fffbeb;border-left:3px solid #d97706;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"Could you explain that a little more?" &nbsp;/&nbsp; "What do you mean by that?"</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Ask the catalyst question deliberately</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">The single most important question on the call. Make it a structured beat, not something you hope they volunteer.</div>
-                <div style="background:#fffbeb;border-left:3px solid #d97706;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"What actually changed that made you look into this now rather than carrying on figuring it out yourself?"</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Future pace past step one</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">You're stopping at "what does success look like." Full sequence:</div>
-                <div style="background:#fffbeb;padding:10px 12px;border-radius:8px;margin-top:10px;font-size:12px;color:#374151;line-height:1.8;">1. What does success look like?<br>2. What number gets you there?<br>3. What does your life actually look like the day you hit that number?</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Sit in emotional moments</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">When something loaded comes up — daughter with ADHD, fear of failure, leaving home at 15 — slow down, mirror the emotion, let it breathe before moving on.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Add a case study between pitch and expectations</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">After the three phases you go straight to price. One specific case study, matched to whoever you're speaking to, needs to sit there first.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Slow down — you're speaking too fast</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">Two to three seconds before responding is fine. <strong>Silence is not awkward — it's power.</strong> Rushing communicates anxiety.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Don't let your investment in the outcome show</div>
-                <div style="background:#fffbeb;border-left:3px solid #d97706;padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:10px;font-size:13px;color:#111827;font-style:italic;">"You seem like you care a lot about the outcome — I love that — but I don't want to be able to see it." — Aaron</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">Trust the process. You don't need to rush to the next point to prove the call is going well.</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">Partner objection — be more firm with the three-way call</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;">You're handling it but not firmly enough. Offer it as a concrete next step, not a vague suggestion.</div>
-                <div style="background:#fffbeb;border-left:3px solid #d97706;padding:10px 12px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13px;color:#111827;font-style:italic;">"He's home at half eleven — could we jump on a quick call together then? I'd rather answer his questions directly than have you try to explain it all secondhand."</div>
-              </div>
-              <div style="background:#fff;border:1.5px solid #fde68a;border-radius:14px;padding:16px;">
-                <div style="font-weight:700;color:#d97706;font-size:13px;margin-bottom:6px;">0.1% fear handle</div>
-                <div style="font-size:13px;color:#374151;line-height:1.6;margin-bottom:10px;">Small residual hesitation — don't dig into it, diffuse it.</div>
-                <div style="background:#fffbeb;border-left:3px solid #d97706;padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px;color:#111827;font-style:italic;line-height:1.7;">"You've got butterflies, that's completely normal. You're about to make a real change. If you were inside the community with all the support around you, do you think those butterflies would quickly turn into relief?"<br><br><span style="font-style:normal;font-weight:600;">Get the yes →</span> "So how do we feel about that 0.1% now?"</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- GREEN: Doing Well -->
-          <div id="dev-green" class="tmmb-sub-section">
-            <div style="background:#f0fdf4;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#059669;font-weight:600;">Aaron specifically praised these. Protect them — don't let the fixes above erode what's already working.</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">Warmth and rapport building</div><div style="font-size:13px;color:#374151;line-height:1.6;">Natural and genuine. Don't suppress it — calibrate the intensity to the prospect.</div></div>
-              </div>
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">Composure under pressure</div><div style="font-size:13px;color:#374151;line-height:1.6;">Card decline, partner objection — you stayed calm and problem-solved. Aaron said this was really nice to see.</div></div>
-              </div>
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">Overall call structure is solid</div><div style="font-size:13px;color:#374151;line-height:1.6;">Opening frame, discovery to commitment to future pace to pitch — the bones are right. These are polishing jobs, not rebuilds.</div></div>
-              </div>
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">"What do you mean by that?" — Aaron called it the best moment on the call</div><div style="font-size:13px;color:#374151;line-height:1.6;">Keep doing it. Every time, not just once.</div></div>
-              </div>
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">Transparency and consultative instinct</div><div style="font-size:13px;color:#374151;line-height:1.6;">"If I don't feel like we can help I'll tell you straight" lands every time. Don't lose that.</div></div>
-              </div>
-              <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                <span style="font-size:16px;flex-shrink:0;margin-top:1px;">✅</span>
-                <div><div style="font-weight:700;color:#059669;font-size:13px;margin-bottom:4px;">Natural personality in rapport</div><div style="font-size:13px;color:#374151;line-height:1.6;">Once trust is built you relax and let your character through. Aaron said this is exactly what made the Ellie rapport section so strong.</div></div>
-              </div>
-            </div>
-          </div>
-
         </div>
 
         <!-- ===== MONTHLY TRACKER ===== -->
@@ -3702,6 +3606,204 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   /* ---------- SALES ---------- */
   /* loadSales / logSalesCall removed — superseded by TMMB dashboard below */
 
+  /* ===================== DEV PIPELINE ===================== */
+
+  const DEV_PIPELINE_KEY = 'dev_pipeline';
+
+  const DEV_CARDS_DEFAULT = [
+    { id:'d1',  col:'red',    label:'Stop saying "100%"',                    detail:'Replace with silence or "that makes sense." It\'s a filler that makes you sound like you\'re agreeing rather than leading.' },
+    { id:'d2',  col:'red',    label:'Stop over-validating',                  detail:'"Amazing, totally, absolutely" on every response pushes away type-A personalities and men. Calibrate warmth to the prospect.' },
+    { id:'d3',  col:'red',    label:'Stop cushioning the price',             detail:'"The investment for the full 12 months is £4,000." — then silence. Don\'t soften it.' },
+    { id:'d4',  col:'red',    label:'Recap bridge before the pitch',         detail:'Summarise their situation before transitioning. "Let me relay what I understand about your situation — anything I\'ve missed?"' },
+    { id:'d5',  col:'red',    label:'Pre-close check before price',          detail:'"In your honest opinion, do you feel like what we do can get you to [their number]?" — every call, before £4,000.' },
+    { id:'d6',  col:'red',    label:'Never mention coach pathway on calls',  detail:'Aaron was explicit — get them through the programme first. It undermines the pitch credibility.' },
+    { id:'d7',  col:'red',    label:'No China point for experienced prospects', detail:'Only for complete beginners. For anyone already doing TikTok Shop it wastes time.' },
+    { id:'d8',  col:'orange', label:'Press vague answers every time',        detail:'"Could you explain that a little more?" or "What do you mean by that?" — not just once, on every surface-level answer.' },
+    { id:'d9',  col:'orange', label:'Ask the catalyst question deliberately',detail:'"What actually changed that made you look into this now rather than carrying on figuring it out yourself?" — every call.' },
+    { id:'d10', col:'orange', label:'Future pace past step one',             detail:'Dream → exact number → what life looks like the day they hit it. You\'re stopping at step one.' },
+    { id:'d11', col:'orange', label:'Sit in emotional moments',              detail:'Slow down, mirror the emotion, let it breathe before moving to the next question.' },
+    { id:'d12', col:'orange', label:'Add case study before price',           detail:'One specific case study matched to the prospect, between the pitch and expectations section.' },
+    { id:'d13', col:'orange', label:'Slow down — speaking pace',            detail:'Two to three second pauses before responding are fine. Silence is power, not awkward.' },
+    { id:'d14', col:'orange', label:"Don't let investment in outcome show",  detail:'"You seem like you care a lot about the outcome — I love that — but I don\'t want to be able to see it." — Aaron.' },
+    { id:'d15', col:'orange', label:'Partner objection — firm 3-way call',  detail:'"Could we jump on a quick call together then? I\'d rather answer his questions directly than have you try to explain it secondhand."' },
+    { id:'d16', col:'orange', label:'0.1% fear handle',                     detail:'"You\'ve got butterflies, that\'s normal... do you think those butterflies would turn into relief?" → yes → "So how do we feel about that 0.1% now?"' },
+    { id:'d17', col:'green',  label:'Warmth and rapport building',           detail:'Natural and genuine. Don\'t suppress it — calibrate the intensity to the prospect.' },
+    { id:'d18', col:'green',  label:'Composure under pressure',              detail:'Card decline, partner objection — stayed calm and problem-solved. Aaron said this was really nice to see.' },
+    { id:'d19', col:'green',  label:'Overall call structure',                detail:'Opening frame, discovery to commitment to future pace to pitch — the bones are right.' },
+    { id:'d20', col:'green',  label:'"What do you mean by that?" clarification', detail:'Aaron called it the best moment on the Chloe call. Keep doing it every time, not just once.' },
+    { id:'d21', col:'green',  label:'Transparency and consultative instinct',detail:'"If I don\'t feel like we can help I\'ll tell you straight" lands every time.' },
+    { id:'d22', col:'green',  label:'Natural personality in rapport',        detail:'Once trust is built you relax and let your character through — what made the Ellie rapport section so strong.' },
+  ];
+
+  function dev_getCards() {
+    try {
+      const s = localStorage.getItem(DEV_PIPELINE_KEY);
+      return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEV_CARDS_DEFAULT));
+    } catch(e) { return JSON.parse(JSON.stringify(DEV_CARDS_DEFAULT)); }
+  }
+
+  function dev_saveCards(cards) {
+    localStorage.setItem(DEV_PIPELINE_KEY, JSON.stringify(cards));
+    if (sb) sb.from('hub_data')
+      .upsert({ key: DEV_PIPELINE_KEY, value: cards, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .then(({ error }) => { if (error) console.error('[hub_sync] dev_saveCards failed:', error); });
+  }
+
+  function dev_showCol(col, el) {
+    document.querySelectorAll('.dev-column').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.dev-col-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('dev-col-' + col).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function dev_moveCard(id, dir) {
+    const order = ['red', 'orange', 'green'];
+    const cards = dev_getCards();
+    const card = cards.find(c => c.id === id);
+    if (!card) return;
+    const newIdx = order.indexOf(card.col) + dir;
+    if (newIdx < 0 || newIdx >= order.length) return;
+    card.col = order[newIdx];
+    dev_saveCards(cards);
+    dev_render();
+  }
+
+  function dev_render() {
+    const cards = dev_getCards();
+    const cols = { red: [], orange: [], green: [] };
+    cards.forEach(c => { if (cols[c.col]) cols[c.col].push(c); });
+
+    const cfg = {
+      red:    { border:'#fecaca', text:'#dc2626', upLabel:'Move to Work On →' },
+      orange: { border:'#fde68a', text:'#d97706', upLabel:'Move to Doing Well →' },
+      green:  { border:'#a7f3d0', text:'#059669', upLabel:'' },
+    };
+
+    ['red','orange','green'].forEach(col => {
+      const cnt = document.getElementById('dev-cnt-' + col);
+      if (cnt) cnt.textContent = cols[col].length;
+      const el = document.getElementById('dev-col-' + col);
+      if (!el) return;
+      if (!cols[col].length) {
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;border:1.5px dashed #e5e7eb;border-radius:14px;">No cards here yet</div>';
+        return;
+      }
+      el.innerHTML = cols[col].map(card => {
+        const c = cfg[col];
+        const canUp   = col !== 'green';
+        const canBack = col !== 'red';
+        return `<div class="dev-card" style="border-color:${c.border};">
+          <div class="dev-card-label" style="color:${c.text};">${card.label}</div>
+          <div class="dev-card-detail">${card.detail}</div>
+          <div class="dev-card-actions">
+            ${canBack ? `<button class="dev-move-btn" style="color:#9ca3af;" onclick="dev_moveCard('${card.id}',-1)">← Back</button>` : '<span></span>'}
+            ${canUp   ? `<button class="dev-move-btn" style="color:${c.text};border-color:${c.border};" onclick="dev_moveCard('${card.id}',1)">${c.upLabel}</button>` : '<span style="font-size:11px;color:#059669;font-weight:700;">★ Achieved</span>'}
+          </div>
+        </div>`;
+      }).join('');
+    });
+  }
+
+  function dev_openAnalyse() {
+    let modal = document.getElementById('dev-analyse-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'dev-analyse-modal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);overflow-y:auto;padding:20px 16px;box-sizing:border-box;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:20px;max-width:560px;margin:0 auto;padding:24px 20px 20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h3 style="margin:0;font-size:17px;font-weight:700;color:#111827;">Analyse Against Development Plan</h3>
+            <button onclick="dev_closeAnalyse()" style="background:none;border:none;font-size:26px;color:#9ca3af;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+          </div>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 14px;">Paste a call transcript and the AI will assess each of your development cards — suggesting which ones to move up, keep, or move back based on what it sees in the call.</p>
+          <div class="tmmb-form-group" style="margin-bottom:14px;">
+            <label class="tmmb-form-label">Call Transcript</label>
+            <textarea id="dev-transcript-input" rows="10" placeholder="Paste the full transcript here..." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
+          </div>
+          <button id="dev-analyse-run-btn" onclick="dev_runAnalyse()" class="tmmb-btn tmmb-btn-primary" style="width:100%;justify-content:center;margin-bottom:16px;">Analyse →</button>
+          <div id="dev-analyse-results" style="display:none;"></div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) dev_closeAnalyse(); });
+    }
+    document.getElementById('dev-transcript-input').value = '';
+    document.getElementById('dev-analyse-results').style.display = 'none';
+    document.getElementById('dev-analyse-results').innerHTML = '';
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function dev_closeAnalyse() {
+    const modal = document.getElementById('dev-analyse-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  async function dev_runAnalyse() {
+    const transcript = (document.getElementById('dev-transcript-input').value || '').trim();
+    if (transcript.length < 50) { alert('Paste a longer transcript first.'); return; }
+    const btn = document.getElementById('dev-analyse-run-btn');
+    btn.disabled = true; btn.textContent = 'Analysing…';
+    try {
+      const res  = await fetch('https://cutting-dashboard.vercel.app/api/dev-analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, pipeline: dev_getCards() })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.recommendations) throw new Error(json.error || 'No response');
+      dev_showRecommendations(json.recommendations);
+    } catch(e) {
+      alert('Analysis failed: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Analyse →';
+    }
+  }
+
+  function dev_showRecommendations(recs) {
+    const colLabel = { red:'Fix Now', orange:'Work On', green:'Doing Well' };
+    const colColor = { red:'#dc2626', orange:'#d97706', green:'#059669' };
+    const results = document.getElementById('dev-analyse-results');
+    results.style.display = 'block';
+    if (!recs.length) {
+      results.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:13px;padding:20px;">No specific recommendations — check back after more calls.</div>';
+      return;
+    }
+    results.innerHTML = `
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9ca3af;margin-bottom:12px;">AI Recommendations (${recs.length})</div>
+      ${recs.map(rec => {
+        const moving = rec.current !== rec.suggested;
+        return `<div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">${rec.label}</div>
+          ${moving
+            ? `<div style="font-size:11px;font-weight:700;margin-bottom:8px;"><span style="color:${colColor[rec.current]};">${colLabel[rec.current]}</span> <span style="color:#9ca3af;">→</span> <span style="color:${colColor[rec.suggested]};">${colLabel[rec.suggested]}</span></div>`
+            : `<div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Stay in ${colLabel[rec.current]}</div>`}
+          <div style="font-size:12px;color:#374151;line-height:1.55;margin-bottom:${rec.evidence ? '8px' : '0'};">${rec.reason}</div>
+          ${rec.evidence ? `<div style="background:#fff;border-left:3px solid #e5e7eb;padding:8px 10px;font-size:11px;color:#6b7280;font-style:italic;margin-bottom:10px;border-radius:0 6px 6px 0;">"${rec.evidence}"</div>` : ''}
+          ${moving ? `<div style="display:flex;gap:8px;">
+            <button onclick="dev_applyRec('${rec.id}','${rec.suggested}',this)" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Accept</button>
+            <button onclick="this.closest('div[style]').remove()" style="background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:#9ca3af;cursor:pointer;font-family:'Inter',sans-serif;">Keep</button>
+          </div>` : `<div style="font-size:11px;color:#059669;font-weight:700;">✓ No change needed</div>`}
+        </div>`;
+      }).join('')}`;
+  }
+
+  function dev_applyRec(id, newCol, btn) {
+    const cards = dev_getCards();
+    const card = cards.find(c => c.id === id);
+    if (!card) return;
+    card.col = newCol;
+    dev_saveCards(cards);
+    dev_render();
+    const row = btn.closest('div[style]');
+    if (row) {
+      row.style.opacity = '0.5';
+      row.style.pointerEvents = 'none';
+      row.querySelector('div:last-child').innerHTML = '<div style="font-size:11px;color:#059669;font-weight:700;">✓ Moved</div>';
+    }
+  }
+
   /* ===================== TMMB CLOSER DASHBOARD ===================== */
 
   function tmmb_showTab(id, el) {
@@ -4556,7 +4658,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -4596,6 +4698,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               tmmb_updateOverview();
               tmmb_renderVault();
             }
+            if (key === 'dev_pipeline') {
+              localStorage.setItem(DEV_PIPELINE_KEY, JSON.stringify(value));
+              dev_render();
+            }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
       }
@@ -4625,6 +4731,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadWorkouts();
     highlightSpainPrepToday();
     htd_updateCard();
+    dev_render();
     hub_initSync();
   });
 
