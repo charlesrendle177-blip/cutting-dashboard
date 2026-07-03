@@ -1658,6 +1658,7 @@
         <span class="dot"></span>
         Charles' Hub — Personal Command Centre
         <span style="opacity:0.45;font-size:10px;margin-left:8px;font-weight:400">v2.0</span>
+        <span id="hub-sync-dot" title="Checking sync…" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-left:8px;vertical-align:middle;transition:background 0.4s;"></span>
       </div>
       <div class="greeting-text fu fu2" id="greeting">
         Good morning, <span class="name">Charles</span>
@@ -4246,44 +4247,63 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   /* ---------- SUPABASE SYNC ---------- */
+  let hub_syncSubscribed = false;
+
+  function hub_setSyncDot(ok) {
+    const dot = document.getElementById('hub-sync-dot');
+    if (dot) { dot.style.background = ok ? '#059669' : '#ef4444'; dot.title = ok ? 'Synced' : 'Offline'; }
+  }
+
+  // Pull latest data from Supabase — called on load and on visibility change
+  async function hub_fetchRemote() {
+    if (!sb) return;
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls']);
+    if (error || !rows) { hub_setSyncDot(false); return; }
+    for (const row of rows) {
+      const remote = row.value || [];
+      const local  = JSON.parse(localStorage.getItem(row.key) || '[]');
+      if (remote.length === 0 && local.length > 0) {
+        await sb.from('hub_data').upsert({ key: row.key, value: local, updated_at: new Date().toISOString() });
+      } else if (remote.length > 0) {
+        localStorage.setItem(row.key, JSON.stringify(remote));
+      }
+    }
+    hub_setSyncDot(true);
+    htd_render();
+    htd_updateCard();
+  }
+
   async function hub_initSync() {
     if (!sb) return;
     try {
-      const { data: rows } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls']);
-      if (rows) {
-        for (const row of rows) {
-          const remote = row.value || [];
-          const local  = JSON.parse(localStorage.getItem(row.key) || '[]');
-          if (remote.length === 0 && local.length > 0) {
-            // First-time setup: push existing local data up to Supabase
-            await sb.from('hub_data').upsert({ key: row.key, value: local, updated_at: new Date().toISOString() });
-          } else if (remote.length > 0) {
-            localStorage.setItem(row.key, JSON.stringify(remote));
-          }
-        }
-        htd_render();
-        htd_updateCard();
-      }
+      await hub_fetchRemote();
 
-      // Real-time: refresh when another device saves
-      sb.channel('hub_sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hub_data' }, payload => {
-          const row = payload.new || {};
-          const key = row.key;
-          const value = typeof row.value === 'string' ? JSON.parse(row.value) : (row.value || []);
-          if (key === 'hub_todos') {
-            localStorage.setItem(HTD_KEY, JSON.stringify(value));
-            htd_render();
-            htd_updateCard();
-          }
-          if (key === 'tmmb_calls') {
-            localStorage.setItem('tmmb_calls', JSON.stringify(value));
-            tmmb_updateOverview();
-            tmmb_renderVault();
-          }
-        })
-        .subscribe(status => console.log('[hub_sync] realtime status:', status));
-    } catch(e) { console.warn('Supabase sync error:', e); }
+      // Subscribe to realtime once only — re-subscribing on every visibility change
+      // creates duplicate channels and causes double renders
+      if (!hub_syncSubscribed) {
+        hub_syncSubscribed = true;
+        sb.channel('hub_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'hub_data' }, payload => {
+            const row = payload.new || {};
+            const key = row.key;
+            const value = typeof row.value === 'string' ? JSON.parse(row.value) : (row.value || []);
+            if (key === 'hub_todos') {
+              localStorage.setItem(HTD_KEY, JSON.stringify(value));
+              htd_render();
+              htd_updateCard();
+            }
+            if (key === 'tmmb_calls') {
+              localStorage.setItem('tmmb_calls', JSON.stringify(value));
+              tmmb_updateOverview();
+              tmmb_renderVault();
+            }
+          })
+          .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
+      }
+    } catch(e) {
+      hub_setSyncDot(false);
+      console.warn('Supabase sync error:', e);
+    }
   }
 
   /* ---------- INIT ---------- */
@@ -4294,9 +4314,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       htd_save(_todos.map(t => t.section === 'admin' ? { ...t, section: 'personal' } : t));
     }
 
-    // Re-sync when app comes back to foreground (covers iOS backgrounding)
+    // Re-fetch data when app comes back to foreground — don't re-subscribe
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && sb) hub_initSync();
+      if (!document.hidden && sb) hub_fetchRemote();
     });
 
     initGreeting();
