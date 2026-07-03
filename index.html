@@ -2154,7 +2154,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" id="tmmb-tab-calllog" onclick="tmmb_showTab('tmmb-calllog',this)">Call Log</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-monthly',this);tmmb_renderMonthly()">Monthly</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-vault',this);tmmb_initVault()">Call Vault</button>
-      <button class="tmmb-tab" id="tmmb-tab-analyser" onclick="tmmb_showTab('tmmb-analyser',this)">Call Analyser</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this);dev_render()">My Development</button>
     </div>
 
@@ -2417,45 +2416,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         </div>
 
         <!-- ===== CALL ANALYSER ===== -->
-        <div id="tmmb-analyser" class="tmmb-section">
-          <div class="tmmb-section-header">
-            <h2>Call Analyser</h2>
-            <p>Select a call from the log, paste the Fathom transcript, and get instant AI coaching feedback</p>
-          </div>
-
-          <!-- Call context banner — populated by tmmb_analyseFromCall() -->
-          <div id="tmmb-analyser-ctx" style="display:none;margin-bottom:16px;background:#fff;border:1px solid rgba(5,150,105,0.25);border-radius:14px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-              <div>
-                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:#059669;margin-bottom:4px;">Analysing call</div>
-                <div style="font-weight:700;color:#111827;font-size:15px;" id="tmmb-ctx-name"></div>
-                <div style="font-size:12px;color:#6b7280;margin-top:2px;" id="tmmb-ctx-meta"></div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                <a id="tmmb-ctx-fathom" href="#" target="_blank" rel="noopener"
-                   style="display:none;background:#f0fdf4;border:1px solid rgba(5,150,105,0.3);color:#059669;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
-                  Open Fathom Recording →
-                </a>
-                <button onclick="tmmb_clearAnalyserCtx()" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:12px;padding:4px 8px;">Clear</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-label">Transcript Input</div>
-            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Open Fathom, copy the full transcript, and paste it below.</div>
-            <div class="tmmb-form-group">
-              <textarea id="tmmb-transcript-input" rows="10" placeholder="Paste the full call transcript here — include both sides of the conversation. The more detail, the better the feedback."></textarea>
-            </div>
-            <button class="tmmb-btn tmmb-btn-primary" onclick="tmmb_analyseCall()" id="tmmb-analyse-btn">
-              <span id="tmmb-analyse-label">Analyse Call →</span>
-            </button>
-          </div>
-
-          <div id="tmmb-analyser-out" class="tmmb-analyser-out">
-            <div id="tmmb-analyser-content"></div>
-          </div>
-        </div>
 
         <div id="tmmb-scripts" class="tmmb-section" style="display:none;"></div>
 
