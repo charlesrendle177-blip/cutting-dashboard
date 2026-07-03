@@ -2447,8 +2447,19 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <p>Aaron's review — July 2026. Read before every close call.</p>
           </div>
 
+          <!-- Sub-tab nav -->
+          <div class="tmmb-sub-tabs">
+            <button class="tmmb-sub-tab active" onclick="tmmb_showSubTab('dev-language',this)">Language</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-discovery',this)">Discovery</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-structure',this)">Structure</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-rules',this)">Hard Rules</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-presence',this)">Presence</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-wins',this)">Wins ✅</button>
+            <button class="tmmb-sub-tab" onclick="tmmb_showSubTab('dev-objections',this)">Objections</button>
+          </div>
+
           <!-- S1: Language Habits -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-language" class="tmmb-sub-section active">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">STOP DOING</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Language Habits to Break</span>
@@ -2475,7 +2486,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S2: Discovery Weaknesses -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-discovery" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#fef3c7;color:#d97706;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">IMPROVE</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Discovery Weaknesses</span>
@@ -2513,7 +2524,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S3: Structural Gaps -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-structure" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#dbeafe;color:#2563eb;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">STRUCTURE</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Structural Gaps</span>
@@ -2542,7 +2553,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S4: Never Do Again -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-rules" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">HARD RULES</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Never Do Again</span>
@@ -2564,7 +2575,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S5: Energy and Presence -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-presence" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#ede9fe;color:#7c3aed;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">PRESENCE</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Energy and Presence</span>
@@ -2587,7 +2598,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S6: What's Working -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-wins" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#d1fae5;color:#059669;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">KEEP DOING</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">What's Already Working</span>
@@ -2617,7 +2628,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- S7: Objection Handling -->
-          <div style="margin-bottom:20px;">
+          <div id="dev-objections" class="tmmb-sub-section">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span style="background:#e0e7ff;color:#4f46e5;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">SCRIPTS</span>
               <span style="font-size:14px;font-weight:700;color:#111827;">Objection Handling Gaps</span>
@@ -2640,9 +2651,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
 
-          <div style="background:#f9fafb;border-radius:14px;padding:16px;margin-bottom:8px;text-align:center;">
-            <div style="font-size:12px;color:#9ca3af;">From Aaron's review · July 2026</div>
-          </div>
         </div>
 
         <!-- ===== MONTHLY TRACKER ===== -->

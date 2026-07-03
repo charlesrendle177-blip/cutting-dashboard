@@ -12,7 +12,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>" 2>/dev/null || echo "
 git push origin main
 
 echo "→ Waiting for GitHub Pages build..."
-TOKEN=$(git remote get-url origin | grep -oP '(?<=https://)[^@]+(?=@)' || echo "")
+TOKEN=$(git remote get-url origin | python3 -c "import sys,re; m=re.search(r'https://([^@]+)@',sys.stdin.read()); print(m.group(1) if m else '')" 2>/dev/null || echo "")
 
 for i in $(seq 1 24); do
   sleep 5
