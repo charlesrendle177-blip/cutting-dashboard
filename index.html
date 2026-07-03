@@ -3603,6 +3603,25 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       .then(({ error }) => { if (error) console.error('[hub_sync] tmmb_saveCalls failed:', error); });
   }
 
+  // Returns how many monthly payments a paytype involves
+  function tmmb_paytypeMonths(paytype) {
+    const map = { pif:1, deposit:2, plan2:2, plan3:3, plan4:4, plan6:6, plan12:12 };
+    return map[paytype] || 1;
+  }
+
+  // Commission attributable to a specific year/month for a single call
+  function tmmb_commissionForMonth(call, year, month) {
+    if (call.outcome !== 'closed') return 0;
+    const n = tmmb_paytypeMonths(call.paytype || 'pif');
+    const totalComm = Math.round((call.dealValue || 4000) * 0.1);
+    const d = new Date(call.date + 'T12:00:00');
+    const callAbsMonth = d.getFullYear() * 12 + d.getMonth();
+    const targetAbsMonth = year * 12 + month;
+    const diff = targetAbsMonth - callAbsMonth;
+    if (diff < 0 || diff >= n) return 0;
+    return Math.round(totalComm / n);
+  }
+
   function tmmb_onOutcomeChange(val) {
     const el = document.getElementById('tmmb-deal-section');
     if (el) el.classList.toggle('active', val === 'closed');
@@ -4024,7 +4043,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const occ        = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
     const fup        = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
     const closeRate  = shows > 0 ? Math.round((closes / shows) * 100) : 0;
-    const commission = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    // Commission: spread payment plan deals across their months
+    const allCalls   = tmmb_getCalls();
+    const commission = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, year, month), 0);
     const cashIn     = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
 
     document.getElementById('tm-shows').textContent      = shows;
