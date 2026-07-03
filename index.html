@@ -3672,6 +3672,169 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_updateOverview();
   }
 
+  function tmmb_editCall(id) {
+    const calls = tmmb_getCalls();
+    const c = calls.find(x => x.id === id);
+    if (!c) return;
+    let modal = document.getElementById('tmmb-edit-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'tmmb-edit-modal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);overflow-y:auto;padding:20px 16px;box-sizing:border-box;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:20px;max-width:540px;margin:0 auto;padding:24px 20px 20px;position:relative;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <h3 style="margin:0;font-size:17px;font-weight:700;color:#111827;">Edit Call</h3>
+            <button onclick="tmmb_closeEditModal()" style="background:none;border:none;font-size:26px;color:#9ca3af;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+          </div>
+          <div class="tmmb-form-grid" style="margin-bottom:14px;">
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Date</label>
+              <input type="date" id="em-date">
+            </div>
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Outcome</label>
+              <select id="em-outcome">
+                <option value="closed">Closed</option>
+                <option value="followup">Follow-up</option>
+                <option value="noclose">No Close</option>
+                <option value="noshow">No Show</option>
+              </select>
+            </div>
+          </div>
+          <div class="tmmb-form-grid" style="margin-bottom:14px;">
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Prospect Name</label>
+              <input type="text" id="em-name" placeholder="Full name">
+            </div>
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Email</label>
+              <input type="email" id="em-email" placeholder="email@example.com">
+            </div>
+          </div>
+          <div class="tmmb-form-grid" style="margin-bottom:14px;">
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Lead Source</label>
+              <select id="em-source">
+                <option value="">Select...</option>
+                <option value="setter">Setter</option>
+                <option value="referral">Referral</option>
+                <option value="ad">Paid Ad</option>
+                <option value="inbound">Inbound</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Programme / Offer</label>
+              <input type="text" id="em-deal" placeholder="e.g. Primed 90-Day">
+            </div>
+          </div>
+          <div class="tmmb-form-grid" style="margin-bottom:14px;">
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Payment Type</label>
+              <select id="em-paytype">
+                <option value="pif">PIF</option>
+                <option value="deposit">Deposit</option>
+                <option value="plan2">Plan · 2m</option>
+                <option value="plan3">Plan · 3m</option>
+                <option value="plan4">Plan · 4m</option>
+                <option value="plan6">Plan · 6m</option>
+                <option value="plan12">Plan · 12m</option>
+              </select>
+            </div>
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Cash Collected (£)</label>
+              <input type="number" id="em-cash" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+          <div class="tmmb-form-group" style="margin-bottom:14px;">
+            <label class="tmmb-form-label">Total Deal Value (£)</label>
+            <input type="number" id="em-dealValue" min="0" step="100" placeholder="4000">
+          </div>
+          <div class="tmmb-form-group" style="margin-bottom:14px;">
+            <label class="tmmb-form-label">Objections Faced</label>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;" id="em-obj-checkboxes"></div>
+          </div>
+          <div class="tmmb-form-group" style="margin-bottom:14px;">
+            <label class="tmmb-form-label">Notes</label>
+            <textarea id="em-notes" rows="3" placeholder="Key notes from the call..." style="width:100%;box-sizing:border-box;resize:vertical;"></textarea>
+          </div>
+          <div class="tmmb-form-grid" style="margin-bottom:20px;">
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Fathom Recording Link</label>
+              <input type="url" id="em-fathom" placeholder="https://fathom.video/calls/...">
+            </div>
+            <div class="tmmb-form-group">
+              <label class="tmmb-form-label">Prospect Video Link</label>
+              <input type="url" id="em-prosvideo" placeholder="https://loom.com/share/...">
+            </div>
+          </div>
+          <button onclick="tmmb_saveEditCall()" class="tmmb-btn tmmb-btn-primary" style="width:100%;justify-content:center;">Save Changes</button>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) tmmb_closeEditModal(); });
+    }
+    modal.dataset.editId = id;
+    document.getElementById('em-date').value = c.date || '';
+    document.getElementById('em-outcome').value = c.outcome || 'followup';
+    document.getElementById('em-name').value = c.name || '';
+    document.getElementById('em-email').value = c.email || '';
+    document.getElementById('em-source').value = c.source || '';
+    document.getElementById('em-deal').value = c.deal || '';
+    document.getElementById('em-paytype').value = c.paytype || 'pif';
+    document.getElementById('em-cash').value = c.cash || '';
+    document.getElementById('em-dealValue').value = c.dealValue || '';
+    document.getElementById('em-notes').value = c.notes || '';
+    document.getElementById('em-fathom').value = c.fathom || '';
+    document.getElementById('em-prosvideo').value = c.prosvideo || '';
+    const objList = ['price','timing','not-sure','partner','already-tried','thinking-about-it','results','trust'];
+    const objLabels = {price:'Price',timing:'Bad Timing','not-sure':'Not Sure',partner:'Partner','already-tried':'Already Tried','thinking-about-it':'Thinking About It',results:'Results',trust:'Trust'};
+    document.getElementById('em-obj-checkboxes').innerHTML = objList.map(o =>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 10px;">
+        <input type="checkbox" value="${o}" ${(c.objections||[]).includes(o)?'checked':''} style="accent-color:#059669;">
+        ${objLabels[o]||o}</label>`
+    ).join('');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function tmmb_closeEditModal() {
+    const modal = document.getElementById('tmmb-edit-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function tmmb_saveEditCall() {
+    const modal = document.getElementById('tmmb-edit-modal');
+    if (!modal) return;
+    const id = parseInt(modal.dataset.editId, 10);
+    const calls = tmmb_getCalls();
+    const idx = calls.findIndex(x => x.id === id);
+    if (idx === -1) return;
+    const objections = Array.from(document.querySelectorAll('#em-obj-checkboxes input:checked')).map(cb => cb.value);
+    calls[idx] = {
+      ...calls[idx],
+      date: document.getElementById('em-date').value,
+      outcome: document.getElementById('em-outcome').value,
+      name: document.getElementById('em-name').value.trim(),
+      email: document.getElementById('em-email').value.trim(),
+      source: document.getElementById('em-source').value,
+      deal: document.getElementById('em-deal').value.trim(),
+      paytype: document.getElementById('em-paytype').value,
+      cash: parseInt(document.getElementById('em-cash').value, 10) || 0,
+      dealValue: parseInt(document.getElementById('em-dealValue').value, 10) || 4000,
+      notes: document.getElementById('em-notes').value.trim(),
+      fathom: document.getElementById('em-fathom').value.trim(),
+      prosvideo: document.getElementById('em-prosvideo').value.trim(),
+      objections,
+    };
+    tmmb_saveCalls(calls);
+    tmmb_renderCallHistory();
+    tmmb_updateOverview();
+    tmmb_renderVault();
+    tmmb_closeEditModal();
+  }
+
   function tmmb_outcomeLabel(o) {
     return { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show' }[o] || o;
   }
@@ -3709,6 +3872,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <td>${c.outcome === 'closed' ? `<div class="tmmb-call-cash">£${(c.cash||0).toLocaleString()}</div><div class="tmmb-call-comm">comm £${comm.toLocaleString()}</div>` : '<span style="color:#9ca3af;">—</span>'}</td>
           <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
           <td style="white-space:nowrap;">
+            <button onclick="event.stopPropagation();tmmb_editCall(${c.id})"
+              style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:#7c3aed;cursor:pointer;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;margin-right:4px;" title="Edit this call">Edit</button>
             <button onclick="event.stopPropagation();tmmb_analyseFromCall(${c.id})"
               style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);color:#059669;cursor:pointer;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;margin-right:4px;" title="Analyse this call">Analyse</button>
             <button onclick="event.stopPropagation();tmmb_deleteCall(${c.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;" title="Delete">×</button>
