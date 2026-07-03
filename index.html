@@ -4096,49 +4096,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_analyseFromCall(id) {
-    const c = tmmb_getCalls().find(x => x.id === id);
-    if (!c) return;
-
-    // Switch to analyser tab
     document.querySelectorAll('.tmmb-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.tmmb-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tmmb-analyser').classList.add('active');
-    const tabBtn = document.getElementById('tmmb-tab-analyser');
-    if (tabBtn) tabBtn.classList.add('active');
-
-    // Populate context banner
-    const ctx = document.getElementById('tmmb-analyser-ctx');
-    if (ctx) {
-      ctx.style.display = 'block';
-      document.getElementById('tmmb-ctx-name').textContent = c.name || 'Unknown';
-      const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan·2m', plan3:'Plan·3m', plan4:'Plan·4m', plan6:'Plan·6m', plan12:'Plan·12m' };
-      const metaParts = [
-        c.date,
-        c.deal || null,
-        c.outcome ? ({closed:'Closed',followup:'Follow-up',noclose:'No Close',noshow:'No Show'}[c.outcome]) : null,
-        c.cash ? `£${c.cash.toLocaleString()} collected` : null,
-        c.paytype ? paytypeLabel[c.paytype] : null
-      ].filter(Boolean);
-      document.getElementById('tmmb-ctx-meta').textContent = metaParts.join(' · ');
-      const fathomLink = document.getElementById('tmmb-ctx-fathom');
-      if (c.fathom) {
-        fathomLink.href = c.fathom;
-        fathomLink.style.display = 'inline-block';
-      } else {
-        fathomLink.style.display = 'none';
-      }
-    }
-
-    // Clear previous output and scroll up
-    document.getElementById('tmmb-transcript-input').value = '';
-    const out = document.getElementById('tmmb-analyser-out');
-    if (out) out.classList.remove('visible');
-    ctx.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  function tmmb_clearAnalyserCtx() {
-    const ctx = document.getElementById('tmmb-analyser-ctx');
-    if (ctx) ctx.style.display = 'none';
+    const devSection = document.getElementById('tmmb-development');
+    if (devSection) devSection.classList.add('active');
+    const devTab = document.querySelector('.tmmb-tab[onclick*="tmmb-development"]');
+    if (devTab) devTab.classList.add('active');
+    dev_render();
+    dev_openAnalyse();
   }
 
   // ── Call Vault ────────────────────────────────────────────────
@@ -4638,6 +4603,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     hub_setSyncDot(true);
     htd_render();
     htd_updateCard();
+    dev_render();
   }
 
   async function hub_initSync() {
