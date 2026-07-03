@@ -2508,6 +2508,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="tmmb-stat-label">Commission</div>
               <div class="tmmb-stat-val" style="color:var(--accent)" id="tm-commission">£0</div>
             </div>
+            <div class="tmmb-stat-box">
+              <div class="tmmb-stat-label">Cash Collected</div>
+              <div class="tmmb-stat-val" style="color:#059669" id="tm-cash-in">£0</div>
+            </div>
           </div>
 
           <div class="tmmb-charts-row">
@@ -4454,6 +4458,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('tm-closes').textContent     = closes;
     document.getElementById('tm-close-rate').textContent = closeRate + '%';
     document.getElementById('tm-commission').textContent = '£' + commission.toLocaleString();
+    const cashInEl = document.getElementById('tm-cash-in');
+    if (cashInEl) cashInEl.textContent = '£' + cashIn.toLocaleString();
 
     // Daily data for bar chart
     const daysInMonth = new Date(year, month + 1, 0).getDate();
