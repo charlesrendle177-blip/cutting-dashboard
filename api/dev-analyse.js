@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         system: SYSTEM,
         messages: [{
           role: 'user',
-          content: `Charles's development pipeline:\n\n${pipelineSummary}\n\n---\n\nCall transcript:\n\n${transcript.slice(0, 14000)}`
+          content: `Charles's development pipeline:\n\n${pipelineSummary}\n\n---\n\nCall transcript:\n\n${transcript}`
         }]
       })
     });
