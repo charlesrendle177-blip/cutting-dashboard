@@ -3573,36 +3573,65 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   /* ===================== DEV PIPELINE ===================== */
 
   const DEV_PIPELINE_KEY = 'dev_pipeline';
+  const DEV_PIPELINE_VERSION = 2;
 
   const DEV_CARDS_DEFAULT = [
-    { id:'d1',  col:'red',    label:'Stop saying "100%"',                    detail:'Replace with silence or "that makes sense." It\'s a filler that makes you sound like you\'re agreeing rather than leading.' },
-    { id:'d2',  col:'red',    label:'Stop over-validating',                  detail:'"Amazing, totally, absolutely" on every response pushes away type-A personalities and men. Calibrate warmth to the prospect.' },
-    { id:'d3',  col:'red',    label:'Stop cushioning the price',             detail:'"The investment for the full 12 months is £4,000." — then silence. Don\'t soften it.' },
-    { id:'d4',  col:'red',    label:'Recap bridge before the pitch',         detail:'Summarise their situation before transitioning. "Let me relay what I understand about your situation — anything I\'ve missed?"' },
-    { id:'d5',  col:'red',    label:'Pre-close check before price',          detail:'"In your honest opinion, do you feel like what we do can get you to [their number]?" — every call, before £4,000.' },
-    { id:'d6',  col:'red',    label:'Never mention coach pathway on calls',  detail:'Aaron was explicit — get them through the programme first. It undermines the pitch credibility.' },
-    { id:'d7',  col:'red',    label:'No China point for experienced prospects', detail:'Only for complete beginners. For anyone already doing TikTok Shop it wastes time.' },
-    { id:'d8',  col:'orange', label:'Press vague answers every time',        detail:'"Could you explain that a little more?" or "What do you mean by that?" — not just once, on every surface-level answer.' },
-    { id:'d9',  col:'orange', label:'Ask the catalyst question deliberately',detail:'"What actually changed that made you look into this now rather than carrying on figuring it out yourself?" — every call.' },
-    { id:'d10', col:'orange', label:'Future pace past step one',             detail:'Dream → exact number → what life looks like the day they hit it. You\'re stopping at step one.' },
-    { id:'d11', col:'orange', label:'Sit in emotional moments',              detail:'Slow down, mirror the emotion, let it breathe before moving to the next question.' },
-    { id:'d12', col:'orange', label:'Add case study before price',           detail:'One specific case study matched to the prospect, between the pitch and expectations section.' },
-    { id:'d13', col:'orange', label:'Slow down — speaking pace',            detail:'Two to three second pauses before responding are fine. Silence is power, not awkward.' },
-    { id:'d14', col:'orange', label:"Don't let investment in outcome show",  detail:'"You seem like you care a lot about the outcome — I love that — but I don\'t want to be able to see it." — Aaron.' },
-    { id:'d15', col:'orange', label:'Partner objection — firm 3-way call',  detail:'"Could we jump on a quick call together then? I\'d rather answer his questions directly than have you try to explain it secondhand."' },
-    { id:'d16', col:'orange', label:'0.1% fear handle',                     detail:'"You\'ve got butterflies, that\'s normal... do you think those butterflies would turn into relief?" → yes → "So how do we feel about that 0.1% now?"' },
-    { id:'d17', col:'green',  label:'Warmth and rapport building',           detail:'Natural and genuine. Don\'t suppress it — calibrate the intensity to the prospect.' },
-    { id:'d18', col:'green',  label:'Composure under pressure',              detail:'Card decline, partner objection — stayed calm and problem-solved. Aaron said this was really nice to see.' },
-    { id:'d19', col:'green',  label:'Overall call structure',                detail:'Opening frame, discovery to commitment to future pace to pitch — the bones are right.' },
-    { id:'d20', col:'green',  label:'"What do you mean by that?" clarification', detail:'Aaron called it the best moment on the Chloe call. Keep doing it every time, not just once.' },
-    { id:'d21', col:'green',  label:'Transparency and consultative instinct',detail:'"If I don\'t feel like we can help I\'ll tell you straight" lands every time.' },
-    { id:'d22', col:'green',  label:'Natural personality in rapport',        detail:'Once trust is built you relax and let your character through — what made the Ellie rapport section so strong.' },
+    { id:'d1',  col:'red',    label:'Stop saying "100%"',                      detail:'Replace with silence or "that makes sense." It\'s a filler that makes you sound like you\'re agreeing rather than leading.' },
+    { id:'d2',  col:'orange', label:'Stop over-validating',                    detail:'"Amazing, totally, absolutely" on every response pushes away type-A personalities and men. Aaron noted this used to be a bigger issue — keep it moving.' },
+    { id:'d3',  col:'red',    label:'Stop cushioning the price',               detail:'"The investment for the full 12 months is £4,000." — then silence. Don\'t soften it.' },
+    { id:'d4',  col:'orange', label:'Recap bridge before the pitch',           detail:'The "Fredding" bit is working — you\'re relaying their situation back before pitching and Aaron noticed. Keep it consistent every call.' },
+    { id:'d5',  col:'red',    label:'Pre-close check before price',            detail:'"In your honest opinion, do you feel like what we do can get you to [their number]?" — every call, before £4,000.' },
+    { id:'d6',  col:'red',    label:'Never mention coach pathway on calls',    detail:'Aaron was explicit — get them through the programme first. It undermines the pitch credibility.' },
+    { id:'d7',  col:'red',    label:'No China point for experienced prospects',detail:'Only for complete beginners. For anyone already doing TikTok Shop it wastes time.' },
+    { id:'d8',  col:'orange', label:'Press vague answers every time',          detail:'The instinct is starting to show up more. Not just once — every surface-level answer gets pressed with "what do you mean by that?" or "could you explain that a little more?"' },
+    { id:'d9',  col:'orange', label:'Ask the catalyst question deliberately',  detail:'"What actually changed that made you look into this now rather than carrying on figuring it out yourself?" — every call.' },
+    { id:'d10', col:'orange', label:'Future pace past step one',               detail:'Dream → exact number → what life looks like the day they hit it. You\'re stopping at step one.' },
+    { id:'d11', col:'orange', label:'Sit in emotional moments',                detail:'Slow down and let the prospect finish. You cut Courtney off right as she was about to name the real wound — you could feel it coming and moved too fast. Let people bleed before you speak.' },
+    { id:'d12', col:'orange', label:'Add case study before price',             detail:'One specific case study matched to the prospect, between the pitch and expectations section.' },
+    { id:'d13', col:'red',    label:'Slow down — speaking pace',              detail:'Flagged in the first ten seconds of this call — same note across every review. You mirror the prospect\'s tempo instead of setting your own. This is the root cause dragging everything else. Slow down regardless of how fast they\'re talking.' },
+    { id:'d14', col:'orange', label:"Don't let investment in outcome show",    detail:'"You seem like you care a lot about the outcome — I love that — but I don\'t want to be able to see it." — Aaron.' },
+    { id:'d15', col:'orange', label:'Partner objection — firm 3-way call',    detail:'"Could we jump on a quick call together then? I\'d rather answer his questions directly than have you try to explain it secondhand."' },
+    { id:'d16', col:'orange', label:'0.1% fear handle',                       detail:'"You\'ve got butterflies, that\'s normal... do you think those butterflies would turn into relief?" → yes → "So how do we feel about that 0.1% now?"' },
+    { id:'d17', col:'green',  label:'Warmth and rapport building',             detail:'Natural and genuine. Don\'t suppress it — calibrate the intensity to the prospect.' },
+    { id:'d18', col:'green',  label:'Composure under pressure',                detail:'Studio spend, cosmetic work, £13k already parted with — didn\'t react. Aaron flagged this specifically: most closers would visibly wince. Card declines, partner objections — same composure.' },
+    { id:'d19', col:'green',  label:'Overall call structure',                  detail:'Opening frame, discovery to commitment to future pace to pitch — the bones are right.' },
+    { id:'d20', col:'green',  label:'"What do you mean by that?" clarification',detail:'Aaron called it the best moment on the Chloe call. Keep doing it every time, not just once.' },
+    { id:'d21', col:'green',  label:'Transparency and consultative instinct',  detail:'"If I don\'t feel like we can help I\'ll tell you straight" — Aaron said it lands every time. Keep it in.' },
+    { id:'d22', col:'green',  label:'Natural personality in rapport',          detail:'Once trust is built you relax and let your character through — what made the Ellie rapport section so strong.' },
+    { id:'d23', col:'red',    label:"Don't interrupt before the payload lands",detail:'You cut Courtney off right as she was about to name the real wound. The silence before the real answer is the most important moment — count to three after they pause before speaking.' },
+    { id:'d24', col:'orange', label:'Use "why" in the first 15 minutes',      detail:'"Why" is your best tool for root cause and you\'re defaulting to logistics questions for the first 15-20 minutes before reaching for it. It should be the second or third tool out, not the last.' },
+    { id:'d25', col:'green',  label:'The "land right in the middle" reframe',  detail:'Aaron called it the best moment across both calls. Shut down the "is this for beginners" doubt before it became a real objection. Have it ready every time.' },
   ];
+
+  function dev_runMigrations() {
+    const v = parseInt(localStorage.getItem(DEV_PIPELINE_KEY + '_v') || '1', 10);
+    if (v >= DEV_PIPELINE_VERSION) return;
+    const s = localStorage.getItem(DEV_PIPELINE_KEY);
+    if (!s) { localStorage.setItem(DEV_PIPELINE_KEY + '_v', String(DEV_PIPELINE_VERSION)); return; }
+    try {
+      let cards = JSON.parse(s);
+      if (v < 2) {
+        const moves = { d2: { from:'red', to:'orange' }, d4: { from:'red', to:'orange' }, d13: { from:'orange', to:'red' } };
+        cards = cards.map(c => {
+          const m = moves[c.id];
+          return (m && c.col === m.from) ? { ...c, col: m.to } : c;
+        });
+      }
+      dev_saveCards(cards);
+      localStorage.setItem(DEV_PIPELINE_KEY + '_v', String(DEV_PIPELINE_VERSION));
+    } catch(e) {}
+  }
 
   function dev_getCards() {
     try {
       const s = localStorage.getItem(DEV_PIPELINE_KEY);
-      return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEV_CARDS_DEFAULT));
+      if (!s) return JSON.parse(JSON.stringify(DEV_CARDS_DEFAULT));
+      const saved = JSON.parse(s);
+      const savedMap = new Map(saved.map(c => [c.id, c]));
+      return DEV_CARDS_DEFAULT.map(def => {
+        const existing = savedMap.get(def.id);
+        return existing ? { ...def, col: existing.col } : def;
+      });
     } catch(e) { return JSON.parse(JSON.stringify(DEV_CARDS_DEFAULT)); }
   }
 
@@ -4663,6 +4692,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadWorkouts();
     highlightSpainPrepToday();
     htd_updateCard();
+    dev_runMigrations();
     dev_render();
     hub_initSync();
   });
