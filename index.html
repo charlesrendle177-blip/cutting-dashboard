@@ -3573,7 +3573,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   /* ===================== DEV PIPELINE ===================== */
 
   const DEV_PIPELINE_KEY = 'dev_pipeline';
-  const DEV_PIPELINE_VERSION = 2;
+  const DEV_PIPELINE_VERSION = 3;
 
   const DEV_CARDS_DEFAULT = [
     { id:'d1',  col:'red',    label:'Stop saying "100%"',                      detail:'Replace with silence or "that makes sense." It\'s a filler that makes you sound like you\'re agreeing rather than leading.' },
@@ -3610,7 +3610,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!s) { localStorage.setItem(DEV_PIPELINE_KEY + '_v', String(DEV_PIPELINE_VERSION)); return; }
     try {
       let cards = JSON.parse(s);
-      if (v < 2) {
+      if (v < 3) {
         const moves = { d2: { from:'red', to:'orange' }, d4: { from:'red', to:'orange' }, d13: { from:'orange', to:'red' } };
         cards = cards.map(c => {
           const m = moves[c.id];
@@ -4632,6 +4632,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     hub_setSyncDot(true);
     htd_render();
     htd_updateCard();
+    dev_runMigrations();
     dev_render();
   }
 
@@ -4692,7 +4693,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     loadWorkouts();
     highlightSpainPrepToday();
     htd_updateCard();
-    dev_runMigrations();
     dev_render();
     hub_initSync();
   });
