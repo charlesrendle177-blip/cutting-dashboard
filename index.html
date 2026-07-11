@@ -2205,9 +2205,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <span style="color:var(--label);font-size:13px;">One call closes</span>
                 <span style="font-weight:600;color:var(--accent);" id="tmmb-ov-occ">0</span>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
                 <span style="color:var(--label);font-size:13px;">Follow-up closes</span>
                 <span style="font-weight:600;color:var(--gold);" id="tmmb-ov-fup">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+                <span style="color:var(--label);font-size:13px;">FU conversion rate</span>
+                <span style="font-weight:600;color:#059669;" id="tmmb-ov-furate">—</span>
               </div>
             </div>
             <div class="card">
@@ -2284,6 +2288,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   <option value="ad">Paid ad</option>
                   <option value="inbound">Inbound</option>
                   <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Follow-up link -->
+            <div style="margin-bottom:16px;padding:10px 14px;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0;">
+                <input type="checkbox" id="cl-is-followup" onchange="tmmb_toggleFollowupLink(this.checked)" style="width:auto;accent-color:#7c3aed;">
+                <span style="font-size:13px;font-weight:600;color:#374151;">This is a follow-up to a previous call</span>
+              </label>
+              <div id="cl-followup-picker" style="display:none;margin-top:10px;">
+                <label class="tmmb-form-label" style="display:block;margin-bottom:4px;">Select original call</label>
+                <select id="cl-parent-id" onchange="tmmb_onParentCallSelect(this.value)" style="width:100%;">
+                  <option value="">— select prospect —</option>
                 </select>
               </div>
             </div>
@@ -3857,26 +3875,54 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (el) el.classList.toggle('active', val === 'closed');
   }
 
+  function tmmb_toggleFollowupLink(checked) {
+    const picker = document.getElementById('cl-followup-picker');
+    if (!picker) return;
+    if (checked) {
+      const followups = tmmb_getCalls().filter(c => c.outcome === 'followup').slice(0, 40);
+      const sel = document.getElementById('cl-parent-id');
+      sel.innerHTML = '<option value="">— select prospect —</option>' +
+        followups.map(c => `<option value="${c.id}">${c.name} · ${c.date}</option>`).join('');
+      picker.style.display = '';
+    } else {
+      picker.style.display = 'none';
+      const sel = document.getElementById('cl-parent-id');
+      if (sel) sel.value = '';
+    }
+  }
+
+  function tmmb_onParentCallSelect(val) {
+    if (!val) return;
+    const parent = tmmb_getCalls().find(c => c.id === parseInt(val, 10));
+    if (!parent) return;
+    const nameEl  = document.getElementById('cl-name');
+    const emailEl = document.getElementById('cl-email');
+    if (nameEl  && !nameEl.value.trim())  nameEl.value  = parent.name  || '';
+    if (emailEl && !emailEl.value.trim()) emailEl.value = parent.email || '';
+  }
+
   function tmmb_logCall() {
-    const date      = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
-    const name      = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
-    const email     = (document.getElementById('cl-email').value || '').trim();
-    const source    = document.getElementById('cl-source').value;
-    const outcome   = document.getElementById('cl-outcome').value;
-    const deal      = (document.getElementById('cl-deal').value || '').trim();
-    const paytype   = document.getElementById('cl-paytype').value;
-    const cash      = parseFloat(document.getElementById('cl-cash').value) || 0;
-    const dealValue = parseFloat(document.getElementById('cl-dealvalue').value) || 4000;
-    const notes     = (document.getElementById('cl-notes').value || '').trim();
+    const date       = document.getElementById('cl-date').value || new Date().toISOString().split('T')[0];
+    const name       = (document.getElementById('cl-name').value || '').trim() || 'Unknown';
+    const email      = (document.getElementById('cl-email').value || '').trim();
+    const source     = document.getElementById('cl-source').value;
+    const outcome    = document.getElementById('cl-outcome').value;
+    const deal       = (document.getElementById('cl-deal').value || '').trim();
+    const paytype    = document.getElementById('cl-paytype').value;
+    const cash       = parseFloat(document.getElementById('cl-cash').value) || 0;
+    const dealValue  = parseFloat(document.getElementById('cl-dealvalue').value) || 4000;
+    const notes      = (document.getElementById('cl-notes').value || '').trim();
     const objections = Array.from(
       document.querySelectorAll('#tmmb-obj-checkboxes input:checked')
     ).map(i => i.value);
 
-    const fathom    = (document.getElementById('cl-fathom').value || '').trim();
-    const prosvideo = (document.getElementById('cl-prosvideo').value || '').trim();
+    const fathom     = (document.getElementById('cl-fathom').value || '').trim();
+    const prosvideo  = (document.getElementById('cl-prosvideo').value || '').trim();
+    const parentCallId = parseInt(document.getElementById('cl-parent-id')?.value || '0', 10) || null;
+    const callType   = parentCallId ? 'call2' : 'call1';
 
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, email, source, outcome, type: 'call1', deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, source, outcome, type: callType, parentCallId, deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
     tmmb_saveCalls(calls);
 
     ['cl-name','cl-email','cl-notes','cl-deal','cl-fathom','cl-prosvideo'].forEach(id => {
@@ -3888,6 +3934,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('cl-source').value = '';
     document.getElementById('cl-paytype').value = 'pif';
     document.querySelectorAll('#tmmb-obj-checkboxes input').forEach(i => i.checked = false);
+    const fuCheck = document.getElementById('cl-is-followup');
+    if (fuCheck) { fuCheck.checked = false; tmmb_toggleFollowupLink(false); }
     tmmb_onOutcomeChange('closed');
 
     tmmb_renderCallHistory();
@@ -4081,6 +4129,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     }
     const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan·2m', plan3:'Plan·3m', plan4:'Plan·4m', plan6:'Plan·6m', plan12:'Plan·12m' };
     const sourceLabel  = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
+    const convertedIds = new Set(calls.filter(c => c.parentCallId).map(c => c.parentCallId));
     el.innerHTML = '<div style="overflow-x:auto;"><table class="tmmb-call-table"><thead><tr>' +
       '<th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
       '</tr></thead><tbody>' +
@@ -4091,6 +4140,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         const dealBit     = c.deal ? c.deal : '—';
         const paytypeBit  = c.paytype && c.paytype !== 'pif' ? ` <span style="font-size:10px;color:#9ca3af;">${paytypeLabel[c.paytype]||c.paytype}</span>` : '';
         const objStr      = (c.objections||[]).length ? c.objections.map(o=>o.replace(/-/g,' ')).join(', ') : '';
+        const fuBadge     = c.parentCallId ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:1px 5px;">↩ FU</span>` : '';
+        const convBadge   = (c.outcome === 'followup' && convertedIds.has(c.id)) ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#059669;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:4px;padding:1px 5px;">✓ Closed</span>` : '';
         return `<tr style="cursor:pointer;" onclick="tmmb_toggleCallExpand(${c.id})">
           <td style="white-space:nowrap;">${c.date || '—'}</td>
           <td>
@@ -4099,7 +4150,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </td>
           <td>${dealBit}${paytypeBit}</td>
           <td>${c.outcome === 'closed' ? `<div class="tmmb-call-cash">£${(c.cash||0).toLocaleString()}</div><div class="tmmb-call-comm">comm £${comm.toLocaleString()}</div>` : '<span style="color:#9ca3af;">—</span>'}</td>
-          <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span></td>
+          <td><span class="tmmb-pill ${tmmb_outcomeClass(c.outcome)}">${tmmb_outcomeLabel(c.outcome)}</span>${fuBadge}${convBadge}</td>
           <td style="white-space:nowrap;">
             <button onclick="event.stopPropagation();tmmb_editCall(${c.id})"
               style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:#7c3aed;cursor:pointer;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;margin-right:4px;" title="Edit this call">Edit</button>
@@ -4254,6 +4305,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const noshow = calls.filter(c => c.outcome === 'noshow').length;
     const occ    = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
     const fup    = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
+    const convertedIds = new Set(calls.filter(c => c.parentCallId).map(c => c.parentCallId));
+    const fuTotal = calls.filter(c => c.outcome === 'followup').length;
+    const fuConv  = calls.filter(c => c.outcome === 'followup' && convertedIds.has(c.id)).length;
 
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     set('tmmb-stat-calls', shown);
@@ -4267,6 +4321,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('tmmb-ov-noshow',   noshow);
     set('tmmb-ov-occ',      occ);
     set('tmmb-ov-fup',      fup);
+    set('tmmb-ov-furate',   fuTotal ? `${fuConv}/${fuTotal} (${Math.round(fuConv/fuTotal*100)}%)` : '—');
 
     // Home screen stat cards
     const s  = document.getElementById('s-show');  if (s)  s.textContent  = total ? Math.round(shown/total*100)  + '%' : '—';
