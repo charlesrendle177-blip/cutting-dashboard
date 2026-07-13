@@ -1421,11 +1421,11 @@
     /* Monthly Tracker */
     .tmmb-month-nav {
       display: flex; align-items: center; justify-content: center;
-      gap: 24px; padding: 24px 0 20px;
+      gap: 24px; padding: 10px 0 12px;
     }
     .tmmb-month-nav span {
-      font-size: 22px; font-weight: 700; color: var(--text);
-      min-width: 180px; text-align: center;
+      font-size: 20px; font-weight: 700; color: var(--text);
+      min-width: 160px; text-align: center;
     }
     .tmmb-btn-nav {
       background: var(--surface); border: 1px solid var(--border);
@@ -1435,25 +1435,25 @@
     }
     .tmmb-btn-nav:hover { border-color: var(--accent); color: var(--accent); }
     .tmmb-charts-row {
-      display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 28px;
+      display: grid; grid-template-columns: 3fr 2fr; gap: 12px; margin-bottom: 16px;
     }
     .tmmb-chart-card {
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px;
+      border-radius: 12px; padding: 12px 14px;
     }
     .tmmb-chart-title {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.2px; color: var(--label); margin-bottom: 14px;
+      letter-spacing: 1.2px; color: var(--label); margin-bottom: 8px;
     }
-    .tmmb-chart-canvas-wrap { position: relative; height: 180px; }
+    .tmmb-chart-canvas-wrap { position: relative; height: 130px; }
     .tmmb-week-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .tmmb-week-table th {
-      text-align: left; padding: 10px 12px; color: var(--label);
+      text-align: left; padding: 6px 10px; color: var(--label);
       font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
       border-bottom: 1px solid var(--border); font-weight: 500;
     }
     .tmmb-week-table td {
-      padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 7px 10px; border-bottom: 1px solid rgba(0,0,0,0.05);
       color: var(--text); line-height: 1.4;
     }
     .tmmb-week-table tbody tr:hover td { background: rgba(5,150,105,0.04); }
@@ -1468,7 +1468,7 @@
       .tmmb-stats-grid { grid-template-columns: repeat(3,1fr); }
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
-      .tmmb-charts-row { grid-template-columns: 1fr; }
+      .tmmb-charts-row { grid-template-columns: 3fr 2fr; }
       .tmmb-vault-grid { grid-template-columns: 1fr; }
     }
 
@@ -2458,9 +2458,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
         <!-- ===== MONTHLY TRACKER ===== -->
         <div id="tmmb-monthly" class="tmmb-section">
-          <div class="tmmb-section-header">
-            <h2>Monthly Tracker</h2>
-            <p>Performance breakdown — computed from your call log</p>
+          <div class="tmmb-section-header" style="margin-bottom:6px;">
+            <h2 style="font-size:20px;margin-bottom:2px;">Monthly Tracker</h2>
           </div>
 
           <div class="tmmb-month-nav">
@@ -2469,7 +2468,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <button class="tmmb-btn-nav" onclick="tmmb_changeMonth(1)">&#8250;</button>
           </div>
 
-          <div class="tmmb-stats-grid" style="margin-bottom:28px">
+          <div class="tmmb-stats-grid" style="margin-bottom:12px">
             <div class="tmmb-stat-box">
               <div class="tmmb-stat-label">Calls Taken</div>
               <div class="tmmb-stat-val" id="tm-shows">0</div>
@@ -2507,8 +2506,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
 
-          <div class="tmmb-section-header" style="margin-top:4px;margin-bottom:16px">
-            <h2>Weekly Breakdown</h2>
+          <div class="tmmb-section-header" style="margin-top:0;margin-bottom:6px;">
+            <h2 style="font-size:14px;font-weight:700;">Weekly Breakdown</h2>
           </div>
           <table class="tmmb-week-table">
             <thead>
@@ -2526,11 +2525,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <tbody id="tmmb-weekly-tbody"></tbody>
           </table>
 
-          <div style="margin-top:24px;padding:18px 20px;background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;text-align:center;">
-            <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:4px;">Commission Report</div>
-            <div style="font-size:12px;color:#6b7280;margin-bottom:14px;">Downloads a CSV of this month's closed deals — paste straight into Google Sheets to invoice TMMB</div>
-            <button onclick="tmmb_exportMonthlyCSV()" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:0.02em;">
-              ↓ Download Commission Report
+          <div style="margin-top:12px;padding:10px 16px;background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:12px;color:#059669;font-weight:600;">Commission Report — CSV ready for Google Sheets</div>
+            <button onclick="tmmb_exportMonthlyCSV()" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">
+              ↓ Download
             </button>
           </div>
         </div>
