@@ -2607,13 +2607,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <option value="personal">Personal</option>
             <option value="tmmb">TMMB</option>
           </select>
-          <select class="td-quick-select" id="td-add-priority">
-            <option value="3">P3 — Medium</option>
-            <option value="5">P5 — Urgent</option>
-            <option value="4">P4 — High</option>
-            <option value="2">P2 — Low</option>
-            <option value="1">P1 — Someday</option>
-          </select>
           <button class="td-add-btn" onclick="htd_quickAdd()">Add</button>
         </div>
       </div>
@@ -2740,7 +2733,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     personal: { label: 'Personal', color: '#059669' },
     tmmb:     { label: 'TMMB',     color: '#d97706' }
   };
-  const HTD_PRIO = { 1: '#9ca3af', 2: '#3b82f6', 3: '#f59e0b', 4: '#f97316', 5: '#ef4444' };
 
   function htd_get() {
     try { return JSON.parse(localStorage.getItem(HTD_KEY) || '[]'); } catch { return []; }
@@ -2757,11 +2749,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const text = (input?.value || '').trim();
     if (!text) { input?.focus(); return; }
     const section = document.getElementById('td-add-section')?.value || 'primed';
-    const priority = parseInt(document.getElementById('td-add-priority')?.value || '3');
     const todos = htd_get();
     const sectionOpen = todos.filter(t => t.section === section && !t.done);
     const maxOrd = sectionOpen.length ? Math.max(...sectionOpen.map(t => t.order || 0)) : 0;
-    todos.push({ id: Date.now(), text, section, priority, notes: '', due: null, done: false, doneAt: null, order: maxOrd + 1 });
+    todos.push({ id: Date.now(), text, section, notes: '', due: null, done: false, doneAt: null, order: maxOrd + 1 });
     htd_save(todos);
     if (input) input.value = '';
     htd_render();
@@ -2813,7 +2804,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const t = todos.find(x => x.id === id);
     if (!t) return;
     t.notes    = wrap.querySelector('.td-notes-text')?.value ?? t.notes;
-    t.priority = parseInt(wrap.querySelector('.td-notes-prio')?.value) || t.priority;
     t.section  = wrap.querySelector('.td-notes-sec')?.value || t.section;
     const dueVal = wrap.querySelector('.td-notes-date')?.value;
     t.due = dueVal || null;
@@ -2864,17 +2854,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <div class="td-section-list" data-section="${sk}">`;
       tasks.forEach(t => {
         pos++;
-        const pc  = HTD_PRIO[t.priority] || '#9ca3af';
         const sc  = sec.color;
         const sbg = sc + '18';
         const SEC_OPTS = Object.entries(HTD_SECTIONS).map(([k, v]) =>
           `<option value="${k}" ${k === t.section ? 'selected' : ''}>${v.label}</option>`).join('');
-        const PRIO_OPTS = [5,4,3,2,1].map(p =>
-          `<option value="${p}" ${p === t.priority ? 'selected' : ''}>${p === 5 ? 'P5 — Urgent' : p === 4 ? 'P4 — High' : p === 3 ? 'P3 — Medium' : p === 2 ? 'P2 — Low' : 'P1 — Someday'}</option>`).join('');
         html += `<div class="td-task-wrap" data-id="${t.id}" data-section="${sk}" data-order="${t.order||0}" draggable="true">
           <div class="td-task">
             <div class="td-grip">⋮⋮</div>
-            <div class="td-order" style="background:${pc}">${pos}</div>
+            <div class="td-order" style="background:#e5e7eb;color:#6b7280;">${pos}</div>
             <div class="td-check" onclick="htd_toggle(${t.id})" title="Mark done"></div>
             <div class="td-text" onclick="htd_expand(${t.id})">${t.text.replace(/</g,'&lt;')}</div>
             <div class="td-meta">
@@ -2888,8 +2875,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div class="td-notes">
             <textarea class="td-notes-text" placeholder="Add notes…">${(t.notes||'').replace(/</g,'&lt;')}</textarea>
             <div class="td-notes-row">
-              <label>Priority</label>
-              <select class="td-notes-sel td-notes-prio">${PRIO_OPTS}</select>
               <label>Section</label>
               <select class="td-notes-sel td-notes-sec">${SEC_OPTS}</select>
               <label>Due</label>
