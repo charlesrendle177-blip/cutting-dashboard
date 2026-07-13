@@ -2525,6 +2525,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </thead>
             <tbody id="tmmb-weekly-tbody"></tbody>
           </table>
+
+          <div style="margin-top:24px;padding:18px 20px;background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:14px;text-align:center;">
+            <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:4px;">Commission Report</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:14px;">Downloads a CSV of this month's closed deals — paste straight into Google Sheets to invoice TMMB</div>
+            <button onclick="tmmb_exportMonthlyCSV()" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:0.02em;">
+              ↓ Download Commission Report
+            </button>
+          </div>
         </div>
 
       </div><!-- /tmmb-main -->
@@ -4419,6 +4427,47 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (tmmb_viewMonth < 0)  { tmmb_viewMonth = 11; tmmb_viewYear--; }
     if (tmmb_viewMonth > 11) { tmmb_viewMonth = 0;  tmmb_viewYear++; }
     tmmb_renderMonthly();
+  }
+
+  function tmmb_exportMonthlyCSV() {
+    const year  = tmmb_viewYear;
+    const month = tmmb_viewMonth;
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const paytypeLabel = { pif:'Paid in Full', deposit:'Deposit + Balance', plan2:'Plan (2m)', plan3:'Plan (3m)', plan4:'Plan (4m)', plan6:'Plan (6m)', plan12:'Plan (12m)' };
+
+    const closes = tmmb_getCalls().filter(c => {
+      if (c.outcome !== 'closed' || !c.date) return false;
+      const d = new Date(c.date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    }).sort((a, b) => (a.date < b.date ? -1 : 1));
+
+    if (!closes.length) {
+      alert('No closed deals in ' + MONTHS[month] + ' ' + year + '. Nothing to export.');
+      return;
+    }
+
+    const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const rows = [['Date', 'Prospect Name', 'Programme', 'Payment Type', 'Deal Value (£)', 'Cash Collected (£)', 'Commission Due (£)']];
+
+    let totalCash = 0, totalComm = 0;
+    closes.forEach(c => {
+      const comm = Math.round((c.dealValue || 4000) * 0.1);
+      totalCash += (c.cash || 0);
+      totalComm += comm;
+      rows.push([c.date, c.name || 'Unknown', c.deal || 'TMMB Academy', paytypeLabel[c.paytype] || c.paytype || 'PIF', (c.dealValue || 4000), (c.cash || 0), comm]);
+    });
+    rows.push(['', '', '', 'TOTAL', '', totalCash, totalComm]);
+
+    const csv = rows.map(r => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'TMMB-Commission-' + MONTHS[month] + '-' + year + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function tmmb_renderMonthly() {
