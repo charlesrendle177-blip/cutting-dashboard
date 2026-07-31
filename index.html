@@ -2156,6 +2156,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-vault',this);tmmb_initVault()">Call Vault</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this);dev_render()">My Development</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-invoices',this);inv_render()">Invoices</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-pipeline',this);pipe_render()">Pipeline</button>
     </div>
 
     <div class="tmmb-wrap">
@@ -2313,7 +2314,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="tmmb-form-grid" style="margin-bottom:14px;">
                 <div class="tmmb-form-group">
                   <label class="tmmb-form-label">Programme / Offer</label>
-                  <input type="text" id="cl-deal" placeholder="e.g. TMMB Accelerator">
+                  <input type="text" id="cl-deal" placeholder="e.g. TMMB Academy">
                 </div>
                 <div class="tmmb-form-group">
                   <label class="tmmb-form-label">Payment Type</label>
@@ -2572,6 +2573,77 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
           <!-- Invoice list -->
           <div id="inv-list"></div>
+        </div>
+
+        <!-- ===== PIPELINE ===== -->
+        <div id="tmmb-pipeline" class="tmmb-section">
+          <div class="tmmb-section-header">
+            <h2>Pipeline</h2>
+            <p>Prospects not ready yet — follow-up tracker</p>
+          </div>
+
+          <!-- Stats row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">
+            <div style="background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:10px;padding:12px 14px;text-align:center;">
+              <div style="font-size:11px;color:#5b21b6;font-weight:700;margin-bottom:3px;">In Pipeline</div>
+              <div style="font-size:22px;font-weight:700;color:#7c3aed;" id="pipe-stat-total">0</div>
+            </div>
+            <div style="background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:12px 14px;text-align:center;">
+              <div style="font-size:11px;color:#92400e;font-weight:700;margin-bottom:3px;">Deposits Held</div>
+              <div style="font-size:22px;font-weight:700;color:#b45309;" id="pipe-stat-deps">0</div>
+            </div>
+            <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:10px;padding:12px 14px;text-align:center;">
+              <div style="font-size:11px;color:#065f46;font-weight:700;margin-bottom:3px;">Deposit £</div>
+              <div style="font-size:22px;font-weight:700;color:#059669;" id="pipe-stat-cash">£0</div>
+            </div>
+          </div>
+
+          <!-- Add form -->
+          <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:20px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Prospect</div>
+            <div style="display:grid;gap:10px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <label class="tmmb-form-label">Name</label>
+                  <input type="text" id="pipe-name" placeholder="Prospect name" style="width:100%;">
+                </div>
+                <div>
+                  <label class="tmmb-form-label">Phone</label>
+                  <input type="tel" id="pipe-phone" placeholder="07700 000000" style="width:100%;">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <label class="tmmb-form-label">Follow-up Month</label>
+                  <input type="month" id="pipe-month" style="width:100%;">
+                </div>
+                <div>
+                  <label class="tmmb-form-label">Reason Not Ready</label>
+                  <input type="text" id="pipe-reason" placeholder="e.g. Kids back to school in Sept" style="width:100%;">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;padding-top:8px;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;">
+                    <input type="checkbox" id="pipe-dep-check" onchange="document.getElementById('pipe-dep-amt').style.display=this.checked?'block':'none'" style="width:auto;accent-color:#7c3aed;">
+                    Deposit taken
+                  </label>
+                </div>
+                <div id="pipe-dep-amt" style="display:none;">
+                  <label class="tmmb-form-label">Deposit Amount (£)</label>
+                  <input type="number" id="pipe-deposit" placeholder="0" min="0" step="1" style="width:100%;">
+                </div>
+              </div>
+              <div>
+                <label class="tmmb-form-label">Notes</label>
+                <input type="text" id="pipe-notes" placeholder="Anything else worth remembering..." style="width:100%;">
+              </div>
+              <button onclick="pipe_add()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add to Pipeline</button>
+            </div>
+          </div>
+
+          <!-- Pipeline list -->
+          <div id="pipe-list"></div>
         </div>
 
       </div><!-- /tmmb-main -->
@@ -4865,6 +4937,120 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     list.innerHTML = stats + rows;
   }
 
+  /* ---------- PIPELINE ---------- */
+  const PIPE_KEY = 'tmmb_pipeline';
+
+  function pipe_get() {
+    try { return JSON.parse(localStorage.getItem(PIPE_KEY) || '[]'); } catch { return []; }
+  }
+
+  function pipe_save(prospects) {
+    localStorage.setItem(PIPE_KEY, JSON.stringify(prospects));
+    if (sb) sb.from('hub_data').upsert({ key: PIPE_KEY, value: prospects, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+
+  function pipe_add() {
+    const name    = (document.getElementById('pipe-name')?.value || '').trim();
+    const phone   = (document.getElementById('pipe-phone')?.value || '').trim();
+    const month   = document.getElementById('pipe-month')?.value || '';
+    const reason  = (document.getElementById('pipe-reason')?.value || '').trim();
+    const depCheck = document.getElementById('pipe-dep-check')?.checked || false;
+    const deposit = depCheck ? (parseFloat(document.getElementById('pipe-deposit')?.value || '0') || 0) : 0;
+    const notes   = (document.getElementById('pipe-notes')?.value || '').trim();
+    if (!name) { alert('Please enter a name.'); return; }
+    if (!month) { alert('Please select a follow-up month.'); return; }
+    const prospects = pipe_get();
+    prospects.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, phone, month, reason, depositTaken: depCheck, deposit, notes, status: 'active', addedAt: new Date().toISOString() });
+    pipe_save(prospects);
+    ['pipe-name','pipe-phone','pipe-reason','pipe-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const depAmt = document.getElementById('pipe-deposit'); if (depAmt) depAmt.value = '';
+    const depChk = document.getElementById('pipe-dep-check'); if (depChk) { depChk.checked = false; document.getElementById('pipe-dep-amt').style.display = 'none'; }
+    pipe_render();
+  }
+
+  function pipe_setStatus(id, status) {
+    pipe_save(pipe_get().map(p => p.id === id ? { ...p, status } : p));
+    pipe_render();
+  }
+
+  function pipe_delete(id) {
+    if (!confirm('Remove this prospect from the pipeline?')) return;
+    pipe_save(pipe_get().filter(p => p.id !== id));
+    pipe_render();
+  }
+
+  function pipe_fmtMonth(ym) {
+    if (!ym) return '';
+    const [y, m] = ym.split('-');
+    return new Date(+y, +m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  }
+
+  function pipe_render() {
+    const all = pipe_get();
+    const active = all.filter(p => p.status === 'active');
+
+    // Stats
+    const depCount = active.filter(p => p.depositTaken).length;
+    const depCash  = active.filter(p => p.depositTaken).reduce((s, p) => s + (p.deposit || 0), 0);
+    const totEl = document.getElementById('pipe-stat-total'); if (totEl) totEl.textContent = active.length;
+    const depEl = document.getElementById('pipe-stat-deps');  if (depEl) depEl.textContent = depCount;
+    const cashEl = document.getElementById('pipe-stat-cash'); if (cashEl) cashEl.textContent = '£' + depCash.toLocaleString();
+
+    const list = document.getElementById('pipe-list');
+    if (!list) return;
+    if (!active.length) { list.innerHTML = '<div style="text-align:center;padding:36px 20px;color:var(--label);font-size:14px;">No prospects in pipeline yet</div>'; return; }
+
+    // Sort by follow-up month, then group
+    const sorted = [...active].sort((a, b) => (a.month || '').localeCompare(b.month || ''));
+    const groups = {};
+    sorted.forEach(p => { const k = p.month || 'Unknown'; if (!groups[k]) groups[k] = []; groups[k].push(p); });
+
+    const now = new Date();
+    const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    list.innerHTML = Object.entries(groups).map(([monthKey, prospects]) => {
+      const monthName = pipe_fmtMonth(monthKey);
+      const isPast    = monthKey < currentKey;
+      const isCurrent = monthKey === currentKey;
+      const headerColour = isPast ? '#ef4444' : isCurrent ? '#d97706' : '#7c3aed';
+      const headerBg     = isPast ? '#fee2e2' : isCurrent ? '#fef3c7' : '#ede9fe';
+      const headerBorder = isPast ? '#fca5a5' : isCurrent ? '#fde68a' : '#c4b5fd';
+
+      const cards = prospects.map(p => {
+        const depBadge = p.depositTaken
+          ? `<span style="background:#d1fae5;color:#065f46;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">Deposit £${(p.deposit||0).toLocaleString()}</span>`
+          : `<span style="background:#f3f4f6;color:#6b7280;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">No Deposit</span>`;
+        const phoneBtn = p.phone
+          ? `<a href="tel:${p.phone.replace(/\s/g,'')}" style="background:#ede9fe;color:#7c3aed;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">📞 Call</a>`
+          : '';
+        const closedBtn = `<button onclick="pipe_setStatus('${p.id}','closed')" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Closed ✓</button>`;
+        const delBtn    = `<button onclick="pipe_delete('${p.id}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">✕</button>`;
+        return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:140px;">
+              <div style="font-size:14px;font-weight:700;color:var(--text);">${p.name}</div>
+              ${p.phone ? `<div style="font-size:12px;color:var(--label);margin-top:2px;">${p.phone}</div>` : ''}
+              ${p.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-style:italic;">${p.reason}</div>` : ''}
+              ${p.notes ? `<div style="font-size:11px;color:var(--label);margin-top:4px;">${p.notes}</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+              ${depBadge}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${phoneBtn}${closedBtn}${delBtn}</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div style="margin-bottom:20px;">
+        <div style="background:${headerBg};border:1.5px solid ${headerBorder};border-radius:8px;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:700;color:${headerColour};">${monthName}</span>
+          <span style="font-size:11px;font-weight:600;color:${headerColour};">${prospects.length} prospect${prospects.length !== 1 ? 's' : ''}</span>
+        </div>
+        ${cards}
+      </div>`;
+    }).join('');
+  }
+
   /* ---------- SUPABASE SYNC ---------- */
   let hub_syncSubscribed = false;
 
@@ -4876,7 +5062,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -4925,6 +5111,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             if (key === 'tmmb_invoices') {
               localStorage.setItem(INV_KEY, JSON.stringify(value));
               inv_render();
+            }
+            if (key === 'tmmb_pipeline') {
+              localStorage.setItem(PIPE_KEY, JSON.stringify(value));
+              pipe_render();
             }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));

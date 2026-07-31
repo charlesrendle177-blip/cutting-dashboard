@@ -1,4 +1,4 @@
-const SYSTEM = `You are a sales coach reviewing Charles Rendle's call against his personal development pipeline. Charles sells TMMB, a TikTok Shop creator academy at £4,000 for 12 months.
+const SYSTEM = `You are a sales coach reviewing Charles Rendle's call against his personal development pipeline. Charles sells the TMMB Academy at £4,000 for 12 months.
 
 You will receive:
 1. Charles's current development pipeline — each card has an id, label, and current column: "red" (fix now), "orange" (work on), "green" (doing well)
