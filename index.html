@@ -2541,13 +2541,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <p>Log and track your TMMB commission invoices</p>
           </div>
 
+          <!-- Month navigator -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 18px;">
+            <button onclick="inv_prevMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;line-height:1;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">‹</button>
+            <span id="inv-month-label" style="font-size:19px;font-weight:700;color:var(--text);min-width:150px;text-align:center;"></span>
+            <button onclick="inv_nextMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;line-height:1;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">›</button>
+          </div>
+
           <!-- Add invoice form -->
           <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Log New Invoice</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Log Invoice for <span id="inv-form-month"></span></div>
             <div style="display:grid;gap:10px;">
               <div>
                 <label class="tmmb-form-label">Label</label>
-                <input type="text" id="inv-label" placeholder="June 2026" style="width:100%;">
+                <input type="text" id="inv-label" placeholder="July 2026" style="width:100%;">
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <div>
@@ -4730,6 +4737,24 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   /* ---------- INVOICES ---------- */
   const INV_KEY = 'tmmb_invoices';
+  let inv_year = new Date().getFullYear();
+  let inv_mon  = new Date().getMonth(); // 0-based
+
+  function inv_monthKey()  { return `${inv_year}-${String(inv_mon + 1).padStart(2, '0')}`; }
+  function inv_monthName() { return new Date(inv_year, inv_mon, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
+
+  function inv_prevMonth() {
+    if (inv_mon === 0) { inv_mon = 11; inv_year--; } else { inv_mon--; }
+    const el = document.getElementById('inv-label');
+    if (el) el.value = '';
+    inv_render();
+  }
+  function inv_nextMonth() {
+    if (inv_mon === 11) { inv_mon = 0; inv_year++; } else { inv_mon++; }
+    const el = document.getElementById('inv-label');
+    if (el) el.value = '';
+    inv_render();
+  }
 
   function inv_get() {
     try { return JSON.parse(localStorage.getItem(INV_KEY) || '[]'); } catch { return []; }
@@ -4740,24 +4765,29 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (sb) sb.from('hub_data').upsert({ key: INV_KEY, value: invoices, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
   }
 
+  function inv_monthOf(inv) {
+    if (inv.month) return inv.month;
+    if (inv.submittedAt) return inv.submittedAt.slice(0, 7);
+    return '';
+  }
+
   function inv_add() {
-    const label = (document.getElementById('inv-label')?.value || '').trim();
+    const label  = (document.getElementById('inv-label')?.value || '').trim();
     const amount = parseFloat(document.getElementById('inv-amount')?.value || '0') || 0;
-    const link = (document.getElementById('inv-link')?.value || '').trim();
+    const link   = (document.getElementById('inv-link')?.value || '').trim();
     if (!label) { alert('Please enter an invoice label.'); return; }
     const invoices = inv_get();
-    invoices.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), label, amount, link, status: 'submitted', submittedAt: new Date().toISOString() });
+    invoices.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), label, amount, link, month: inv_monthKey(), status: 'submitted', submittedAt: new Date().toISOString() });
     inv_save(invoices);
-    const amtEl = document.getElementById('inv-amount');
+    const amtEl  = document.getElementById('inv-amount');
     const linkEl = document.getElementById('inv-link');
-    if (amtEl) amtEl.value = '';
+    if (amtEl)  amtEl.value  = '';
     if (linkEl) linkEl.value = '';
     inv_render();
   }
 
   function inv_markPaid(id) {
-    const invoices = inv_get().map(inv => inv.id === id ? { ...inv, status: 'paid', paidAt: new Date().toISOString() } : inv);
-    inv_save(invoices);
+    inv_save(inv_get().map(inv => inv.id === id ? { ...inv, status: 'paid', paidAt: new Date().toISOString() } : inv));
     inv_render();
   }
 
@@ -4768,20 +4798,34 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function inv_render() {
+    const name = inv_monthName();
+
+    // Update navigator label
+    const mlEl = document.getElementById('inv-month-label');
+    if (mlEl) mlEl.textContent = name;
+
+    // Update form heading
+    const fmEl = document.getElementById('inv-form-month');
+    if (fmEl) fmEl.textContent = name;
+
+    // Auto-fill label input if empty
     const labelEl = document.getElementById('inv-label');
-    if (labelEl && !labelEl.value) {
-      const now = new Date();
-      labelEl.value = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    }
+    if (labelEl && !labelEl.value) labelEl.value = name;
+
     const list = document.getElementById('inv-list');
     if (!list) return;
-    const invoices = inv_get();
+
+    const key      = inv_monthKey();
+    const invoices = inv_get().filter(inv => inv_monthOf(inv) === key);
+
     if (!invoices.length) {
-      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--label);font-size:14px;">No invoices logged yet</div>';
+      list.innerHTML = `<div style="text-align:center;padding:36px 20px;color:var(--label);font-size:14px;">No invoices for ${name}</div>`;
       return;
     }
+
     const totalPending = invoices.filter(i => i.status === 'submitted').reduce((s, i) => s + (i.amount || 0), 0);
     const totalPaid    = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
+
     const stats = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
         <div style="background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:12px 14px;text-align:center;">
@@ -4789,13 +4833,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div style="font-size:20px;font-weight:700;color:#b45309;">£${totalPending.toLocaleString()}</div>
         </div>
         <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:10px;padding:12px 14px;text-align:center;">
-          <div style="font-size:12px;color:#065f46;font-weight:600;margin-bottom:4px;">Total Paid</div>
+          <div style="font-size:12px;color:#065f46;font-weight:600;margin-bottom:4px;">Paid This Month</div>
           <div style="font-size:20px;font-weight:700;color:#059669;">£${totalPaid.toLocaleString()}</div>
         </div>
       </div>`;
+
     const rows = invoices.map(inv => {
       const isPaid = inv.status === 'paid';
-      const badge = isPaid
+      const badge  = isPaid
         ? '<span style="background:#d1fae5;color:#065f46;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">Paid</span>'
         : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">Submitted</span>';
       const submitted = inv.submittedAt ? new Date(inv.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
@@ -4816,6 +4861,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         ${badge}${pdfBtn}${markPaidBtn}${delBtn}
       </div>`;
     }).join('');
+
     list.innerHTML = stats + rows;
   }
 
