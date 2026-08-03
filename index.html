@@ -2192,6 +2192,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
 
+          <!-- Clawback window alert — hidden when nothing at risk -->
+          <div id="tmmb-clawback-card" class="card" style="margin-bottom:14px;display:none;border-color:#fde68a;">
+            <div class="card-label" style="color:#d97706;">⏱ Commission at Risk (Clawback Window Open)</div>
+            <div id="tmmb-clawback-body"></div>
+            <div style="font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected. Disappears from here once locked.</div>
+          </div>
+
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
             <div class="card">
               <div class="card-label">This Month</div>
@@ -4357,10 +4364,19 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           ${c.paytype ? `<span class="tmmb-vault-paytype">${paytypeLabel[c.paytype]||c.paytype}</span>` : ''}
           ${c.deal ? `<span style="font-size:12px;color:#6b7280;">${c.deal}</span>` : ''}
         </div>
-        <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">
           Commission <strong style="color:#059669;">£${comm.toLocaleString()}</strong>
           ${c.dealValue && c.dealValue !== 4000 ? ` · Deal value £${Number(c.dealValue).toLocaleString()}` : ''}
-        </div>` :
+        </div>
+        ${(() => {
+          if (!c.date) return '';
+          const daysLeft = 30 - Math.floor((Date.now() - new Date(c.date).getTime()) / 86400000);
+          if (daysLeft <= 0) return '<div style="margin-bottom:12px;display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;color:#059669;">🔒 Commission locked</div>';
+          const col = daysLeft <= 7 ? '#ef4444' : '#d97706';
+          const bg  = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
+          const bdr = daysLeft <= 7 ? '#fca5a5' : '#fde68a';
+          return `<div style="margin-bottom:12px;display:inline-flex;align-items:center;gap:4px;background:${bg};border:1px solid ${bdr};border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;color:${col};">⏱ ${daysLeft}d to lock</div>`;
+        })()}` :
         (c.deal ? `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;">${c.deal}</div>` : '');
 
       const links = (c.fathom || c.prosvideo) ? `
@@ -4445,7 +4461,37 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <span style="font-weight:600;color:var(--accent);">${count}×</span>
             </div>`).join('')
         : '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Log calls to see objection patterns</div>';
+    tmmb_renderClawback();
     }
+  }
+
+  function tmmb_renderClawback() {
+    const card = document.getElementById('tmmb-clawback-card');
+    const body = document.getElementById('tmmb-clawback-body');
+    if (!card || !body) return;
+    const now = Date.now();
+    const atRisk = tmmb_getCalls()
+      .filter(c => c.outcome === 'closed' && c.date)
+      .map(c => ({ c, daysLeft: 30 - Math.floor((now - new Date(c.date).getTime()) / 86400000) }))
+      .filter(({ daysLeft }) => daysLeft > 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+    if (!atRisk.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    body.innerHTML = atRisk.map(({ c, daysLeft }) => {
+      const comm = Math.round((c.dealValue || 4000) * 0.1);
+      const col  = daysLeft <= 7 ? '#ef4444' : '#d97706';
+      const bg   = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+          <span style="font-size:11px;color:var(--label);margin-left:8px;">${c.date}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:#059669;font-weight:700;">£${comm.toLocaleString()}</span>
+          <span style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">⏱ ${daysLeft}d left</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function tmmb_scoreBar(label, score) {
