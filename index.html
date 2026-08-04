@@ -1180,6 +1180,8 @@
     /* form grids */
     .tmmb-form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .tmmb-form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .tmmb-2col   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tmmb-ov-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 
     /* deal section */
     .tmmb-deal-section {
@@ -1465,10 +1467,14 @@
     @media (max-width: 640px) {
       .tmmb-tabs { padding: 0 16px; }
       .tmmb-main { padding: 20px 16px 60px; }
-      .tmmb-stats-grid { grid-template-columns: repeat(3,1fr); }
+      .tmmb-stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .tmmb-stat-box { padding: 14px 8px; }
+      .tmmb-stat-num { font-size: 20px; }
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
+      .tmmb-2col { grid-template-columns: 1fr; }
+      .tmmb-ov-2col { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
-      .tmmb-charts-row { grid-template-columns: 3fr 2fr; }
+      .tmmb-charts-row { grid-template-columns: 1fr; }
       .tmmb-vault-grid { grid-template-columns: 1fr; }
     }
 
@@ -2199,7 +2205,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div style="font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected. Disappears from here once locked.</div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div class="tmmb-ov-2col">
             <div class="card">
               <div class="card-label">This Month</div>
               <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
@@ -2564,7 +2570,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <label class="tmmb-form-label">Label</label>
                 <input type="text" id="inv-label" placeholder="July 2026" style="width:100%;">
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="tmmb-2col">
                 <div>
                   <label class="tmmb-form-label">Commission (£)</label>
                   <input type="number" id="inv-amount" placeholder="0" min="0" step="1" style="width:100%;">
@@ -2609,7 +2615,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:20px;">
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Prospect</div>
             <div style="display:grid;gap:10px;">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="tmmb-2col">
                 <div>
                   <label class="tmmb-form-label">Name</label>
                   <input type="text" id="pipe-name" placeholder="Prospect name" style="width:100%;">
@@ -2619,7 +2625,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   <input type="tel" id="pipe-phone" placeholder="07700 000000" style="width:100%;">
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="tmmb-2col">
                 <div>
                   <label class="tmmb-form-label">Follow-up Month</label>
                   <input type="month" id="pipe-month" style="width:100%;">
@@ -2629,7 +2635,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   <input type="text" id="pipe-reason" placeholder="e.g. Kids back to school in Sept" style="width:100%;">
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="tmmb-2col">
                 <div style="display:flex;align-items:center;gap:10px;padding-top:8px;">
                   <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;">
                     <input type="checkbox" id="pipe-dep-check" onchange="document.getElementById('pipe-dep-amt').style.display=this.checked?'block':'none'" style="width:auto;accent-color:#7c3aed;">
