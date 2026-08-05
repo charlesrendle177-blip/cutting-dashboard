@@ -1729,12 +1729,40 @@
     .biz-form-block { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
     .biz-goal-bar  { height: 8px; border-radius: 4px; background: #e5e7eb; margin: 8px 0; overflow: hidden; }
     .biz-goal-fill { height: 100%; border-radius: 4px; background: #1e40af; transition: width 0.4s; }
+    .biz-check-item { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid #f3f4f6; }
+    .biz-check-item:last-child { border-bottom:none; }
+    .biz-check-item input[type=checkbox] { width:18px; height:18px; accent-color:#1e40af; margin-top:1px; flex-shrink:0; cursor:pointer; }
+    .biz-check-label { font-size:13px; color:#374151; line-height:1.5; cursor:pointer; }
+    .biz-check-label.done { text-decoration:line-through; color:#9ca3af; }
+    .biz-pnl-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f3f4f6; font-size:13px; color:#374151; }
+    .biz-pnl-row:last-child { border-bottom:none; }
+    .biz-pnl-row.biz-pnl-total { font-weight:700; color:#111827; }
+    .biz-pnl-val { font-weight:600; }
+    .biz-scale-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; }
+    .biz-scale-table th { text-align:left; font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.07em; padding:6px 8px; background:#f9fafb; }
+    .biz-scale-table td { padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; }
+    .biz-scale-table tr.biz-active-row td { background:#eff6ff; color:#1e40af; font-weight:700; }
+    .biz-scale-table td.biz-profit-cell { color:#059669; font-weight:700; }
+    .biz-cta-btn { display:inline-flex; align-items:center; gap:8px; background:#1e40af; color:#fff; border:none; border-radius:10px; padding:13px 22px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; text-decoration:none; margin:18px 0 8px; transition:background 0.15s; }
+    .biz-cta-btn:hover { background:#1d4ed8; color:#fff; }
+    .biz-make-card { background:#f0f4ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:16px 18px; margin-top:20px; }
+    .biz-make-card h4 { font-size:13px; font-weight:800; color:#1e40af; margin-bottom:6px; }
+    .biz-make-card p { font-size:12px; color:#374151; line-height:1.5; margin-bottom:10px; }
+    .biz-make-step { font-size:12px; color:#374151; padding:4px 0; display:flex; gap:8px; align-items:flex-start; }
+    .biz-make-step-num { background:#1e40af; color:#fff; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0; margin-top:1px; }
+    .biz-phase-label { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em; margin:20px 0 8px; }
+    .biz-reset-btn { background:none; border:1.5px solid #e5e7eb; border-radius:8px; padding:5px 12px; font-size:11px; color:#6b7280; cursor:pointer; font-family:'Inter',sans-serif; }
+    .biz-reset-btn:hover { border-color:#d1d5db; color:#374151; }
+    .biz-pnl-block { background:#f0f4ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:16px 18px; margin-bottom:20px; }
+    .biz-pnl-block-title { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
     @media (max-width: 640px) {
       .biz-tabs { padding: 0 16px; }
       .biz-main { padding: 20px 16px 60px; }
       .biz-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .biz-stat-num { font-size: 22px; }
       .biz-stat-box { padding: 14px 8px; }
+      .biz-scale-table { font-size: 11px; }
+      .biz-scale-table th, .biz-scale-table td { padding: 5px 5px; }
     }
 
   </style>
@@ -2754,8 +2782,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <div class="biz-tabs">
         <button class="biz-tab active" onclick="biz_showTab('biz-overview',this);biz_updateOverview()">Overview</button>
         <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
-        <button class="biz-tab" onclick="biz_showTab('biz-revenue',this);biz_renderRevenue()">Revenue</button>
+        <button class="biz-tab" onclick="biz_showTab('biz-revenue',this);biz_renderPnL();biz_renderRevenue()">Revenue</button>
         <button class="biz-tab" onclick="biz_showTab('biz-goals',this);biz_renderGoals()">Goals</button>
+        <button class="biz-tab" onclick="biz_showTab('biz-onboard',this);biz_renderOnboard()">Onboard</button>
       </div>
 
       <div class="biz-main">
@@ -2776,12 +2805,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="biz-stat-label">MRR</div>
             </div>
             <div class="biz-stat-box">
-              <div class="biz-stat-num" id="biz-stat-arr">£0</div>
-              <div class="biz-stat-label">ARR</div>
+              <div class="biz-stat-num" id="biz-stat-net" style="color:#059669;">£0</div>
+              <div class="biz-stat-label">Net Profit</div>
             </div>
             <div class="biz-stat-box">
-              <div class="biz-stat-num" id="biz-stat-churned">0</div>
-              <div class="biz-stat-label">Churned</div>
+              <div class="biz-stat-num" id="biz-stat-arr">£0</div>
+              <div class="biz-stat-label">ARR</div>
             </div>
           </div>
           <div class="tmmb-ov-2col">
@@ -2806,17 +2835,26 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Client</div>
             <div style="display:grid;gap:10px;">
               <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Client Name</label><input type="text" id="biz-cl-name" placeholder="e.g. John Smith" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Company</label><input type="text" id="biz-cl-company" placeholder="e.g. Smith Agency" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Client Name</label><input type="text" id="biz-cl-name" placeholder="e.g. Primed Agency" style="width:100%;"></div>
+                <div>
+                  <label class="tmmb-form-label">Industry Type</label>
+                  <select id="biz-cl-industry" style="width:100%;">
+                    <option value="recruitment_agency">Recruitment Agency</option>
+                    <option value="amazon_agency">Amazon Agency</option>
+                    <option value="marketing_agency">Marketing Agency</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
               <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Monthly Retainer (£)</label><input type="number" id="biz-cl-fee" placeholder="0" min="0" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Monthly Retainer (£)</label><input type="number" id="biz-cl-fee" placeholder="1500" min="0" style="width:100%;"></div>
                 <div><label class="tmmb-form-label">Start Date</label><input type="date" id="biz-cl-start" style="width:100%;"></div>
               </div>
               <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Email</label><input type="email" id="biz-cl-email" placeholder="client@email.com" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Notes</label><input type="text" id="biz-cl-notes" placeholder="Any extra context…" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Contact Email</label><input type="email" id="biz-cl-email" placeholder="client@company.com" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Dashboard URL</label><input type="url" id="biz-cl-url" placeholder="https://vidaire.co.uk" style="width:100%;"></div>
               </div>
+              <div><label class="tmmb-form-label">Notes</label><input type="text" id="biz-cl-notes" placeholder="Any extra context…" style="width:100%;"></div>
               <button onclick="biz_addClient()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add Client</button>
             </div>
           </div>
@@ -2826,9 +2864,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <!-- REVENUE -->
         <div id="biz-revenue" class="biz-section">
           <div class="biz-section-header">
-            <h2>Revenue</h2>
-            <p>Cash collected each month</p>
+            <h2>Revenue &amp; P&L</h2>
+            <p>Auto-calculated from your active clients · log cash received below</p>
           </div>
+          <div id="biz-pnl-section"></div>
           <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 18px;">
             <button onclick="biz_prevMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">‹</button>
             <span id="biz-rev-month-label" style="font-size:19px;font-weight:700;color:#111827;min-width:160px;text-align:center;"></span>
@@ -2877,6 +2916,44 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
           <div id="biz-goal-list"></div>
         </div>
+
+        <!-- ONBOARD -->
+        <div id="biz-onboard" class="biz-section">
+          <div class="biz-section-header">
+            <h2>Onboard New Client</h2>
+            <p>Pre-flight → Vidaire wizard → Make.com automation fires automatically</p>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="biz-phase-label">Step 1 — Pre-flight checklist</div>
+            <button class="biz-reset-btn" onclick="biz_resetChecklist()">Reset all</button>
+          </div>
+          <div class="biz-form-block" style="margin-bottom:8px;">
+            <div id="biz-preflight-checks"></div>
+          </div>
+
+          <div class="biz-phase-label">Step 2 — Open the wizard</div>
+          <a href="https://vidaire.co.uk/dashboard/admin/clients/new" target="_blank" class="biz-cta-btn">Open Vidaire Onboarding Wizard →</a>
+
+          <div class="biz-make-card">
+            <h4>Make.com fires the moment you hit "Create client"</h4>
+            <p>A Supabase webhook triggers the scenario automatically — you don't need to do anything.</p>
+            <div class="biz-make-step"><div class="biz-make-step-num">1</div>Welcome email sent to client with login URL</div>
+            <div class="biz-make-step"><div class="biz-make-step-num">2</div>Push notification sent to your phone</div>
+            <div class="biz-make-step"><div class="biz-make-step-num">3</div>Close CRM contact + deal created automatically</div>
+            <div class="biz-make-step"><div class="biz-make-step-num">4</div>Notion client page created (SOP + go-live checklist)</div>
+            <div class="biz-make-step" style="margin-top:12px;color:#6b7280;">
+              <div class="biz-make-step-num" style="background:#9ca3af;">?</div>
+              Not set up yet? Set this up in Make.com once — watch the Supabase <code style="font-size:11px;background:#e5e7eb;padding:1px 4px;border-radius:3px;">clients</code> table for INSERT events.
+            </div>
+          </div>
+
+          <div class="biz-phase-label" style="margin-top:24px;">Step 3 — Post-onboarding checklist</div>
+          <div class="biz-form-block">
+            <div id="biz-postflight-checks"></div>
+          </div>
+
+        </div><!-- /biz-onboard -->
 
       </div><!-- /biz-main -->
     </div><!-- /biz-wrap -->
@@ -5564,6 +5641,30 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   const BIZ_CLIENTS_KEY = 'biz_clients';
   const BIZ_REVENUE_KEY = 'biz_revenue';
   const BIZ_GOALS_KEY   = 'biz_goals';
+  const BIZ_CHECKS_KEY  = 'biz_onboard_checks';
+
+  // Vidaire cost model (mirrors lib/finance.ts)
+  const BIZ_MRR_PER    = 1500;
+  const BIZ_VAR_PER    = 262; // Lusha 62 + Lumyna 80 + Instantly 77 + Loom 15 + Inboxes 28
+  const BIZ_FIXED      = 51;  // Claude 18 + Domain 3 + Other 30
+
+  const BIZ_PREFLIGHT = [
+    { id:'pf1', text:'Contract signed and countersigned by client' },
+    { id:'pf2', text:'Sending domain purchased and DNS configured (MX, SPF, DKIM)' },
+    { id:'pf3', text:'Instantly campaign created — copy Campaign ID ready to paste' },
+    { id:'pf4', text:'Loom folder created for client — copy Folder ID ready to paste' },
+    { id:'pf5', text:'Inboxes set up and warming (allow 2–3 weeks minimum)' },
+    { id:'pf6', text:'Client briefed on Loom naming: FirstName-LastName-DD-MM' },
+  ];
+
+  const BIZ_POSTFLIGHT = [
+    { id:'po1', text:'Credentials shared with client (login email + temp password)' },
+    { id:'po2', text:'Client logged in and changed their password' },
+    { id:'po3', text:'Client connected Gmail in Vidaire (enables Loom view alerts)' },
+    { id:'po4', text:'First Loom batch uploaded with correct naming' },
+    { id:'po5', text:'Instantly campaign activated and test send done' },
+    { id:'po6', text:'Confirmed Loom tracking fires: open a video → check dashboard shows the view' },
+  ];
 
   let biz_rev_year = new Date().getFullYear();
   let biz_rev_mon  = new Date().getMonth();
@@ -5583,6 +5684,95 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function biz_saveGoals(d) {
     localStorage.setItem(BIZ_GOALS_KEY, JSON.stringify(d));
     if (sb) sb.from('hub_data').upsert({ key: BIZ_GOALS_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+
+  function biz_getChecks() { try { return JSON.parse(localStorage.getItem(BIZ_CHECKS_KEY) || '{}'); } catch { return {}; } }
+  function biz_saveChecks(d) { localStorage.setItem(BIZ_CHECKS_KEY, JSON.stringify(d)); }
+
+  function biz_toggleCheck(id) {
+    const c = biz_getChecks();
+    c[id] = !c[id];
+    biz_saveChecks(c);
+    biz_renderOnboard();
+  }
+
+  function biz_resetChecklist() {
+    if (!confirm('Reset all checklist items?')) return;
+    biz_saveChecks({});
+    biz_renderOnboard();
+  }
+
+  function biz_renderOnboard() {
+    const checks = biz_getChecks();
+    function renderList(items, containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = items.map(item => `
+        <div class="biz-check-item">
+          <input type="checkbox" id="chk-${item.id}" ${checks[item.id] ? 'checked' : ''} onchange="biz_toggleCheck('${item.id}')">
+          <label class="biz-check-label${checks[item.id] ? ' done' : ''}" for="chk-${item.id}">${item.text}</label>
+        </div>
+      `).join('');
+    }
+    renderList(BIZ_PREFLIGHT, 'biz-preflight-checks');
+    renderList(BIZ_POSTFLIGHT, 'biz-postflight-checks');
+  }
+
+  function biz_renderPnL() {
+    const el = document.getElementById('biz-pnl-section');
+    if (!el) return;
+    const n = biz_getClients().filter(c => c.status === 'active').length;
+    const mrr = n * BIZ_MRR_PER;
+    const variable = n * BIZ_VAR_PER;
+    const gross = mrr - variable;
+    const net = gross - BIZ_FIXED;
+    const grossPct = mrr > 0 ? Math.round((gross / mrr) * 100) : 0;
+    const netPct   = mrr > 0 ? Math.round((net   / mrr) * 100) : 0;
+    const fmt = v => '£' + v.toLocaleString();
+    const rows = [1,2,3,4,5,6,8,10].map(i => {
+      const im = i * BIZ_MRR_PER, iv = i * BIZ_VAR_PER, ig = im - iv, inet = ig - BIZ_FIXED;
+      return `<tr class="${i===n?'biz-active-row':''}">
+        <td>${i}</td><td>${fmt(im)}</td><td>${fmt(iv)}</td><td>${fmt(ig)}</td>
+        <td class="biz-profit-cell">${fmt(inet)}</td>
+        <td>${Math.round((inet/im)*100)}%</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Variable costs / client</div>
+          <div class="biz-pnl-row"><span>Lusha</span><span class="biz-pnl-val">£62</span></div>
+          <div class="biz-pnl-row"><span>Lumyna</span><span class="biz-pnl-val">£80</span></div>
+          <div class="biz-pnl-row"><span>Instantly</span><span class="biz-pnl-val">£77</span></div>
+          <div class="biz-pnl-row"><span>Loom</span><span class="biz-pnl-val">£15</span></div>
+          <div class="biz-pnl-row"><span>Inboxes</span><span class="biz-pnl-val">£28</span></div>
+          <div class="biz-pnl-row biz-pnl-total"><span>Total</span><span class="biz-pnl-val">£262</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Fixed costs / month</div>
+          <div class="biz-pnl-row"><span>Claude</span><span class="biz-pnl-val">£18</span></div>
+          <div class="biz-pnl-row"><span>Vercel</span><span class="biz-pnl-val">£0</span></div>
+          <div class="biz-pnl-row"><span>Supabase</span><span class="biz-pnl-val">£0</span></div>
+          <div class="biz-pnl-row"><span>Domain</span><span class="biz-pnl-val">£3</span></div>
+          <div class="biz-pnl-row"><span>Other</span><span class="biz-pnl-val">£30</span></div>
+          <div class="biz-pnl-row biz-pnl-total"><span>Total</span><span class="biz-pnl-val">£51</span></div>
+        </div>
+      </div>
+      <div class="biz-pnl-block">
+        <div class="biz-pnl-block-title">Current P&L — ${n} active client${n!==1?'s':''}</div>
+        <div class="biz-pnl-row"><span>MRR</span><span class="biz-pnl-val">${fmt(mrr)}</span></div>
+        <div class="biz-pnl-row"><span>Variable costs</span><span class="biz-pnl-val" style="color:#dc2626;">−${fmt(variable)}</span></div>
+        <div class="biz-pnl-row biz-pnl-total"><span>Gross profit <span style="font-weight:400;color:#9ca3af;">(${grossPct}%)</span></span><span class="biz-pnl-val">${fmt(gross)}</span></div>
+        <div class="biz-pnl-row"><span>Fixed costs</span><span class="biz-pnl-val" style="color:#dc2626;">−${fmt(BIZ_FIXED)}</span></div>
+        <div class="biz-pnl-row biz-pnl-total" style="font-size:15px;padding-top:10px;"><span>Net profit <span style="font-size:12px;font-weight:400;color:#9ca3af;">(${netPct}%)</span></span><span class="biz-pnl-val" style="color:${net>=0?'#059669':'#dc2626'};">${fmt(net)}</span></div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Scale projection</div>
+      <div style="overflow-x:auto;"><table class="biz-scale-table">
+        <thead><tr><th>Clients</th><th>MRR</th><th>Var costs</th><th>Gross</th><th>Net profit</th><th>Margin</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div style="height:24px;"></div>
+    `;
   }
 
   function biz_showTab(id, btn) {
@@ -5611,11 +5801,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const active  = clients.filter(c => c.status === 'active');
     const churned = clients.filter(c => c.status === 'churned');
     const mrr     = active.reduce((s, c) => s + (c.fee || 0), 0);
+    const net = (active.length * BIZ_MRR_PER) - (active.length * BIZ_VAR_PER) - BIZ_FIXED;
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     set('biz-stat-clients', active.length || '0');
     set('biz-stat-mrr',     mrr ? '£' + mrr.toLocaleString() : '£0');
+    set('biz-stat-net',     active.length ? (net >= 0 ? '£' : '-£') + Math.abs(net).toLocaleString() : '£0');
     set('biz-stat-arr',     mrr ? '£' + (mrr * 12).toLocaleString() : '£0');
-    set('biz-stat-churned', churned.length || '0');
+    const netEl = document.getElementById('biz-stat-net');
+    if (netEl) netEl.style.color = active.length && net < 0 ? '#dc2626' : '#059669';
 
     const clientEl = document.getElementById('biz-ov-client-list');
     if (clientEl) {
@@ -5651,17 +5844,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   // ── Clients ───────────────────────────────────────────────────
   function biz_addClient() {
-    const name    = document.getElementById('biz-cl-name')?.value.trim();
-    const company = document.getElementById('biz-cl-company')?.value.trim();
-    const fee     = parseInt(document.getElementById('biz-cl-fee')?.value || '0', 10);
-    const start   = document.getElementById('biz-cl-start')?.value;
-    const email   = document.getElementById('biz-cl-email')?.value.trim();
-    const notes   = document.getElementById('biz-cl-notes')?.value.trim();
+    const name     = document.getElementById('biz-cl-name')?.value.trim();
+    const industry = document.getElementById('biz-cl-industry')?.value || 'recruitment_agency';
+    const fee      = parseInt(document.getElementById('biz-cl-fee')?.value || '0', 10);
+    const start    = document.getElementById('biz-cl-start')?.value;
+    const email    = document.getElementById('biz-cl-email')?.value.trim();
+    const url      = document.getElementById('biz-cl-url')?.value.trim();
+    const notes    = document.getElementById('biz-cl-notes')?.value.trim();
     if (!name) return;
     const clients = biz_getClients();
-    clients.unshift({ id: Date.now(), name, company, fee, start, email, notes, status: 'active', addedAt: new Date().toISOString() });
+    clients.unshift({ id: Date.now(), name, industry, fee, start, email, url, notes, status: 'active', addedAt: new Date().toISOString() });
     biz_saveClients(clients);
-    ['biz-cl-name','biz-cl-company','biz-cl-fee','biz-cl-start','biz-cl-email','biz-cl-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['biz-cl-name','biz-cl-fee','biz-cl-start','biz-cl-email','biz-cl-url','biz-cl-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     biz_renderClients();
     biz_updateOverview();
   }
@@ -5688,18 +5882,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       return;
     }
     const badge = { active: '<span class="biz-badge biz-badge-active">Active</span>', paused: '<span class="biz-badge biz-badge-paused">Paused</span>', churned: '<span class="biz-badge biz-badge-churned">Churned</span>' };
+    const industryLabel = { recruitment_agency: 'Recruitment Agency', amazon_agency: 'Amazon Agency', marketing_agency: 'Marketing Agency', other: 'Other' };
     el.innerHTML = clients.map(c => `
       <div class="biz-client-card">
         <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
             <div class="biz-client-name">${c.name}</div>${badge[c.status]||''}
           </div>
-          <div class="biz-client-meta">${[c.company, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
+          <div class="biz-client-meta">${[industryLabel[c.industry]||c.industry, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
+          ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:11px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:3px;">Open dashboard →</a>` : ''}
           ${c.notes ? `<div style="font-size:11px;color:#9ca3af;margin-top:3px;">${c.notes}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div class="biz-client-fee">£${(c.fee||0).toLocaleString()}<span style="font-size:11px;color:#9ca3af;font-weight:400;">/mo</span></div>
-          <div style="display:flex;gap:5px;margin-top:6px;justify-content:flex-end;">
+          <div style="display:flex;gap:5px;margin-top:6px;justify-content:flex-end;flex-wrap:wrap;">
             ${c.status !== 'active'  ? `<button onclick="biz_setClientStatus(${c.id},'active')"  style="font-size:10px;padding:3px 7px;border:1px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:5px;cursor:pointer;">Active</button>` : ''}
             ${c.status !== 'paused'  ? `<button onclick="biz_setClientStatus(${c.id},'paused')"  style="font-size:10px;padding:3px 7px;border:1px solid #fde68a;background:#fef3c7;color:#b45309;border-radius:5px;cursor:pointer;">Pause</button>` : ''}
             ${c.status !== 'churned' ? `<button onclick="biz_setClientStatus(${c.id},'churned')" style="font-size:10px;padding:3px 7px;border:1px solid #e5e7eb;background:#f9fafb;color:#6b7280;border-radius:5px;cursor:pointer;">Churned</button>` : ''}
