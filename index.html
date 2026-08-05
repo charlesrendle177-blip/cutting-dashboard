@@ -3962,6 +3962,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     try { return JSON.parse(localStorage.getItem('tmmb_calls') || '[]'); } catch { return []; }
   }
 
+  function tmmb_fmtDate(s) {
+    if (!s) return '—';
+    const [y, m, d] = s.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
   function tmmb_saveCalls(calls) {
     localStorage.setItem('tmmb_calls', JSON.stringify(calls));
     if (sb) sb.from('hub_data')
@@ -4264,7 +4270,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <td style="width:28px;padding:8px 4px 8px 14px;">
             <button onclick="event.stopPropagation();tmmb_toggleStar(${c.id})" title="${c.starred?'Remove star':'Star this call'}" style="background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:0;opacity:${c.starred?1:0.2};transition:opacity 0.15s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='${c.starred?1:0.2}'">⭐</button>
           </td>
-          <td style="white-space:nowrap;">${c.date || '—'}</td>
+          <td style="white-space:nowrap;">${tmmb_fmtDate(c.date)}</td>
           <td>
             <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}</div>
             ${contactLine ? `<div class="tmmb-call-contact">${contactLine}</div>` : ''}
@@ -4425,7 +4431,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}">${outcomeLabel[c.outcome]||c.outcome}</span>
             </div>
           </div>
-          <div class="tmmb-vault-card-date">${c.date||'—'}${src ? ' · '+src : ''}</div>
+          <div class="tmmb-vault-card-date">${tmmb_fmtDate(c.date)}${src ? ' · '+src : ''}</div>
           ${dealBlock}
           ${links}
           ${objs}
@@ -4509,7 +4515,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
         <div>
           <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
-          <span style="font-size:11px;color:var(--label);margin-left:8px;">${c.date}</span>
+          <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:12px;color:#059669;font-weight:700;">£${comm.toLocaleString()}</span>
