@@ -2436,6 +2436,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('followup',this)">Follow-up</button>
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noclose',this)">No Close</button>
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noshow',this)">No Show</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('starred',this)">⭐ Starred</button>
             </div>
           </div>
 
@@ -4248,7 +4249,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const sourceLabel  = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
     const convertedIds = new Set(calls.filter(c => c.parentCallId).map(c => c.parentCallId));
     el.innerHTML = '<div style="overflow-x:auto;"><table class="tmmb-call-table"><thead><tr>' +
-      '<th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
+      '<th></th><th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
       '</tr></thead><tbody>' +
       calls.map(c => {
         const comm = Math.round((c.dealValue || 4000) * 0.1);
@@ -4260,6 +4261,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         const fuBadge     = c.parentCallId ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:1px 5px;">↩ FU</span>` : '';
         const convBadge   = (c.outcome === 'followup' && convertedIds.has(c.id)) ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#059669;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:4px;padding:1px 5px;">✓ Closed</span>` : '';
         return `<tr style="cursor:pointer;" onclick="tmmb_toggleCallExpand(${c.id})">
+          <td style="width:28px;padding:8px 4px 8px 14px;">
+            <button onclick="event.stopPropagation();tmmb_toggleStar(${c.id})" title="${c.starred?'Remove star':'Star this call'}" style="background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:0;opacity:${c.starred?1:0.2};transition:opacity 0.15s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='${c.starred?1:0.2}'">⭐</button>
+          </td>
           <td style="white-space:nowrap;">${c.date || '—'}</td>
           <td>
             <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}</div>
@@ -4290,6 +4294,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_toggleCallExpand(id) {
     const row = document.getElementById('call-exp-' + id);
     if (row) row.classList.toggle('open');
+  }
+
+  function tmmb_toggleStar(id) {
+    const calls = tmmb_getCalls();
+    const call = calls.find(c => c.id === id);
+    if (!call) return;
+    call.starred = !call.starred;
+    tmmb_saveCalls(calls);
+    tmmb_renderCallHistory();
+    tmmb_renderVault();
   }
 
   function tmmb_analyseFromCall(id) {
@@ -4335,7 +4349,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('vault-stat-comm',   closed.length ? '£'+totalComm.toLocaleString() : '—');
 
     // Filter + search
-    let calls = tmmb_vaultFilter === 'all' ? all : all.filter(c => c.outcome === tmmb_vaultFilter);
+    let calls = tmmb_vaultFilter === 'all' ? all
+              : tmmb_vaultFilter === 'starred' ? all.filter(c => c.starred)
+              : all.filter(c => c.outcome === tmmb_vaultFilter);
     const q = (document.getElementById('vault-search')?.value || '').toLowerCase().trim();
     if (q) calls = calls.filter(c =>
       (c.name||'').toLowerCase().includes(q) ||
@@ -4404,7 +4420,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="tmmb-vault-card-body">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:2px;">
             <div class="tmmb-vault-card-name">${c.name||'Unknown'}</div>
-            <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}" style="flex-shrink:0;margin-top:2px;">${outcomeLabel[c.outcome]||c.outcome}</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:2px;">
+              <button onclick="event.stopPropagation();tmmb_toggleStar(${c.id})" title="${c.starred?'Remove star':'Star this call'}" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;opacity:${c.starred?1:0.25};transition:opacity 0.15s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='${c.starred?1:0.25}'">${c.starred?'⭐':'⭐'}</button>
+              <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}">${outcomeLabel[c.outcome]||c.outcome}</span>
+            </div>
           </div>
           <div class="tmmb-vault-card-date">${c.date||'—'}${src ? ' · '+src : ''}</div>
           ${dealBlock}
