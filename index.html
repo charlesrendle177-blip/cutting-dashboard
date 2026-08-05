@@ -1668,6 +1668,75 @@
       .td-task { grid-template-columns: 14px 26px 20px 1fr auto; gap: 7px; padding: 10px 14px; }
       .td-notes { padding-left: 52px; }
     }
+    /* ============================================================
+       BUSINESS (VIDAIRE) SECTION
+    ============================================================ */
+    .biz-wrap {
+      --biz-accent: #1e40af;
+      --biz-bg: #f0f4ff;
+      background: var(--biz-bg);
+      flex: 1;
+    }
+    .biz-tabs {
+      display: flex; padding: 0 48px;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      background: #fff; overflow-x: auto; gap: 0;
+      position: sticky; top: 57px; z-index: 90;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    .biz-tab {
+      padding: 14px 20px; font-size: 13px; font-weight: 600;
+      color: #6b7280; background: none; border: none;
+      border-bottom: 2.5px solid transparent; cursor: pointer;
+      white-space: nowrap; font-family: 'Inter', sans-serif; transition: color 0.15s;
+    }
+    .biz-tab:hover { color: #374151; }
+    .biz-tab.active { color: #1e40af; border-bottom-color: #1e40af; font-weight: 700; }
+    .biz-main { max-width: 960px; margin: 0 auto; padding: 32px 48px 60px; }
+    .biz-section { display: none; }
+    .biz-section.active { display: block; }
+    .biz-section-header { margin-bottom: 24px; }
+    .biz-section-header h2 { font-size: 22px; font-weight: 800; color: #111827; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .biz-section-header p  { font-size: 13px; color: #6b7280; }
+    .biz-stat-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 14px; margin-bottom: 28px;
+    }
+    .biz-stat-box {
+      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 16px;
+      padding: 22px 16px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+      position: relative; overflow: hidden;
+    }
+    .biz-stat-box::before {
+      content: ''; position: absolute; top: 0; left: 20px; right: 20px;
+      height: 2px; background: #1e40af; opacity: 0.4;
+    }
+    .biz-stat-num   { font-size: 30px; font-weight: 800; color: #1e40af; line-height: 1; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .biz-stat-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; }
+    .biz-client-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px;
+      padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .biz-client-name { font-size: 15px; font-weight: 700; color: #111827; }
+    .biz-client-meta { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .biz-client-fee  { font-size: 18px; font-weight: 800; color: #1e40af; white-space: nowrap; }
+    .biz-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .biz-badge-active  { background: #dcfce7; color: #15803d; }
+    .biz-badge-paused  { background: #fef3c7; color: #b45309; }
+    .biz-badge-churned { background: #f3f4f6; color: #6b7280; }
+    .biz-form-block { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
+    .biz-goal-bar  { height: 8px; border-radius: 4px; background: #e5e7eb; margin: 8px 0; overflow: hidden; }
+    .biz-goal-fill { height: 100%; border-radius: 4px; background: #1e40af; transition: width 0.4s; }
+    @media (max-width: 640px) {
+      .biz-tabs { padding: 0 16px; }
+      .biz-main { padding: 20px 16px 60px; }
+      .biz-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .biz-stat-num { font-size: 22px; }
+      .biz-stat-box { padding: 14px 8px; }
+    }
+
   </style>
 </head>
 <body>
@@ -2680,13 +2749,137 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <div class="hdr-crumb">Charles' Hub / Business</div>
     </div>
 
-    <div class="business-center">
-      <div class="cs-block">
-        <div class="cs-icon">🏢</div>
-        <div class="cs-title">Coming Soon</div>
-        <div class="cs-text">Primed Agency and Primed Systems metrics, client overview, and revenue dashboard. Being built next.</div>
+    <div class="biz-wrap">
+
+      <div class="biz-tabs">
+        <button class="biz-tab active" onclick="biz_showTab('biz-overview',this);biz_updateOverview()">Overview</button>
+        <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
+        <button class="biz-tab" onclick="biz_showTab('biz-revenue',this);biz_renderRevenue()">Revenue</button>
+        <button class="biz-tab" onclick="biz_showTab('biz-goals',this);biz_renderGoals()">Goals</button>
       </div>
-    </div>
+
+      <div class="biz-main">
+
+        <!-- OVERVIEW -->
+        <div id="biz-overview" class="biz-section active">
+          <div class="biz-section-header">
+            <h2>Vidaire</h2>
+            <p>Business performance at a glance</p>
+          </div>
+          <div class="biz-stat-grid">
+            <div class="biz-stat-box">
+              <div class="biz-stat-num" id="biz-stat-clients">0</div>
+              <div class="biz-stat-label">Active Clients</div>
+            </div>
+            <div class="biz-stat-box">
+              <div class="biz-stat-num" id="biz-stat-mrr">£0</div>
+              <div class="biz-stat-label">MRR</div>
+            </div>
+            <div class="biz-stat-box">
+              <div class="biz-stat-num" id="biz-stat-arr">£0</div>
+              <div class="biz-stat-label">ARR</div>
+            </div>
+            <div class="biz-stat-box">
+              <div class="biz-stat-num" id="biz-stat-churned">0</div>
+              <div class="biz-stat-label">Churned</div>
+            </div>
+          </div>
+          <div class="tmmb-ov-2col">
+            <div class="card">
+              <div class="card-label">Active Clients</div>
+              <div id="biz-ov-client-list"><div style="color:var(--label);font-size:13px;padding:16px 0;text-align:center;">No clients added yet</div></div>
+            </div>
+            <div class="card">
+              <div class="card-label">Goals at a Glance</div>
+              <div id="biz-ov-goals-list"><div style="color:var(--label);font-size:13px;padding:16px 0;text-align:center;">No goals set yet</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLIENTS -->
+        <div id="biz-clients" class="biz-section">
+          <div class="biz-section-header">
+            <h2>Clients</h2>
+            <p>Active Vidaire clients and their retainers</p>
+          </div>
+          <div class="biz-form-block">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Client</div>
+            <div style="display:grid;gap:10px;">
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Client Name</label><input type="text" id="biz-cl-name" placeholder="e.g. John Smith" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Company</label><input type="text" id="biz-cl-company" placeholder="e.g. Smith Agency" style="width:100%;"></div>
+              </div>
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Monthly Retainer (£)</label><input type="number" id="biz-cl-fee" placeholder="0" min="0" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Start Date</label><input type="date" id="biz-cl-start" style="width:100%;"></div>
+              </div>
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Email</label><input type="email" id="biz-cl-email" placeholder="client@email.com" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Notes</label><input type="text" id="biz-cl-notes" placeholder="Any extra context…" style="width:100%;"></div>
+              </div>
+              <button onclick="biz_addClient()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add Client</button>
+            </div>
+          </div>
+          <div id="biz-client-list"></div>
+        </div>
+
+        <!-- REVENUE -->
+        <div id="biz-revenue" class="biz-section">
+          <div class="biz-section-header">
+            <h2>Revenue</h2>
+            <p>Cash collected each month</p>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 18px;">
+            <button onclick="biz_prevMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">‹</button>
+            <span id="biz-rev-month-label" style="font-size:19px;font-weight:700;color:#111827;min-width:160px;text-align:center;"></span>
+            <button onclick="biz_nextMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">›</button>
+          </div>
+          <div class="biz-form-block">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Log Revenue for <span id="biz-rev-form-month"></span></div>
+            <div style="display:grid;gap:10px;">
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Amount Received (£)</label><input type="number" id="biz-rev-amount" placeholder="0" min="0" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Source / Notes</label><input type="text" id="biz-rev-note" placeholder="e.g. Client A retainer" style="width:100%;"></div>
+              </div>
+              <button onclick="biz_addRevenue()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Log Revenue</button>
+            </div>
+          </div>
+          <div id="biz-rev-list"></div>
+        </div>
+
+        <!-- GOALS -->
+        <div id="biz-goals" class="biz-section">
+          <div class="biz-section-header">
+            <h2>Goals</h2>
+            <p>Track targets vs actuals</p>
+          </div>
+          <div class="biz-form-block">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Goal</div>
+            <div style="display:grid;gap:10px;">
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Goal Label</label><input type="text" id="biz-goal-label" placeholder="e.g. Monthly Revenue" style="width:100%;"></div>
+                <div><label class="tmmb-form-label">Target (£ or number)</label><input type="number" id="biz-goal-target" placeholder="0" min="0" style="width:100%;"></div>
+              </div>
+              <div class="tmmb-2col">
+                <div><label class="tmmb-form-label">Current Progress</label><input type="number" id="biz-goal-current" placeholder="0" min="0" style="width:100%;"></div>
+                <div>
+                  <label class="tmmb-form-label">Period</label>
+                  <select id="biz-goal-period" style="width:100%;">
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annual">Annual</option>
+                    <option value="ongoing">Ongoing</option>
+                  </select>
+                </div>
+              </div>
+              <button onclick="biz_addGoal()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add Goal</button>
+            </div>
+          </div>
+          <div id="biz-goal-list"></div>
+        </div>
+
+      </div><!-- /biz-main -->
+    </div><!-- /biz-wrap -->
 
   </div>
 </div>
@@ -5139,7 +5332,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -5192,6 +5385,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             if (key === 'tmmb_pipeline') {
               localStorage.setItem(PIPE_KEY, JSON.stringify(value));
               pipe_render();
+            }
+            if (key === 'biz_clients') {
+              localStorage.setItem(BIZ_CLIENTS_KEY, JSON.stringify(value));
+              biz_renderClients(); biz_updateOverview();
+            }
+            if (key === 'biz_revenue') {
+              localStorage.setItem(BIZ_REVENUE_KEY, JSON.stringify(value));
+              biz_renderRevenue();
+            }
+            if (key === 'biz_goals') {
+              localStorage.setItem(BIZ_GOALS_KEY, JSON.stringify(value));
+              biz_renderGoals(); biz_updateOverview();
             }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
@@ -5351,6 +5556,275 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     setTimeout(() => flash.remove(), 3000);
   }
   /* ============================================================ */
+
+  // ============================================================
+  // BUSINESS (VIDAIRE)
+  // ============================================================
+
+  const BIZ_CLIENTS_KEY = 'biz_clients';
+  const BIZ_REVENUE_KEY = 'biz_revenue';
+  const BIZ_GOALS_KEY   = 'biz_goals';
+
+  let biz_rev_year = new Date().getFullYear();
+  let biz_rev_mon  = new Date().getMonth();
+
+  function biz_getClients() { try { return JSON.parse(localStorage.getItem(BIZ_CLIENTS_KEY) || '[]'); } catch { return []; } }
+  function biz_getRevenue() { try { return JSON.parse(localStorage.getItem(BIZ_REVENUE_KEY) || '[]'); } catch { return []; } }
+  function biz_getGoals()   { try { return JSON.parse(localStorage.getItem(BIZ_GOALS_KEY)   || '[]'); } catch { return []; } }
+
+  function biz_saveClients(d) {
+    localStorage.setItem(BIZ_CLIENTS_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: BIZ_CLIENTS_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+  function biz_saveRevenue(d) {
+    localStorage.setItem(BIZ_REVENUE_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: BIZ_REVENUE_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+  function biz_saveGoals(d) {
+    localStorage.setItem(BIZ_GOALS_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: BIZ_GOALS_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+
+  function biz_showTab(id, btn) {
+    document.querySelectorAll('.biz-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.biz-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function biz_fmtDate(s) {
+    if (!s) return '—';
+    const [y, m, d] = s.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function biz_revMonthKey()  { return `${biz_rev_year}-${String(biz_rev_mon + 1).padStart(2, '0')}`; }
+  function biz_revMonthName() { return new Date(biz_rev_year, biz_rev_mon, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
+
+  function biz_prevMonth() { if (biz_rev_mon === 0) { biz_rev_mon = 11; biz_rev_year--; } else { biz_rev_mon--; } biz_renderRevenue(); }
+  function biz_nextMonth() { if (biz_rev_mon === 11) { biz_rev_mon = 0; biz_rev_year++; } else { biz_rev_mon++; } biz_renderRevenue(); }
+
+  // ── Overview ──────────────────────────────────────────────────
+  function biz_updateOverview() {
+    const clients = biz_getClients();
+    const goals   = biz_getGoals();
+    const active  = clients.filter(c => c.status === 'active');
+    const churned = clients.filter(c => c.status === 'churned');
+    const mrr     = active.reduce((s, c) => s + (c.fee || 0), 0);
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('biz-stat-clients', active.length || '0');
+    set('biz-stat-mrr',     mrr ? '£' + mrr.toLocaleString() : '£0');
+    set('biz-stat-arr',     mrr ? '£' + (mrr * 12).toLocaleString() : '£0');
+    set('biz-stat-churned', churned.length || '0');
+
+    const clientEl = document.getElementById('biz-ov-client-list');
+    if (clientEl) {
+      clientEl.innerHTML = !active.length
+        ? '<div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No clients yet</div>'
+        : active.map(c => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">${c.name}</div>
+              ${c.company ? `<div style="font-size:11px;color:#9ca3af;">${c.company}</div>` : ''}
+            </div>
+            <div style="font-size:14px;font-weight:700;color:#1e40af;">£${(c.fee||0).toLocaleString()}<span style="font-size:10px;color:#9ca3af;font-weight:400;">/mo</span></div>
+          </div>`).join('');
+    }
+
+    const goalsEl = document.getElementById('biz-ov-goals-list');
+    if (goalsEl) {
+      goalsEl.innerHTML = !goals.length
+        ? '<div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No goals set yet</div>'
+        : goals.slice(0, 4).map(g => {
+            const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+            const col = pct >= 100 ? '#059669' : pct >= 60 ? '#1e40af' : '#d97706';
+            return `
+              <div style="padding:7px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px;">
+                  <span>${g.label}</span><span style="color:${col};">${pct}%</span>
+                </div>
+                <div class="biz-goal-bar"><div class="biz-goal-fill" style="width:${pct}%;background:${col};"></div></div>
+              </div>`;
+          }).join('');
+    }
+  }
+
+  // ── Clients ───────────────────────────────────────────────────
+  function biz_addClient() {
+    const name    = document.getElementById('biz-cl-name')?.value.trim();
+    const company = document.getElementById('biz-cl-company')?.value.trim();
+    const fee     = parseInt(document.getElementById('biz-cl-fee')?.value || '0', 10);
+    const start   = document.getElementById('biz-cl-start')?.value;
+    const email   = document.getElementById('biz-cl-email')?.value.trim();
+    const notes   = document.getElementById('biz-cl-notes')?.value.trim();
+    if (!name) return;
+    const clients = biz_getClients();
+    clients.unshift({ id: Date.now(), name, company, fee, start, email, notes, status: 'active', addedAt: new Date().toISOString() });
+    biz_saveClients(clients);
+    ['biz-cl-name','biz-cl-company','biz-cl-fee','biz-cl-start','biz-cl-email','biz-cl-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    biz_renderClients();
+    biz_updateOverview();
+  }
+
+  function biz_setClientStatus(id, status) {
+    biz_saveClients(biz_getClients().map(c => c.id === id ? {...c, status} : c));
+    biz_renderClients();
+    biz_updateOverview();
+  }
+
+  function biz_deleteClient(id) {
+    if (!confirm('Remove this client?')) return;
+    biz_saveClients(biz_getClients().filter(c => c.id !== id));
+    biz_renderClients();
+    biz_updateOverview();
+  }
+
+  function biz_renderClients() {
+    const el = document.getElementById('biz-client-list');
+    if (!el) return;
+    const clients = biz_getClients();
+    if (!clients.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">No clients added yet.</div>';
+      return;
+    }
+    const badge = { active: '<span class="biz-badge biz-badge-active">Active</span>', paused: '<span class="biz-badge biz-badge-paused">Paused</span>', churned: '<span class="biz-badge biz-badge-churned">Churned</span>' };
+    el.innerHTML = clients.map(c => `
+      <div class="biz-client-card">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+            <div class="biz-client-name">${c.name}</div>${badge[c.status]||''}
+          </div>
+          <div class="biz-client-meta">${[c.company, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
+          ${c.notes ? `<div style="font-size:11px;color:#9ca3af;margin-top:3px;">${c.notes}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="biz-client-fee">£${(c.fee||0).toLocaleString()}<span style="font-size:11px;color:#9ca3af;font-weight:400;">/mo</span></div>
+          <div style="display:flex;gap:5px;margin-top:6px;justify-content:flex-end;">
+            ${c.status !== 'active'  ? `<button onclick="biz_setClientStatus(${c.id},'active')"  style="font-size:10px;padding:3px 7px;border:1px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:5px;cursor:pointer;">Active</button>` : ''}
+            ${c.status !== 'paused'  ? `<button onclick="biz_setClientStatus(${c.id},'paused')"  style="font-size:10px;padding:3px 7px;border:1px solid #fde68a;background:#fef3c7;color:#b45309;border-radius:5px;cursor:pointer;">Pause</button>` : ''}
+            ${c.status !== 'churned' ? `<button onclick="biz_setClientStatus(${c.id},'churned')" style="font-size:10px;padding:3px 7px;border:1px solid #e5e7eb;background:#f9fafb;color:#6b7280;border-radius:5px;cursor:pointer;">Churned</button>` : ''}
+            <button onclick="biz_deleteClient(${c.id})" style="font-size:10px;padding:3px 7px;border:1px solid #fca5a5;background:#fee2e2;color:#ef4444;border-radius:5px;cursor:pointer;">×</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── Revenue ───────────────────────────────────────────────────
+  function biz_addRevenue() {
+    const amount = parseInt(document.getElementById('biz-rev-amount')?.value || '0', 10);
+    const note   = document.getElementById('biz-rev-note')?.value.trim();
+    if (!amount) return;
+    const entries = biz_getRevenue();
+    entries.unshift({ id: Date.now(), month: biz_revMonthKey(), amount, note, addedAt: new Date().toISOString() });
+    biz_saveRevenue(entries);
+    ['biz-rev-amount','biz-rev-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    biz_renderRevenue();
+  }
+
+  function biz_deleteRevenue(id) {
+    biz_saveRevenue(biz_getRevenue().filter(e => e.id !== id));
+    biz_renderRevenue();
+  }
+
+  function biz_renderRevenue() {
+    const name = biz_revMonthName();
+    const lbl  = document.getElementById('biz-rev-month-label');
+    const frm  = document.getElementById('biz-rev-form-month');
+    if (lbl) lbl.textContent = name;
+    if (frm) frm.textContent = name;
+    const el = document.getElementById('biz-rev-list');
+    if (!el) return;
+    const entries = biz_getRevenue().filter(e => e.month === biz_revMonthKey());
+    const total   = entries.reduce((s, e) => s + (e.amount || 0), 0);
+    const mrr     = biz_getClients().filter(c => c.status === 'active').reduce((s, c) => s + (c.fee || 0), 0);
+    el.innerHTML = `
+      <div class="tmmb-2col" style="margin-bottom:16px;">
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:10px;color:#1e40af;font-weight:700;margin-bottom:3px;">CASH IN — ${name.split(' ')[0].toUpperCase()}</div>
+          <div style="font-size:26px;font-weight:800;color:#1e40af;">£${total.toLocaleString()}</div>
+        </div>
+        <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:3px;">MRR EXPECTED</div>
+          <div style="font-size:26px;font-weight:800;color:#059669;">£${mrr.toLocaleString()}</div>
+        </div>
+      </div>
+      ${!entries.length
+        ? '<div style="text-align:center;padding:30px 0;color:#9ca3af;font-size:14px;">No revenue logged for this month.</div>'
+        : entries.map(e => `
+            <div style="background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+              <div>
+                <div style="font-size:15px;font-weight:700;color:#111827;">£${(e.amount||0).toLocaleString()}</div>
+                ${e.note ? `<div style="font-size:12px;color:#9ca3af;margin-top:2px;">${e.note}</div>` : ''}
+              </div>
+              <button onclick="biz_deleteRevenue(${e.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;">×</button>
+            </div>`).join('')
+      }`;
+  }
+
+  // ── Goals ─────────────────────────────────────────────────────
+  function biz_addGoal() {
+    const label   = document.getElementById('biz-goal-label')?.value.trim();
+    const target  = parseInt(document.getElementById('biz-goal-target')?.value || '0', 10);
+    const current = parseInt(document.getElementById('biz-goal-current')?.value || '0', 10);
+    const period  = document.getElementById('biz-goal-period')?.value || 'monthly';
+    if (!label || !target) return;
+    const goals = biz_getGoals();
+    goals.unshift({ id: Date.now(), label, target, current, period });
+    biz_saveGoals(goals);
+    ['biz-goal-label','biz-goal-target','biz-goal-current'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    biz_renderGoals();
+    biz_updateOverview();
+  }
+
+  function biz_updateGoalProgress(id, val) {
+    biz_saveGoals(biz_getGoals().map(g => g.id === id ? {...g, current: parseInt(val, 10) || 0} : g));
+    biz_renderGoals();
+    biz_updateOverview();
+  }
+
+  function biz_deleteGoal(id) {
+    biz_saveGoals(biz_getGoals().filter(g => g.id !== id));
+    biz_renderGoals();
+    biz_updateOverview();
+  }
+
+  function biz_renderGoals() {
+    const el = document.getElementById('biz-goal-list');
+    if (!el) return;
+    const goals = biz_getGoals();
+    if (!goals.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">No goals set yet.</div>';
+      return;
+    }
+    const periodLabel = { monthly:'Monthly', quarterly:'Quarterly', annual:'Annual', ongoing:'Ongoing' };
+    el.innerHTML = goals.map(g => {
+      const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+      const col = pct >= 100 ? '#059669' : pct >= 60 ? '#1e40af' : '#d97706';
+      return `
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:12px;padding:16px 20px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#111827;">${g.label}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${periodLabel[g.period]||g.period}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:20px;font-weight:800;color:${col};">${pct}%</div>
+              <div style="font-size:11px;color:#9ca3af;">£${(g.current||0).toLocaleString()} / £${(g.target||0).toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="biz-goal-bar"><div class="biz-goal-fill" style="width:${pct}%;background:${col};"></div></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <label style="font-size:12px;color:#6b7280;font-weight:600;">Update:</label>
+            <input type="number" value="${g.current||0}" min="0"
+              onchange="biz_updateGoalProgress(${g.id}, this.value)"
+              style="width:90px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;">
+            ${pct >= 100 ? '<span style="font-size:12px;font-weight:700;color:#059669;">🎯 Goal hit!</span>' : ''}
+            <button onclick="biz_deleteGoal(${g.id})" style="margin-left:auto;background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
 </script>
 
 <!-- Strong Import Modal -->
