@@ -1671,10 +1671,9 @@
     /* ============================================================
        BUSINESS (VIDAIRE) SECTION
     ============================================================ */
+    /* ═══ BUSINESS TAB — matches TMMB design system, blue accent ═══ */
     .biz-wrap {
-      --biz-accent: #1e40af;
-      --biz-bg: #f0f4ff;
-      background: var(--biz-bg);
+      background: #f0f2f7;
       flex: 1;
     }
     .biz-tabs {
@@ -1686,22 +1685,21 @@
     }
     .biz-tab {
       padding: 14px 20px; font-size: 13px; font-weight: 600;
-      color: #6b7280; background: none; border: none;
-      border-bottom: 2.5px solid transparent; cursor: pointer;
-      white-space: nowrap; font-family: 'Inter', sans-serif; transition: color 0.15s;
+      color: #9ca3af; background: none; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer;
+      white-space: nowrap; font-family: 'Inter', sans-serif;
+      transition: color 0.15s, border-color 0.15s; margin-bottom: -1px;
     }
     .biz-tab:hover { color: #374151; }
     .biz-tab.active { color: #1e40af; border-bottom-color: #1e40af; font-weight: 700; }
-    .biz-main { max-width: 960px; margin: 0 auto; padding: 32px 48px 60px; }
+    .biz-main { max-width: 960px; margin: 0 auto; padding: 36px 48px 100px; }
     .biz-section { display: none; }
     .biz-section.active { display: block; }
-    .biz-section-header { margin-bottom: 24px; }
-    .biz-section-header h2 { font-size: 22px; font-weight: 800; color: #111827; letter-spacing: -0.5px; margin-bottom: 4px; }
-    .biz-section-header p  { font-size: 13px; color: #6b7280; }
-    .biz-stat-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 14px; margin-bottom: 28px;
-    }
+    .biz-section-header { margin-bottom: 28px; }
+    .biz-section-header h2 { font-size: 26px; font-weight: 800; color: #0d2345; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .biz-section-header p { font-size: 13px; color: #6b7280; }
+    /* Stat grid */
+    .biz-stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 28px; }
     .biz-stat-box {
       background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 16px;
       padding: 22px 16px; text-align: center;
@@ -1710,59 +1708,124 @@
     }
     .biz-stat-box::before {
       content: ''; position: absolute; top: 0; left: 20px; right: 20px;
-      height: 2px; background: #1e40af; opacity: 0.4;
+      height: 2px; background: #1e40af; opacity: 0.35;
     }
-    .biz-stat-num   { font-size: 30px; font-weight: 800; color: #1e40af; line-height: 1; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .biz-stat-num { font-size: 34px; font-weight: 800; color: #0d2345; line-height: 1; margin-bottom: 6px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
     .biz-stat-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; }
-    .biz-client-card {
-      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px;
-      padding: 16px 20px; display: flex; align-items: center; gap: 14px;
-      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    /* Cards */
+    .biz-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px;
+      padding: 22px 24px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
     }
+    .biz-card-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #6b7280; margin-bottom: 14px;
+    }
+    .biz-card-label.accent { color: #1e40af; }
+    /* Inputs */
+    .biz-wrap input, .biz-wrap select, .biz-wrap textarea {
+      width: 100%; background: #fff; border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 9px; padding: 10px 14px; color: #111827;
+      font-family: 'Inter', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .biz-wrap input:focus, .biz-wrap select:focus, .biz-wrap textarea:focus {
+      border-color: #1e40af; box-shadow: 0 0 0 3px rgba(30,64,175,0.08);
+    }
+    .biz-form-label {
+      display: block; font-size: 12px; font-weight: 600; color: #4b5563;
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .biz-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    /* Buttons */
+    .biz-btn {
+      display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px;
+      border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 14px;
+      font-weight: 700; cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .biz-btn-primary { background: #1e40af; color: #fff; }
+    .biz-btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,64,175,0.3); }
+    .biz-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid rgba(0,0,0,0.08); }
+    .biz-btn-secondary:hover { background: #e5e7eb; }
+    .biz-btn-ghost { background: none; border: 1px solid rgba(0,0,0,0.10); border-radius: 7px; padding: 6px 13px; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .biz-btn-ghost:hover { border-color: #9ca3af; color: #374151; }
+    /* Client cards */
+    .biz-client-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px;
+      padding: 18px 22px; display: flex; align-items: flex-start; gap: 14px;
+      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+      transition: box-shadow 0.15s;
+    }
+    .biz-client-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06); }
     .biz-client-name { font-size: 15px; font-weight: 700; color: #111827; }
-    .biz-client-meta { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-    .biz-client-fee  { font-size: 18px; font-weight: 800; color: #1e40af; white-space: nowrap; }
-    .biz-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-    .biz-badge-active  { background: #dcfce7; color: #15803d; }
-    .biz-badge-paused  { background: #fef3c7; color: #b45309; }
-    .biz-badge-churned { background: #f3f4f6; color: #6b7280; }
-    .biz-form-block { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
-    .biz-goal-bar  { height: 8px; border-radius: 4px; background: #e5e7eb; margin: 8px 0; overflow: hidden; }
-    .biz-goal-fill { height: 100%; border-radius: 4px; background: #1e40af; transition: width 0.4s; }
-    .biz-check-item { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid #f3f4f6; }
-    .biz-check-item:last-child { border-bottom:none; }
-    .biz-check-item input[type=checkbox] { width:18px; height:18px; accent-color:#1e40af; margin-top:1px; flex-shrink:0; cursor:pointer; }
-    .biz-check-label { font-size:13px; color:#374151; line-height:1.5; cursor:pointer; }
-    .biz-check-label.done { text-decoration:line-through; color:#9ca3af; }
-    .biz-pnl-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f3f4f6; font-size:13px; color:#374151; }
-    .biz-pnl-row:last-child { border-bottom:none; }
-    .biz-pnl-row.biz-pnl-total { font-weight:700; color:#111827; }
-    .biz-pnl-val { font-weight:600; }
-    .biz-scale-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; }
-    .biz-scale-table th { text-align:left; font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.07em; padding:6px 8px; background:#f9fafb; }
-    .biz-scale-table td { padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; }
-    .biz-scale-table tr.biz-active-row td { background:#eff6ff; color:#1e40af; font-weight:700; }
-    .biz-scale-table td.biz-profit-cell { color:#059669; font-weight:700; }
-    .biz-cta-btn { display:inline-flex; align-items:center; gap:8px; background:#1e40af; color:#fff; border:none; border-radius:10px; padding:13px 22px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; text-decoration:none; margin:18px 0 8px; transition:background 0.15s; }
-    .biz-cta-btn:hover { background:#1d4ed8; color:#fff; }
-    .biz-make-card { background:#f0f4ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:16px 18px; margin-top:20px; }
-    .biz-make-card h4 { font-size:13px; font-weight:800; color:#1e40af; margin-bottom:6px; }
-    .biz-make-card p { font-size:12px; color:#374151; line-height:1.5; margin-bottom:10px; }
-    .biz-make-step { font-size:12px; color:#374151; padding:4px 0; display:flex; gap:8px; align-items:flex-start; }
-    .biz-make-step-num { background:#1e40af; color:#fff; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0; margin-top:1px; }
-    .biz-phase-label { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em; margin:20px 0 8px; }
-    .biz-reset-btn { background:none; border:1.5px solid #e5e7eb; border-radius:8px; padding:5px 12px; font-size:11px; color:#6b7280; cursor:pointer; font-family:'Inter',sans-serif; }
-    .biz-reset-btn:hover { border-color:#d1d5db; color:#374151; }
-    .biz-pnl-block { background:#f0f4ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:16px 18px; margin-bottom:20px; }
-    .biz-pnl-block-title { font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+    .biz-client-meta { font-size: 12px; color: #9ca3af; margin-top: 3px; line-height: 1.5; }
+    .biz-client-fee { font-size: 20px; font-weight: 800; color: #1e40af; white-space: nowrap; letter-spacing: -0.5px; }
+    /* Status badges */
+    .biz-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .biz-badge-active    { background: rgba(5,150,105,0.1);    color: #059669; }
+    .biz-badge-paused    { background: rgba(217,119,6,0.1);     color: #d97706; }
+    .biz-badge-churned   { background: rgba(107,114,128,0.1);   color: #6b7280; }
+    .biz-badge-onboarding{ background: rgba(30,64,175,0.1);     color: #1e40af; }
+    /* Status action buttons */
+    .biz-status-btn { font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; border: 1px solid; transition: opacity 0.15s; }
+    .biz-status-btn:hover { opacity: 0.8; }
+    /* Checklist */
+    .biz-check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .biz-check-item:last-child { border-bottom: none; }
+    .biz-check-item input[type=checkbox] { width: 18px; height: 18px; accent-color: #1e40af; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+    .biz-check-label { font-size: 14px; color: #374151; line-height: 1.5; cursor: pointer; transition: color 0.15s; }
+    .biz-check-label.done { text-decoration: line-through; color: #9ca3af; }
+    /* P&L */
+    .biz-pnl-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; color: #374151; }
+    .biz-pnl-row:last-child { border-bottom: none; }
+    .biz-pnl-row.biz-pnl-total { font-weight: 700; color: #111827; border-top: 1px solid rgba(0,0,0,0.10); border-bottom: none; padding-top: 11px; margin-top: 4px; }
+    .biz-pnl-val { font-weight: 600; }
+    .biz-pnl-block { background: #eff6ff; border: 1px solid rgba(30,64,175,0.15); border-radius: 14px; padding: 20px 22px; margin-bottom: 20px; }
+    .biz-pnl-block-title { font-size: 10px; font-weight: 700; color: #1e40af; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+    /* Scale table */
+    .biz-scale-table { width: 100%; border-collapse: collapse; }
+    .biz-scale-table th { text-align: left; padding: 11px 14px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #9ca3af; border-bottom: 1px solid rgba(0,0,0,0.07); background: #f8fafc; }
+    .biz-scale-table td { padding: 12px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .biz-scale-table tr:last-child td { border-bottom: none; }
+    .biz-scale-table tr.biz-active-row td { background: rgba(30,64,175,0.05); color: #1e40af; font-weight: 700; }
+    .biz-scale-table td.biz-profit-cell { color: #059669; font-weight: 700; }
+    /* Goal bar */
+    .biz-goal-bar { height: 6px; border-radius: 3px; background: rgba(0,0,0,0.06); margin: 8px 0 2px; overflow: hidden; }
+    .biz-goal-fill { height: 100%; border-radius: 3px; background: #1e40af; transition: width 0.4s; }
+    /* Phase labels */
+    .biz-phase-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 10px; display: block; }
+    /* CTA button */
+    .biz-cta-btn { display: inline-flex; align-items: center; gap: 8px; background: #1e40af; color: #fff; border: none; border-radius: 10px; padding: 13px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; margin: 16px 0 8px; transition: all 0.15s; }
+    .biz-cta-btn:hover { background: #1d4ed8; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,64,175,0.3); }
+    /* Make.com card */
+    .biz-make-card { background: #eff6ff; border: 1px solid rgba(30,64,175,0.15); border-radius: 14px; padding: 22px 24px; margin-top: 16px; }
+    .biz-make-card h4 { font-size: 14px; font-weight: 800; color: #1e40af; margin-bottom: 6px; }
+    .biz-make-card > p { font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 14px; }
+    .biz-make-step { font-size: 13px; color: #374151; padding: 5px 0; display: flex; gap: 10px; align-items: flex-start; }
+    .biz-make-step-num { background: #1e40af; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+    /* Month nav */
+    .biz-month-nav { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 20px; }
+    .biz-month-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.10); background: #fff; font-size: 18px; cursor: pointer; color: #374151; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: all 0.15s; }
+    .biz-month-btn:hover { background: #f3f4f6; }
+    .biz-month-label { font-size: 17px; font-weight: 700; color: #111827; min-width: 170px; text-align: center; }
+    /* Revenue entries */
+    .biz-rev-entry { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid rgba(0,0,0,0.05); gap: 12px; }
+    .biz-rev-entry:last-child { border-bottom: none; }
+    .biz-rev-amount { font-size: 18px; font-weight: 800; color: #059669; letter-spacing: -0.3px; }
+    .biz-rev-note { font-size: 13px; color: #6b7280; }
+    .biz-rev-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 4px; }
+    /* Responsive */
     @media (max-width: 640px) {
       .biz-tabs { padding: 0 16px; }
-      .biz-main { padding: 20px 16px 60px; }
-      .biz-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .biz-stat-num { font-size: 22px; }
-      .biz-stat-box { padding: 14px 8px; }
-      .biz-scale-table { font-size: 11px; }
-      .biz-scale-table th, .biz-scale-table td { padding: 5px 5px; }
+      .biz-main { padding: 20px 16px 80px; }
+      .biz-stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 20px; }
+      .biz-stat-num { font-size: 24px; }
+      .biz-stat-box { padding: 16px 10px; }
+      .biz-card { padding: 16px 18px; }
+      .biz-client-card { padding: 14px 16px; }
+      .biz-form-grid { grid-template-columns: 1fr; }
+      .biz-scale-table th, .biz-scale-table td { padding: 8px 7px; font-size: 11px; }
     }
 
   </style>
@@ -2805,7 +2868,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="biz-stat-label">MRR</div>
             </div>
             <div class="biz-stat-box">
-              <div class="biz-stat-num" id="biz-stat-net" style="color:#059669;">£0</div>
+              <div class="biz-stat-num" id="biz-stat-net">£0</div>
               <div class="biz-stat-label">Net Profit</div>
             </div>
             <div class="biz-stat-box">
@@ -2814,13 +2877,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
           <div class="tmmb-ov-2col">
-            <div class="card">
-              <div class="card-label">Active Clients</div>
-              <div id="biz-ov-client-list"><div style="color:var(--label);font-size:13px;padding:16px 0;text-align:center;">No clients added yet</div></div>
+            <div class="biz-card">
+              <div class="biz-card-label">Active Clients</div>
+              <div id="biz-ov-client-list"><div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No clients added yet</div></div>
             </div>
-            <div class="card">
-              <div class="card-label">Goals at a Glance</div>
-              <div id="biz-ov-goals-list"><div style="color:var(--label);font-size:13px;padding:16px 0;text-align:center;">No goals set yet</div></div>
+            <div class="biz-card">
+              <div class="biz-card-label">Goals at a Glance</div>
+              <div id="biz-ov-goals-list"><div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No goals set yet</div></div>
             </div>
           </div>
         </div>
@@ -2831,14 +2894,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <h2>Clients</h2>
             <p>Active Vidaire clients and their retainers</p>
           </div>
-          <div class="biz-form-block">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Client</div>
-            <div style="display:grid;gap:10px;">
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Client Name</label><input type="text" id="biz-cl-name" placeholder="e.g. Primed Agency" style="width:100%;"></div>
+          <div class="biz-card">
+            <div class="biz-card-label">Add Client</div>
+            <div style="display:grid;gap:14px;">
+              <div class="biz-form-grid">
+                <div><label class="biz-form-label">Client Name</label><input type="text" id="biz-cl-name" placeholder="e.g. Primed Agency"></div>
                 <div>
-                  <label class="tmmb-form-label">Industry Type</label>
-                  <select id="biz-cl-industry" style="width:100%;">
+                  <label class="biz-form-label">Industry Type</label>
+                  <select id="biz-cl-industry">
                     <option value="recruitment_agency">Recruitment Agency</option>
                     <option value="amazon_agency">Amazon Agency</option>
                     <option value="marketing_agency">Marketing Agency</option>
@@ -2846,16 +2909,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   </select>
                 </div>
               </div>
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Monthly Retainer (£)</label><input type="number" id="biz-cl-fee" placeholder="1500" min="0" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Start Date</label><input type="date" id="biz-cl-start" style="width:100%;"></div>
+              <div class="biz-form-grid">
+                <div><label class="biz-form-label">Monthly Retainer (£)</label><input type="number" id="biz-cl-fee" placeholder="1500" min="0"></div>
+                <div><label class="biz-form-label">Start Date</label><input type="date" id="biz-cl-start"></div>
               </div>
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Contact Email</label><input type="email" id="biz-cl-email" placeholder="client@company.com" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Dashboard URL</label><input type="url" id="biz-cl-url" placeholder="https://vidaire.co.uk" style="width:100%;"></div>
+              <div class="biz-form-grid">
+                <div><label class="biz-form-label">Contact Email</label><input type="email" id="biz-cl-email" placeholder="client@company.com"></div>
+                <div><label class="biz-form-label">Dashboard URL</label><input type="url" id="biz-cl-url" placeholder="https://vidaire.co.uk"></div>
               </div>
-              <div><label class="tmmb-form-label">Notes</label><input type="text" id="biz-cl-notes" placeholder="Any extra context…" style="width:100%;"></div>
-              <button onclick="biz_addClient()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add Client</button>
+              <div><label class="biz-form-label">Notes</label><input type="text" id="biz-cl-notes" placeholder="Any extra context…"></div>
+              <div><button onclick="biz_addClient()" class="biz-btn biz-btn-primary">+ Add Client</button></div>
             </div>
           </div>
           <div id="biz-client-list"></div>
@@ -2868,20 +2931,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <p>Auto-calculated from your active clients · log cash received below</p>
           </div>
           <div id="biz-pnl-section"></div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 18px;">
-            <button onclick="biz_prevMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">‹</button>
-            <span id="biz-rev-month-label" style="font-size:19px;font-weight:700;color:#111827;min-width:160px;text-align:center;"></span>
-            <button onclick="biz_nextMonth()" style="width:34px;height:34px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;font-size:18px;cursor:pointer;color:#374151;display:flex;align-items:center;justify-content:center;">›</button>
+          <div class="biz-month-nav">
+            <button onclick="biz_prevMonth()" class="biz-month-btn">‹</button>
+            <span id="biz-rev-month-label" class="biz-month-label"></span>
+            <button onclick="biz_nextMonth()" class="biz-month-btn">›</button>
           </div>
-          <div class="biz-form-block">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Log Revenue for <span id="biz-rev-form-month"></span></div>
-            <div style="display:grid;gap:10px;">
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Amount Received (£)</label><input type="number" id="biz-rev-amount" placeholder="0" min="0" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Source / Notes</label><input type="text" id="biz-rev-note" placeholder="e.g. Client A retainer" style="width:100%;"></div>
-              </div>
-              <button onclick="biz_addRevenue()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Log Revenue</button>
+          <div class="biz-card">
+            <div class="biz-card-label">Log Revenue — <span id="biz-rev-form-month"></span></div>
+            <div class="biz-form-grid" style="margin-bottom:14px;">
+              <div><label class="biz-form-label">Amount Received (£)</label><input type="number" id="biz-rev-amount" placeholder="0" min="0"></div>
+              <div><label class="biz-form-label">Source / Notes</label><input type="text" id="biz-rev-note" placeholder="e.g. Primed Agency retainer"></div>
             </div>
+            <button onclick="biz_addRevenue()" class="biz-btn biz-btn-primary">+ Log Revenue</button>
           </div>
           <div id="biz-rev-list"></div>
         </div>
@@ -2892,18 +2953,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <h2>Goals</h2>
             <p>Track targets vs actuals</p>
           </div>
-          <div class="biz-form-block">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Add Goal</div>
-            <div style="display:grid;gap:10px;">
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Goal Label</label><input type="text" id="biz-goal-label" placeholder="e.g. Monthly Revenue" style="width:100%;"></div>
-                <div><label class="tmmb-form-label">Target (£ or number)</label><input type="number" id="biz-goal-target" placeholder="0" min="0" style="width:100%;"></div>
+          <div class="biz-card">
+            <div class="biz-card-label">Add Goal</div>
+            <div style="display:grid;gap:14px;">
+              <div class="biz-form-grid">
+                <div><label class="biz-form-label">Goal Label</label><input type="text" id="biz-goal-label" placeholder="e.g. Monthly Revenue"></div>
+                <div><label class="biz-form-label">Target (£ or number)</label><input type="number" id="biz-goal-target" placeholder="0" min="0"></div>
               </div>
-              <div class="tmmb-2col">
-                <div><label class="tmmb-form-label">Current Progress</label><input type="number" id="biz-goal-current" placeholder="0" min="0" style="width:100%;"></div>
+              <div class="biz-form-grid">
+                <div><label class="biz-form-label">Current Progress</label><input type="number" id="biz-goal-current" placeholder="0" min="0"></div>
                 <div>
-                  <label class="tmmb-form-label">Period</label>
-                  <select id="biz-goal-period" style="width:100%;">
+                  <label class="biz-form-label">Period</label>
+                  <select id="biz-goal-period">
                     <option value="monthly">Monthly</option>
                     <option value="quarterly">Quarterly</option>
                     <option value="annual">Annual</option>
@@ -2911,7 +2972,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   </select>
                 </div>
               </div>
-              <button onclick="biz_addGoal()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Add Goal</button>
+              <div><button onclick="biz_addGoal()" class="biz-btn biz-btn-primary">+ Add Goal</button></div>
             </div>
           </div>
           <div id="biz-goal-list"></div>
@@ -2926,9 +2987,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div class="biz-phase-label">Step 1 — Pre-flight checklist</div>
-            <button class="biz-reset-btn" onclick="biz_resetChecklist()">Reset all</button>
+            <button class="biz-btn-ghost" onclick="biz_resetChecklist()">Reset all</button>
           </div>
-          <div class="biz-form-block" style="margin-bottom:8px;">
+          <div class="biz-card" style="margin-bottom:8px;">
             <div id="biz-preflight-checks"></div>
           </div>
 
@@ -2948,8 +3009,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
 
-          <div class="biz-phase-label" style="margin-top:24px;">Step 3 — Post-onboarding checklist</div>
-          <div class="biz-form-block">
+          <span class="biz-phase-label" style="margin-top:24px;">Step 3 — Post-onboarding checklist</span>
+          <div class="biz-card">
             <div id="biz-postflight-checks"></div>
           </div>
 
@@ -5805,36 +5866,39 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     set('biz-stat-clients', active.length || '0');
     set('biz-stat-mrr',     mrr ? '£' + mrr.toLocaleString() : '£0');
-    set('biz-stat-net',     active.length ? (net >= 0 ? '£' : '-£') + Math.abs(net).toLocaleString() : '£0');
-    set('biz-stat-arr',     mrr ? '£' + (mrr * 12).toLocaleString() : '£0');
+    const netFmt = active.length ? (net >= 0 ? '£' : '-£') + Math.abs(net).toLocaleString() : '£0';
+    set('biz-stat-net', netFmt);
+    set('biz-stat-arr', mrr ? '£' + (mrr * 12).toLocaleString() : '£0');
     const netEl = document.getElementById('biz-stat-net');
-    if (netEl) netEl.style.color = active.length && net < 0 ? '#dc2626' : '#059669';
+    if (netEl) netEl.style.color = (active.length && net < 0) ? '#dc2626' : '#059669';
 
+    const industryLabel = { recruitment_agency: 'Recruitment Agency', amazon_agency: 'Amazon Agency', marketing_agency: 'Marketing Agency', other: 'Other' };
     const clientEl = document.getElementById('biz-ov-client-list');
     if (clientEl) {
       clientEl.innerHTML = !active.length
-        ? '<div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No clients yet</div>'
+        ? '<div style="color:#9ca3af;font-size:13px;padding:20px 0;text-align:center;">No clients yet — add one in the Clients tab</div>'
         : active.map(c => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
             <div>
-              <div style="font-size:13px;font-weight:600;">${c.name}</div>
-              ${c.company ? `<div style="font-size:11px;color:#9ca3af;">${c.company}</div>` : ''}
+              <div style="font-size:14px;font-weight:700;color:#111827;">${c.name}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:1px;">${industryLabel[c.industry]||c.industry||''}</div>
             </div>
-            <div style="font-size:14px;font-weight:700;color:#1e40af;">£${(c.fee||0).toLocaleString()}<span style="font-size:10px;color:#9ca3af;font-weight:400;">/mo</span></div>
-          </div>`).join('');
+            <div style="font-size:16px;font-weight:800;color:#1e40af;letter-spacing:-0.3px;">£${(c.fee||0).toLocaleString()}<span style="font-size:11px;color:#9ca3af;font-weight:400;"> /mo</span></div>
+          </div>`).join('') + `<div style="display:flex;justify-content:space-between;padding:10px 0 0;border-top:1px solid rgba(0,0,0,0.07);margin-top:2px;"><span style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total MRR</span><span style="font-size:15px;font-weight:800;color:#1e40af;">£${mrr.toLocaleString()}</span></div>`;
     }
 
     const goalsEl = document.getElementById('biz-ov-goals-list');
     if (goalsEl) {
       goalsEl.innerHTML = !goals.length
-        ? '<div style="color:#9ca3af;font-size:13px;padding:16px 0;text-align:center;">No goals set yet</div>'
+        ? '<div style="color:#9ca3af;font-size:13px;padding:20px 0;text-align:center;">No goals set yet — add one in the Goals tab</div>'
         : goals.slice(0, 4).map(g => {
             const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
             const col = pct >= 100 ? '#059669' : pct >= 60 ? '#1e40af' : '#d97706';
             return `
-              <div style="padding:7px 0;border-bottom:1px solid var(--border);">
-                <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px;">
-                  <span>${g.label}</span><span style="color:${col};">${pct}%</span>
+              <div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:13px;font-weight:700;color:#111827;">${g.label}</span>
+                  <span style="font-size:13px;font-weight:800;color:${col};">${pct}%</span>
                 </div>
                 <div class="biz-goal-bar"><div class="biz-goal-fill" style="width:${pct}%;background:${col};"></div></div>
               </div>`;
@@ -5881,25 +5945,27 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       el.innerHTML = '<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">No clients added yet.</div>';
       return;
     }
-    const badge = { active: '<span class="biz-badge biz-badge-active">Active</span>', paused: '<span class="biz-badge biz-badge-paused">Paused</span>', churned: '<span class="biz-badge biz-badge-churned">Churned</span>' };
+    const badge = { active: 'biz-badge-active', paused: 'biz-badge-paused', churned: 'biz-badge-churned' };
+    const badgeLabel = { active: 'Active', paused: 'Paused', churned: 'Churned' };
     const industryLabel = { recruitment_agency: 'Recruitment Agency', amazon_agency: 'Amazon Agency', marketing_agency: 'Marketing Agency', other: 'Other' };
     el.innerHTML = clients.map(c => `
       <div class="biz-client-card">
         <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
-            <div class="biz-client-name">${c.name}</div>${badge[c.status]||''}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+            <div class="biz-client-name">${c.name}</div>
+            <span class="biz-badge ${badge[c.status]||''}">${badgeLabel[c.status]||c.status}</span>
           </div>
           <div class="biz-client-meta">${[industryLabel[c.industry]||c.industry, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
-          ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:11px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:3px;">Open dashboard →</a>` : ''}
-          ${c.notes ? `<div style="font-size:11px;color:#9ca3af;margin-top:3px;">${c.notes}</div>` : ''}
+          ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:12px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px;">Open dashboard →</a>` : ''}
+          ${c.notes ? `<div style="font-size:12px;color:#9ca3af;margin-top:4px;">${c.notes}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div class="biz-client-fee">£${(c.fee||0).toLocaleString()}<span style="font-size:11px;color:#9ca3af;font-weight:400;">/mo</span></div>
-          <div style="display:flex;gap:5px;margin-top:6px;justify-content:flex-end;flex-wrap:wrap;">
-            ${c.status !== 'active'  ? `<button onclick="biz_setClientStatus(${c.id},'active')"  style="font-size:10px;padding:3px 7px;border:1px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:5px;cursor:pointer;">Active</button>` : ''}
-            ${c.status !== 'paused'  ? `<button onclick="biz_setClientStatus(${c.id},'paused')"  style="font-size:10px;padding:3px 7px;border:1px solid #fde68a;background:#fef3c7;color:#b45309;border-radius:5px;cursor:pointer;">Pause</button>` : ''}
-            ${c.status !== 'churned' ? `<button onclick="biz_setClientStatus(${c.id},'churned')" style="font-size:10px;padding:3px 7px;border:1px solid #e5e7eb;background:#f9fafb;color:#6b7280;border-radius:5px;cursor:pointer;">Churned</button>` : ''}
-            <button onclick="biz_deleteClient(${c.id})" style="font-size:10px;padding:3px 7px;border:1px solid #fca5a5;background:#fee2e2;color:#ef4444;border-radius:5px;cursor:pointer;">×</button>
+          <div class="biz-client-fee">£${(c.fee||0).toLocaleString()}<span style="font-size:12px;color:#9ca3af;font-weight:400;">/mo</span></div>
+          <div style="display:flex;gap:5px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap;">
+            ${c.status !== 'active'  ? `<button onclick="biz_setClientStatus(${c.id},'active')"  class="biz-status-btn" style="border-color:#a7f3d0;background:#f0fdf4;color:#059669;">Active</button>` : ''}
+            ${c.status !== 'paused'  ? `<button onclick="biz_setClientStatus(${c.id},'paused')"  class="biz-status-btn" style="border-color:#fde68a;background:#fef3c7;color:#b45309;">Pause</button>` : ''}
+            ${c.status !== 'churned' ? `<button onclick="biz_setClientStatus(${c.id},'churned')" class="biz-status-btn" style="border-color:#e5e7eb;background:#f9fafb;color:#6b7280;">Churned</button>` : ''}
+            <button onclick="biz_deleteClient(${c.id})" class="biz-status-btn" style="border-color:#fca5a5;background:#fee2e2;color:#ef4444;">✕</button>
           </div>
         </div>
       </div>`).join('');
@@ -5934,26 +6000,31 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const total   = entries.reduce((s, e) => s + (e.amount || 0), 0);
     const mrr     = biz_getClients().filter(c => c.status === 'active').reduce((s, c) => s + (c.fee || 0), 0);
     el.innerHTML = `
-      <div class="tmmb-2col" style="margin-bottom:16px;">
-        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:10px;color:#1e40af;font-weight:700;margin-bottom:3px;">CASH IN — ${name.split(' ')[0].toUpperCase()}</div>
-          <div style="font-size:26px;font-weight:800;color:#1e40af;">£${total.toLocaleString()}</div>
+      <div class="tmmb-2col" style="margin-bottom:20px;">
+        <div class="biz-stat-box">
+          <div class="biz-stat-num" style="color:#1e40af;">£${total.toLocaleString()}</div>
+          <div class="biz-stat-label">Cash in — ${name.split(' ')[0]}</div>
         </div>
-        <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:3px;">MRR EXPECTED</div>
-          <div style="font-size:26px;font-weight:800;color:#059669;">£${mrr.toLocaleString()}</div>
+        <div class="biz-stat-box">
+          <div class="biz-stat-num" style="color:#059669;">£${mrr.toLocaleString()}</div>
+          <div class="biz-stat-label">MRR Expected</div>
         </div>
       </div>
       ${!entries.length
-        ? '<div style="text-align:center;padding:30px 0;color:#9ca3af;font-size:14px;">No revenue logged for this month.</div>'
-        : entries.map(e => `
-            <div style="background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        ? '<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">No revenue logged for ${name}.</div>'
+        : `<div class="biz-card">${entries.map(e => `
+            <div class="biz-rev-entry">
               <div>
-                <div style="font-size:15px;font-weight:700;color:#111827;">£${(e.amount||0).toLocaleString()}</div>
-                ${e.note ? `<div style="font-size:12px;color:#9ca3af;margin-top:2px;">${e.note}</div>` : ''}
+                <div class="biz-rev-amount">£${(e.amount||0).toLocaleString()}</div>
+                ${e.note ? `<div class="biz-rev-note">${e.note}</div>` : ''}
               </div>
-              <button onclick="biz_deleteRevenue(${e.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;">×</button>
-            </div>`).join('')
+              <button onclick="biz_deleteRevenue(${e.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:22px;line-height:1;padding:0 4px;">×</button>
+            </div>`).join('')}
+            <div class="biz-rev-total-row">
+              <span style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">Total</span>
+              <span style="font-size:18px;font-weight:800;color:#059669;">£${total.toLocaleString()}</span>
+            </div>
+          </div>`
       }`;
   }
 
@@ -5997,25 +6068,25 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
       const col = pct >= 100 ? '#059669' : pct >= 60 ? '#1e40af' : '#d97706';
       return `
-        <div style="background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:12px;padding:16px 20px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+        <div class="biz-card" style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
             <div>
-              <div style="font-size:14px;font-weight:700;color:#111827;">${g.label}</div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${periodLabel[g.period]||g.period}</div>
+              <div style="font-size:15px;font-weight:700;color:#111827;">${g.label}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:3px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">${periodLabel[g.period]||g.period}</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:20px;font-weight:800;color:${col};">${pct}%</div>
-              <div style="font-size:11px;color:#9ca3af;">£${(g.current||0).toLocaleString()} / £${(g.target||0).toLocaleString()}</div>
+              <div style="font-size:24px;font-weight:800;color:${col};letter-spacing:-0.5px;">${pct}%</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:1px;">${(g.current||0).toLocaleString()} / ${(g.target||0).toLocaleString()}</div>
             </div>
           </div>
           <div class="biz-goal-bar"><div class="biz-goal-fill" style="width:${pct}%;background:${col};"></div></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-            <label style="font-size:12px;color:#6b7280;font-weight:600;">Update:</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+            <label class="biz-form-label" style="margin:0;white-space:nowrap;">Update</label>
             <input type="number" value="${g.current||0}" min="0"
               onchange="biz_updateGoalProgress(${g.id}, this.value)"
-              style="width:90px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;">
-            ${pct >= 100 ? '<span style="font-size:12px;font-weight:700;color:#059669;">🎯 Goal hit!</span>' : ''}
-            <button onclick="biz_deleteGoal(${g.id})" style="margin-left:auto;background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;">×</button>
+              style="width:100px;padding:7px 10px;border:1px solid rgba(0,0,0,0.12);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;">
+            ${pct >= 100 ? '<span style="font-size:12px;font-weight:700;color:#059669;margin-left:4px;">Goal hit!</span>' : ''}
+            <button onclick="biz_deleteGoal(${g.id})" style="margin-left:auto;background:none;border:none;color:#d1d5db;cursor:pointer;font-size:22px;line-height:1;padding:0 2px;">×</button>
           </div>
         </div>`;
     }).join('');
