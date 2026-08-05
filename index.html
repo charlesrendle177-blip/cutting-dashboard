@@ -1798,6 +1798,18 @@
     /* CTA button */
     .biz-cta-btn { display: inline-flex; align-items: center; gap: 8px; background: #1e40af; color: #fff; border: none; border-radius: 10px; padding: 13px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; margin: 16px 0 8px; transition: all 0.15s; }
     .biz-cta-btn:hover { background: #1d4ed8; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,64,175,0.3); }
+    /* Onboarding wizard */
+    .biz-wiz-step-node { display: flex; flex-direction: column; align-items: center; z-index: 1; min-width: 80px; }
+    .biz-wiz-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #9ca3af; margin-bottom: 6px; }
+    .biz-wiz-dot.active { background: #1e40af; border-color: #1e40af; color: #fff; }
+    .biz-wiz-dot.done { background: #059669; border-color: #059669; color: #fff; }
+    .biz-wiz-nodelabel { font-size: 11px; font-weight: 600; color: #9ca3af; text-align: center; }
+    .biz-wiz-error { background: #fef2f2; border: 1px solid rgba(220,38,38,0.2); border-radius: 9px; padding: 12px 16px; font-size: 13px; color: #dc2626; margin-bottom: 14px; display: none; }
+    .biz-wiz-cred-box { background: #f0f9ff; border: 1px solid rgba(14,165,233,0.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .biz-wiz-cred-label { font-size: 10px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .biz-wiz-cred-val { font-size: 14px; font-weight: 700; color: #0c4a6e; font-family: monospace; word-break: break-all; }
+    .biz-wiz-copy-btn { padding: 6px 13px; border-radius: 7px; border: 1px solid rgba(14,165,233,0.3); background: #fff; color: #0369a1; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+    .biz-wiz-copy-btn:hover { background: #0369a1; color: #fff; }
     /* Make.com card */
     .biz-make-card { background: #eff6ff; border: 1px solid rgba(30,64,175,0.15); border-radius: 14px; padding: 22px 24px; margin-top: 16px; }
     .biz-make-card h4 { font-size: 14px; font-weight: 800; color: #1e40af; margin-bottom: 6px; }
@@ -2993,8 +3005,136 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div id="biz-preflight-checks"></div>
           </div>
 
-          <div class="biz-phase-label">Step 2 — Open the wizard</div>
-          <a href="https://vidaire.co.uk/dashboard/admin/clients/new" target="_blank" class="biz-cta-btn">Open Vidaire Onboarding Wizard →</a>
+          <div class="biz-phase-label">Step 2 — Create client account</div>
+
+          <div class="biz-card" id="biz-wizard-wrap">
+            <!-- Step indicator -->
+            <div style="display:flex;align-items:flex-start;margin-bottom:24px;position:relative;">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;position:relative;">
+                <div style="position:absolute;top:15px;left:15%;right:15%;height:2px;background:rgba(0,0,0,0.07);z-index:0;"></div>
+                <div class="biz-wiz-step-node">
+                  <div class="biz-wiz-dot active" id="biz-wiz-dot-1">1</div>
+                  <div class="biz-wiz-nodelabel" id="biz-wiz-lbl-1" style="color:#1e40af;">Client details</div>
+                </div>
+                <div class="biz-wiz-step-node">
+                  <div class="biz-wiz-dot" id="biz-wiz-dot-2">2</div>
+                  <div class="biz-wiz-nodelabel" id="biz-wiz-lbl-2">Contact &amp; access</div>
+                </div>
+                <div class="biz-wiz-step-node">
+                  <div class="biz-wiz-dot" id="biz-wiz-dot-3">3</div>
+                  <div class="biz-wiz-nodelabel" id="biz-wiz-lbl-3">Campaign setup</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="biz-wiz-error" class="biz-wiz-error"></div>
+
+            <!-- Pane 1: Client details -->
+            <div id="biz-wiz-pane-1">
+              <div class="biz-form-grid" style="margin-bottom:16px;">
+                <div style="grid-column:1/-1;">
+                  <label class="biz-form-label">Company / Client name *</label>
+                  <input id="wiz-name" type="text" placeholder="e.g. Acme Agency">
+                </div>
+                <div>
+                  <label class="biz-form-label">Industry</label>
+                  <select id="wiz-industry">
+                    <option value="">Select industry</option>
+                    <option value="saas">SaaS</option>
+                    <option value="agency">Agency</option>
+                    <option value="ecommerce">E-commerce</option>
+                    <option value="finance">Finance</option>
+                    <option value="legal">Legal</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="biz-form-label">Monthly retainer (£)</label>
+                  <input id="wiz-mrr" type="number" placeholder="1500" value="1500" min="0">
+                </div>
+                <div>
+                  <label class="biz-form-label">Start date</label>
+                  <input id="wiz-start" type="date">
+                </div>
+                <div>
+                  <label class="biz-form-label">Notes (optional)</label>
+                  <input id="wiz-notes" type="text" placeholder="Anything to flag...">
+                </div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;">
+                <button class="biz-btn biz-btn-primary" onclick="biz_wizNext(1)">Continue →</button>
+              </div>
+            </div>
+
+            <!-- Pane 2: Contact & access -->
+            <div id="biz-wiz-pane-2" style="display:none;">
+              <div class="biz-form-grid" style="margin-bottom:16px;">
+                <div>
+                  <label class="biz-form-label">Contact name *</label>
+                  <input id="wiz-cname" type="text" placeholder="Jane Smith">
+                </div>
+                <div>
+                  <label class="biz-form-label">Contact email * <span style="font-weight:400;text-transform:none;font-size:11px;color:#9ca3af;">(login email)</span></label>
+                  <input id="wiz-cemail" type="email" placeholder="jane@agency.com">
+                </div>
+                <div>
+                  <label class="biz-form-label">Notification email *</label>
+                  <input id="wiz-nemail" type="email" placeholder="jane@agency.com">
+                </div>
+                <div>
+                  <label class="biz-form-label">Sending domain *</label>
+                  <input id="wiz-domain" type="text" placeholder="outreach.acmeagency.com">
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <button class="biz-btn-ghost" onclick="biz_wizGo(1)">← Back</button>
+                <button class="biz-btn biz-btn-primary" onclick="biz_wizNext(2)">Continue →</button>
+              </div>
+            </div>
+
+            <!-- Pane 3: Campaign setup -->
+            <div id="biz-wiz-pane-3" style="display:none;">
+              <div style="margin-bottom:16px;">
+                <label class="biz-form-label">Instantly campaign ID * <span style="font-weight:400;text-transform:none;font-size:11px;color:#9ca3af;">(from Instantly dashboard)</span></label>
+                <input id="wiz-campaign" type="text" placeholder="e.g. abc12345-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="margin-bottom:14px;">
+                <label class="biz-form-label">Loom folder ID <span style="font-weight:400;text-transform:none;font-size:11px;color:#9ca3af;">(optional)</span></label>
+                <input id="wiz-loom" type="text" placeholder="e.g. 1a2b3c4d-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <button class="biz-btn-ghost" onclick="biz_wizGo(2)">← Back</button>
+                <button class="biz-btn biz-btn-primary" id="biz-wiz-submit-btn" onclick="biz_wizSubmit()">Create client →</button>
+              </div>
+            </div>
+
+            <!-- Success -->
+            <div id="biz-wiz-pane-success" style="display:none;">
+              <div style="text-align:center;padding:8px 0 20px;">
+                <div style="width:52px;height:52px;border-radius:50%;background:rgba(5,150,105,0.1);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;">✓</div>
+                <div style="font-size:18px;font-weight:800;color:#0d2345;margin-bottom:4px;" id="biz-wiz-success-name">Client created</div>
+                <div style="font-size:13px;color:#6b7280;">Status set to <strong>onboarding</strong> — share these credentials with the client now</div>
+              </div>
+              <div class="biz-wiz-cred-box">
+                <div>
+                  <div class="biz-wiz-cred-label">Login email</div>
+                  <div class="biz-wiz-cred-val" id="biz-wiz-cred-email">—</div>
+                </div>
+                <button class="biz-wiz-copy-btn" onclick="biz_wizCopy('email',this)">Copy</button>
+              </div>
+              <div class="biz-wiz-cred-box">
+                <div>
+                  <div class="biz-wiz-cred-label">Temporary password <span style="font-weight:400;text-transform:none;color:#9ca3af;font-size:10px;">(client changes on first login)</span></div>
+                  <div class="biz-wiz-cred-val" id="biz-wiz-cred-pw">—</div>
+                </div>
+                <button class="biz-wiz-copy-btn" onclick="biz_wizCopy('pw',this)">Copy</button>
+              </div>
+              <div style="margin-top:14px;padding:12px 16px;background:#fffbeb;border:1px solid rgba(217,119,6,0.2);border-radius:9px;font-size:13px;color:#92400e;">
+                <strong>Send these now.</strong> The temporary password is only shown once and cannot be retrieved.
+              </div>
+              <div style="text-align:center;margin-top:20px;">
+                <button class="biz-btn-ghost" onclick="biz_wizReset()">Onboard another client</button>
+              </div>
+            </div>
+          </div>
 
           <div class="biz-make-card">
             <h4>Make.com fires the moment you hit "Create client"</h4>
@@ -5778,6 +5918,131 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     renderList(BIZ_PREFLIGHT, 'biz-preflight-checks');
     renderList(BIZ_POSTFLIGHT, 'biz-postflight-checks');
   }
+
+  // ── Onboarding wizard ──────────────────────────────────────────────────────
+  let biz_wiz_creds = {};
+
+  function biz_wizGo(step) {
+    for (let i = 1; i <= 3; i++) {
+      const p = document.getElementById('biz-wiz-pane-' + i);
+      if (p) p.style.display = (i === step) ? 'block' : 'none';
+    }
+    const suc = document.getElementById('biz-wiz-pane-success');
+    if (suc) suc.style.display = 'none';
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('biz-wiz-dot-' + i);
+      const lbl = document.getElementById('biz-wiz-lbl-' + i);
+      if (!dot) continue;
+      dot.className = 'biz-wiz-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+      dot.innerHTML = i < step ? '✓' : String(i);
+      if (lbl) lbl.style.color = i < step ? '#059669' : i === step ? '#1e40af' : '#9ca3af';
+    }
+    const err = document.getElementById('biz-wiz-error');
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+  }
+
+  function biz_wizShowError(msg) {
+    const err = document.getElementById('biz-wiz-error');
+    if (!err) return;
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  function biz_wizNext(step) {
+    const err = document.getElementById('biz-wiz-error');
+    if (err) err.style.display = 'none';
+    if (step === 1) {
+      if (!document.getElementById('wiz-name').value.trim()) return biz_wizShowError('Client name is required');
+    }
+    if (step === 2) {
+      const ce = document.getElementById('wiz-cemail').value.trim();
+      const ne = document.getElementById('wiz-nemail').value.trim();
+      if (!document.getElementById('wiz-cname').value.trim()) return biz_wizShowError('Contact name is required');
+      if (!ce || !ce.includes('@')) return biz_wizShowError('Valid contact email is required');
+      if (!ne || !ne.includes('@')) return biz_wizShowError('Valid notification email is required');
+      if (!document.getElementById('wiz-domain').value.trim()) return biz_wizShowError('Sending domain is required');
+    }
+    biz_wizGo(step + 1);
+  }
+
+  async function biz_wizSubmit() {
+    const campaign = document.getElementById('wiz-campaign').value.trim();
+    if (!campaign) return biz_wizShowError('Instantly campaign ID is required');
+    const btn = document.getElementById('biz-wiz-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+    const payload = {
+      name: document.getElementById('wiz-name').value.trim(),
+      industry_type: document.getElementById('wiz-industry').value || null,
+      mrr: parseFloat(document.getElementById('wiz-mrr').value) || null,
+      start_date: document.getElementById('wiz-start').value || null,
+      notes: document.getElementById('wiz-notes').value.trim() || null,
+      contact_name: document.getElementById('wiz-cname').value.trim(),
+      contact_email: document.getElementById('wiz-cemail').value.trim(),
+      notification_email: document.getElementById('wiz-nemail').value.trim(),
+      sending_domain: document.getElementById('wiz-domain').value.trim(),
+      instantly_campaign_id: campaign,
+      loom_folder_id: document.getElementById('wiz-loom').value.trim() || null,
+    };
+    try {
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/vidaire-onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        biz_wizShowError(data.error || 'Something went wrong');
+        if (btn) { btn.disabled = false; btn.textContent = 'Create client →'; }
+        return;
+      }
+      biz_wiz_creds = { email: data.credentials.email, pw: data.credentials.temporaryPassword };
+      document.getElementById('biz-wiz-cred-email').textContent = data.credentials.email;
+      document.getElementById('biz-wiz-cred-pw').textContent = data.credentials.temporaryPassword;
+      document.getElementById('biz-wiz-success-name').textContent = payload.name + ' created';
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('biz-wiz-dot-' + i);
+        const lbl = document.getElementById('biz-wiz-lbl-' + i);
+        if (dot) { dot.className = 'biz-wiz-dot done'; dot.innerHTML = '✓'; }
+        if (lbl) lbl.style.color = '#059669';
+      }
+      for (let i = 1; i <= 3; i++) {
+        const p = document.getElementById('biz-wiz-pane-' + i);
+        if (p) p.style.display = 'none';
+      }
+      const suc = document.getElementById('biz-wiz-pane-success');
+      if (suc) suc.style.display = 'block';
+    } catch (e) {
+      biz_wizShowError('Network error — check your connection and try again');
+      if (btn) { btn.disabled = false; btn.textContent = 'Create client →'; }
+    }
+  }
+
+  function biz_wizCopy(which, btn) {
+    const val = which === 'email' ? biz_wiz_creds.email : biz_wiz_creds.pw;
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.cssText += ';background:#059669;color:#fff;border-color:#059669;';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 1800);
+    });
+  }
+
+  function biz_wizReset() {
+    ['wiz-name','wiz-industry','wiz-mrr','wiz-start','wiz-notes',
+     'wiz-cname','wiz-cemail','wiz-nemail','wiz-domain','wiz-campaign','wiz-loom'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = id === 'wiz-mrr' ? '1500' : '';
+    });
+    biz_wiz_creds = {};
+    biz_wizGo(1);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   function biz_renderPnL() {
     const el = document.getElementById('biz-pnl-section');

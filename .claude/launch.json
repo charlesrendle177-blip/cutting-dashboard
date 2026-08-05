@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "jarvis",
+      "name": "hub",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8892"],
       "port": 8892
