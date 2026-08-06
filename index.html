@@ -1931,7 +1931,7 @@
       <div class="section-card fu fu6" onclick="navigate('sales')"
            style="--c-accent: var(--green); --c-glow: rgba(0,212,160,0.07)">
         <div class="card-icon sales">📞</div>
-        <div class="card-title">Sales Skills</div>
+        <div class="card-title">High Ticket Sales Tracker</div>
         <div class="card-subtitle">Track calls, close rate & reps</div>
         <div class="card-divider"></div>
         <div class="card-stats">
@@ -2322,8 +2322,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     <div class="section-header">
       <button class="back-btn" onclick="navigate('home')">←</button>
       <div class="hdr-dot" style="background:#059669;"></div>
-      <div class="hdr-title">TMMB · Closer Dashboard</div>
-      <div class="hdr-crumb">Charles' Hub / Sales Skills</div>
+      <div class="hdr-title">High Ticket Sales</div>
+      <div class="hdr-crumb">Charles' Hub / High Ticket Sales</div>
     </div>
 
     <!-- TMMB internal tab bar -->
@@ -2374,7 +2374,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div id="tmmb-clawback-card" class="card" style="margin-bottom:14px;display:none;border-color:#fde68a;">
             <div class="card-label" style="color:#d97706;">⏱ Clawback Window Open</div>
             <div id="tmmb-clawback-body"></div>
-            <div style="font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected. Disappears from here once locked.</div>
+            <div style="font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected.</div>
+          </div>
+
+          <!-- Locked commissions — hidden when none secured yet -->
+          <div id="tmmb-locked-card" class="card" style="margin-bottom:14px;display:none;border-color:#a7f3d0;">
+            <div class="card-label" style="color:#059669;">🔒 Commission Locked</div>
+            <div id="tmmb-locked-body"></div>
           </div>
 
           <div class="tmmb-ov-2col">
@@ -4968,32 +4974,67 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_renderClawback() {
-    const card = document.getElementById('tmmb-clawback-card');
-    const body = document.getElementById('tmmb-clawback-body');
+    const card   = document.getElementById('tmmb-clawback-card');
+    const body   = document.getElementById('tmmb-clawback-body');
+    const lCard  = document.getElementById('tmmb-locked-card');
+    const lBody  = document.getElementById('tmmb-locked-body');
     if (!card || !body) return;
+
     const now = Date.now();
-    const atRisk = tmmb_getCalls()
+    const closed = tmmb_getCalls()
       .filter(c => c.outcome === 'closed' && c.date)
-      .map(c => ({ c, daysLeft: 30 - Math.floor((now - new Date(c.date).getTime()) / 86400000) }))
-      .filter(({ daysLeft }) => daysLeft > 0)
-      .sort((a, b) => a.daysLeft - b.daysLeft);
-    if (!atRisk.length) { card.style.display = 'none'; return; }
-    card.style.display = 'block';
-    body.innerHTML = atRisk.map(({ c, daysLeft }) => {
-      const comm = Math.round((c.dealValue || 4000) * 0.1);
-      const col  = daysLeft <= 7 ? '#ef4444' : '#d97706';
-      const bg   = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
-        <div>
-          <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
-          <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:#059669;font-weight:700;">£${comm.toLocaleString()}</span>
-          <span style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">⏱ ${daysLeft}d left</span>
-        </div>
+      .map(c => ({ c, daysLeft: 30 - Math.floor((now - new Date(c.date).getTime()) / 86400000) }));
+
+    const atRisk = closed.filter(({ daysLeft }) => daysLeft > 0).sort((a, b) => a.daysLeft - b.daysLeft);
+    const locked = closed.filter(({ daysLeft }) => daysLeft <= 0).sort((a, b) => new Date(b.c.date) - new Date(a.c.date));
+
+    // Clawback at-risk section
+    if (!atRisk.length) {
+      card.style.display = 'none';
+    } else {
+      card.style.display = 'block';
+      body.innerHTML = atRisk.map(({ c, daysLeft }) => {
+        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        const col  = daysLeft <= 7 ? '#ef4444' : '#d97706';
+        const bg   = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+          <div>
+            <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+            <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:#059669;font-weight:700;">£${comm.toLocaleString()}</span>
+            <span style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">⏱ ${daysLeft}d left</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Locked commissions section
+    if (!lCard || !lBody) return;
+    if (!locked.length) {
+      lCard.style.display = 'none';
+    } else {
+      lCard.style.display = 'block';
+      const total = locked.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * 0.1), 0);
+      lBody.innerHTML = locked.map(({ c }) => {
+        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;line-height:1;">✅</span>
+            <div>
+              <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+              <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
+            </div>
+          </div>
+          <span style="font-size:13px;color:#059669;font-weight:700;">£${comm.toLocaleString()}</span>
+        </div>`;
+      }).join('') +
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:1px solid #a7f3d0;margin-top:4px;">
+        <span style="font-size:12px;font-weight:700;color:#059669;">Total locked</span>
+        <span style="font-size:15px;font-weight:800;color:#059669;">£${total.toLocaleString()}</span>
       </div>`;
-    }).join('');
+    }
   }
 
   function tmmb_scoreBar(label, score) {
