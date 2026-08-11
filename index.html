@@ -3213,7 +3213,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                onkeydown="if(event.key==='Enter')htd_quickAdd()">
         <div class="td-add-controls">
           <select class="td-quick-select" id="td-add-section">
-            <option value="primed">Primed</option>
             <option value="personal">Personal</option>
             <option value="tmmb">TMMB</option>
           </select>
@@ -3339,7 +3338,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   ============================================================ */
   const HTD_KEY = 'hub_todos';
   const HTD_SECTIONS = {
-    primed:   { label: 'Primed',   color: '#7c3aed' },
     personal: { label: 'Personal', color: '#059669' },
     tmmb:     { label: 'TMMB',     color: '#d97706' }
   };
@@ -3358,7 +3356,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const input = document.getElementById('td-add-input');
     const text = (input?.value || '').trim();
     if (!text) { input?.focus(); return; }
-    const section = document.getElementById('td-add-section')?.value || 'primed';
+    const section = document.getElementById('td-add-section')?.value || 'personal';
     const todos = htd_get();
     const sectionOpen = todos.filter(t => t.section === section && !t.done);
     const maxOrd = sectionOpen.length ? Math.max(...sectionOpen.map(t => t.order || 0)) : 0;
@@ -3446,7 +3444,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const container = document.getElementById('td-task-container');
     if (!container) return;
 
-    const SEC_ORDER = ['primed', 'tmmb', 'personal'];
+    const SEC_ORDER = ['tmmb', 'personal'];
     // Collect any tasks whose section is no longer in SEC_ORDER and re-assign to personal
     open.filter(t => !SEC_ORDER.includes(t.section)).forEach(t => { t.section = 'personal'; });
     let html = '';
@@ -4604,7 +4602,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div class="tmmb-form-group">
               <label class="tmmb-form-label">Programme / Offer</label>
-              <input type="text" id="em-deal" placeholder="e.g. Primed 90-Day">
+              <input type="text" id="em-deal" placeholder="e.g. TMMB Accelerator">
             </div>
           </div>
           <div class="tmmb-form-grid" style="margin-bottom:14px;">
