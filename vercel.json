@@ -5,6 +5,7 @@
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/tmmb-analyse", "destination": "/api/tmmb-analyse.js" },
     { "source": "/api/vidaire-onboard", "destination": "/api/vidaire-onboard.js" },
-    { "source": "/api/nightly-brief", "destination": "/api/nightly-brief.js" }
+    { "source": "/api/nightly-brief", "destination": "/api/nightly-brief.js" },
+    { "source": "/api/renpho-sync", "destination": "/api/renpho-sync.js" }
   ]
 }
