@@ -1859,6 +1859,25 @@
     .cr-tax-row:last-child { border-bottom: none; }
     .cr-tax-key { color: #6b7280; }
     .cr-tax-val { font-weight: 600; color: #0d2345; }
+    /* Receipt Vault */
+    .cr-vault-section { margin-bottom: 20px; }
+    .cr-vault-header { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .cr-vault-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
+    .cr-vault-count.submitted { background: #d1fae5; color: #065f46; }
+    .cr-receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; background: #f9fafb; border: 1px solid #f3f4f6; margin-bottom: 8px; }
+    .cr-receipt-icon { width: 40px; height: 40px; border-radius: 8px; background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cr-receipt-meta { flex: 1; min-width: 0; }
+    .cr-receipt-name { font-size: 13px; font-weight: 700; color: #0d2345; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cr-receipt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .cr-receipt-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .cr-receipt-amount { font-size: 14px; font-weight: 800; color: #0d2345; }
+    .cr-receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .cr-receipt-btns { display: flex; gap: 4px; margin-top: 2px; }
+    .cr-btn-sm { font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb; background: #fff; color: #374151; }
+    .cr-btn-sm.submit  { border-color: #d97706; color: #d97706; background: transparent; }
+    .cr-btn-sm.unsubmit { border-color: #059669; color: #059669; background: transparent; }
+    .cr-btn-sm.del     { border-color: #fca5a5; color: #dc2626; background: transparent; }
+    .cr-empty { color: #9ca3af; font-size: 13px; text-align: center; padding: 20px 0; }
     @media (max-width: 600px) {
     }
 
@@ -3228,6 +3247,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-income',this);cr_renderIncome()">Income</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-expenses',this);cr_renderExpenses()">Expenses</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-tax',this);cr_renderTax()">Tax</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-receipts',this);cr_loadReceipts()">Receipts</button>
         </div>
         <div class="biz-main">
 
@@ -3317,6 +3337,47 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <p>UK sole trader — income tax &amp; Class 4 NI</p>
             </div>
             <div id="cr-tax-body"></div>
+          </div>
+
+          <!-- CR RECEIPTS -->
+          <div id="cr-receipts" class="cr-section">
+            <div class="biz-section-header">
+              <h2>Receipt Vault</h2>
+              <p>Upload and track your expense receipts (PDF)</p>
+            </div>
+
+            <!-- Upload card -->
+            <div class="biz-card" style="margin-bottom:14px;">
+              <button onclick="cr_toggleUploadForm()" class="biz-btn biz-btn-primary" style="width:100%;margin-bottom:0;">+ Upload Receipt</button>
+              <div id="cr-receipt-form" style="display:none;margin-top:14px;">
+                <div style="margin-bottom:12px;">
+                  <label class="biz-form-label">PDF File (max 10 MB)</label>
+                  <input type="file" id="cr-receipt-file" accept=".pdf" style="width:100%;padding:6px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;">
+                </div>
+                <div class="biz-form-grid" style="margin-bottom:12px;">
+                  <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-receipt-amount" placeholder="0.00" min="0" step="0.01"></div>
+                  <div><label class="biz-form-label">Date</label><input type="date" id="cr-receipt-date"></div>
+                  <div>
+                    <label class="biz-form-label">Category</label>
+                    <select id="cr-receipt-cat">
+                      <option value="software">Software &amp; Tools</option>
+                      <option value="marketing">Marketing &amp; Ads</option>
+                      <option value="equipment">Equipment</option>
+                      <option value="professional">Professional Fees</option>
+                      <option value="travel">Travel &amp; Transport</option>
+                      <option value="office">Office &amp; Supplies</option>
+                      <option value="subscriptions">Subscriptions</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div><label class="biz-form-label">Description</label><input type="text" id="cr-receipt-desc" placeholder="Optional"></div>
+                </div>
+                <button id="cr-upload-btn" onclick="cr_uploadReceipt()" class="biz-btn biz-btn-primary">Save Receipt</button>
+              </div>
+            </div>
+
+            <!-- List -->
+            <div id="cr-receipts-list"><div class="cr-empty" style="text-align:center;padding:30px 0;color:#9ca3af;font-size:13px;">Loading receipts…</div></div>
           </div>
 
         </div><!-- /biz-main CR -->
@@ -6744,6 +6805,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   let cr_inc_year = new Date().getFullYear();
   let cr_inc_mon  = new Date().getMonth();
   let cr_exp_year = new Date().getFullYear();
+  let cr_receipts_cache = [];
+  let cr_receipts_loaded = false;
   let cr_exp_mon  = new Date().getMonth();
 
   const CR_EXP_CATS = {
@@ -7062,6 +7125,156 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-tax-row"><span class="cr-tax-key">Effective tax rate</span><span class="cr-tax-val">${eff}%</span></div>
         <div class="cr-tax-row"><span class="cr-tax-key">Set aside monthly</span><span class="cr-tax-val" style="color:#1e40af;font-size:15px;">£${setAside.toLocaleString()}/mo</span></div>
         <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on Jan 2025 rates. Personal allowance £12,570. Does not include Class 2 NI or payment-on-account. Verify with your accountant.</div>
+      </div>`;
+  }
+
+  // ── Receipt Vault ──────────────────────────────────────────────────────────
+
+  function cr_toggleUploadForm() {
+    const f = document.getElementById('cr-receipt-form');
+    f.style.display = f.style.display === 'none' ? '' : 'none';
+  }
+
+  async function cr_loadReceipts() {
+    const el = document.getElementById('cr-receipts-list');
+    if (!el) return;
+    if (!cr_receipts_loaded) {
+      el.innerHTML = '<div class="cr-empty">Loading receipts…</div>';
+    }
+    try {
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' }),
+      });
+      const data = await r.json();
+      cr_receipts_cache = data.receipts || [];
+      cr_receipts_loaded = true;
+      cr_renderReceipts();
+    } catch(e) {
+      el.innerHTML = `<div class="cr-empty">Failed to load receipts: ${e.message}</div>`;
+    }
+  }
+
+  async function cr_uploadReceipt() {
+    const fileInput = document.getElementById('cr-receipt-file');
+    const file = fileInput && fileInput.files[0];
+    if (!file) { alert('Please select a PDF file.'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('PDF is too large. Maximum size is 10 MB.'); return; }
+
+    const amount      = document.getElementById('cr-receipt-amount').value;
+    const date        = document.getElementById('cr-receipt-date').value;
+    const category    = document.getElementById('cr-receipt-cat').value;
+    const description = document.getElementById('cr-receipt-desc').value;
+
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const btn = document.getElementById('cr-upload-btn');
+    btn.textContent = 'Uploading…';
+    btn.disabled = true;
+
+    try {
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, base64, amount: amount ? parseFloat(amount) : null, date: date || null, category, description: description || null }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        fileInput.value = '';
+        ['cr-receipt-amount','cr-receipt-date','cr-receipt-desc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('cr-receipt-form').style.display = 'none';
+        await cr_loadReceipts();
+      } else {
+        alert('Upload failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch(e) {
+      alert('Upload error: ' + e.message);
+    } finally {
+      btn.textContent = 'Save Receipt';
+      btn.disabled = false;
+    }
+  }
+
+  async function cr_viewReceipt(path) {
+    try {
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'url', path }),
+      });
+      const data = await r.json();
+      if (data.url) window.open(data.url, '_blank');
+      else alert('Could not get download link.');
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function cr_toggleReceiptStatus(id, currentStatus) {
+    const newStatus = currentStatus === 'submitted' ? 'unsubmitted' : 'submitted';
+    await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id, status: newStatus }),
+    });
+    await cr_loadReceipts();
+  }
+
+  async function cr_deleteReceipt(id, path) {
+    if (!confirm('Delete this receipt? This cannot be undone.')) return;
+    await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id, path }),
+    });
+    await cr_loadReceipts();
+  }
+
+  const CR_CAT_LABELS = { software:'Software & Tools', marketing:'Marketing & Ads', equipment:'Equipment', professional:'Professional Fees', travel:'Travel & Transport', office:'Office & Supplies', subscriptions:'Subscriptions', other:'Other' };
+
+  function cr_receiptCard(r) {
+    const statusColour  = r.status === 'submitted' ? '#059669' : '#d97706';
+    const amountStr     = r.amount ? `£${parseFloat(r.amount).toFixed(2)}` : '';
+    const dateStr       = r.date   ? biz_fmtDate(r.date) : '';
+    const catStr        = CR_CAT_LABELS[r.category] || r.category;
+    const sub           = [dateStr, catStr].filter(Boolean).join(' · ');
+    return `
+      <div class="cr-receipt-card">
+        <div class="cr-receipt-icon">PDF</div>
+        <div class="cr-receipt-meta">
+          <div class="cr-receipt-name">${r.original_name}</div>
+          <div class="cr-receipt-sub">${sub}</div>
+          ${r.description ? `<div class="cr-receipt-sub">${r.description}</div>` : ''}
+        </div>
+        <div class="cr-receipt-actions">
+          ${amountStr ? `<div class="cr-receipt-amount">${amountStr}</div>` : ''}
+          <div class="cr-receipt-status" style="color:${statusColour};">${r.status}</div>
+          <div class="cr-receipt-btns">
+            <button class="cr-btn-sm" onclick="cr_viewReceipt('${r.storage_path}')">View</button>
+            <button class="cr-btn-sm ${r.status === 'submitted' ? 'unsubmit' : 'submit'}" onclick="cr_toggleReceiptStatus(${r.id},'${r.status}')">${r.status === 'submitted' ? 'Unsubmit' : 'Submit'}</button>
+            <button class="cr-btn-sm del" onclick="cr_deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function cr_renderReceipts() {
+    const el = document.getElementById('cr-receipts-list');
+    if (!el) return;
+    const unsub = cr_receipts_cache.filter(r => r.status === 'unsubmitted');
+    const sub   = cr_receipts_cache.filter(r => r.status === 'submitted');
+    el.innerHTML = `
+      <div class="cr-vault-section">
+        <div class="cr-vault-header">Unsubmitted <span class="cr-vault-count">${unsub.length}</span></div>
+        ${unsub.length ? unsub.map(cr_receiptCard).join('') : '<div class="cr-empty">No unsubmitted receipts</div>'}
+      </div>
+      <div class="cr-vault-section">
+        <div class="cr-vault-header">Submitted <span class="cr-vault-count submitted">${sub.length}</span></div>
+        ${sub.length ? sub.map(cr_receiptCard).join('') : '<div class="cr-empty">No submitted receipts</div>'}
       </div>`;
   }
 

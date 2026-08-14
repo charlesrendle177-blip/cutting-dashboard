@@ -1,0 +1,86 @@
+// Handles receipt vault actions: list, url (signed download), update status, delete.
+// Requires Vercel env var: SUPABASE_SERVICE_ROLE_KEY
+
+const SB_URL = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not set' });
+
+  let body;
+  try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
+
+  const { action } = body;
+  const headers = { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey };
+
+  // ── list ──────────────────────────────────────────────────────────────────
+  if (action === 'list') {
+    const r = await fetch(`${SB_URL}/rest/v1/cr_receipts?order=created_at.desc`, { headers });
+    if (!r.ok) return res.status(500).json({ error: 'List failed' });
+    const receipts = await r.json();
+    return res.status(200).json({ receipts });
+  }
+
+  // ── url (signed download link, 1 hour) ───────────────────────────────────
+  if (action === 'url') {
+    const { path } = body;
+    if (!path) return res.status(400).json({ error: 'path required' });
+    const r = await fetch(`${SB_URL}/storage/v1/object/sign/cr-receipts/${path}`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: 3600 }),
+    });
+    if (!r.ok) return res.status(500).json({ error: 'Signed URL failed' });
+    const data = await r.json();
+    const url = data.signedURL ? `${SB_URL}${data.signedURL}` : null;
+    return res.status(200).json({ url });
+  }
+
+  // ── update (toggle submitted/unsubmitted) ─────────────────────────────────
+  if (action === 'update') {
+    const { id, status } = body;
+    if (!id || !status) return res.status(400).json({ error: 'id and status required' });
+    if (!['submitted', 'unsubmitted'].includes(status)) {
+      return res.status(400).json({ error: 'status must be submitted or unsubmitted' });
+    }
+    const r = await fetch(`${SB_URL}/rest/v1/cr_receipts?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!r.ok) return res.status(500).json({ error: 'Update failed' });
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── delete ────────────────────────────────────────────────────────────────
+  if (action === 'delete') {
+    const { id, path } = body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+
+    // Remove file from storage (best-effort — don't fail if already gone)
+    if (path) {
+      await fetch(`${SB_URL}/storage/v1/object/cr-receipts/${path}`, {
+        method: 'DELETE',
+        headers,
+      }).catch(() => {});
+    }
+
+    const r = await fetch(`${SB_URL}/rest/v1/cr_receipts?id=eq.${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    if (!r.ok) return res.status(500).json({ error: 'Delete failed' });
+    return res.status(200).json({ ok: true });
+  }
+
+  return res.status(400).json({ error: `Unknown action: ${action}` });
+};

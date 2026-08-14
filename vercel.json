@@ -1,12 +1,17 @@
 {
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/cutting-logs", "destination": "/api/cutting-logs.js" },
-    { "source": "/api/chat", "destination": "/api/chat.js" },
-    { "source": "/api/tmmb-analyse", "destination": "/api/tmmb-analyse.js" },
+    { "source": "/api/cutting-logs",    "destination": "/api/cutting-logs.js" },
+    { "source": "/api/chat",            "destination": "/api/chat.js" },
+    { "source": "/api/tmmb-analyse",    "destination": "/api/tmmb-analyse.js" },
     { "source": "/api/vidaire-onboard", "destination": "/api/vidaire-onboard.js" },
-    { "source": "/api/nightly-brief", "destination": "/api/nightly-brief.js" },
-    { "source": "/api/renpho-sync", "destination": "/api/renpho-sync.js" },
-    { "source": "/api/cr-share-sync", "destination": "/api/cr-share-sync.js" }
-  ]
+    { "source": "/api/nightly-brief",   "destination": "/api/nightly-brief.js" },
+    { "source": "/api/renpho-sync",     "destination": "/api/renpho-sync.js" },
+    { "source": "/api/cr-share-sync",   "destination": "/api/cr-share-sync.js" },
+    { "source": "/api/receipt-upload",  "destination": "/api/receipt-upload.js" },
+    { "source": "/api/receipt-action",  "destination": "/api/receipt-action.js" }
+  ],
+  "functions": {
+    "api/receipt-upload.js": { "maxDuration": 30, "memory": 1024 }
+  }
 }
