@@ -5384,7 +5384,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     `;
 
     // Daily data for bar chart
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const dailyShows  = Array(daysInMonth).fill(0);
     const dailyCloses = Array(daysInMonth).fill(0);
     calls.forEach(c => {
