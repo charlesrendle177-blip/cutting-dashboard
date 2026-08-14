@@ -3376,6 +3376,21 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               </div>
             </div>
 
+            <!-- Filter + sort bar -->
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="tmmb-vault-filter active" id="cr-rf-all"   onclick="cr_setReceiptFilter('all',this)">All</button>
+                <button class="tmmb-vault-filter"        id="cr-rf-unsub" onclick="cr_setReceiptFilter('unsubmitted',this)">Unsubmitted</button>
+                <button class="tmmb-vault-filter"        id="cr-rf-sub"   onclick="cr_setReceiptFilter('submitted',this)">Submitted</button>
+              </div>
+              <select id="cr-receipt-sort" onchange="cr_renderReceipts()" style="margin-left:auto;padding:5px 10px;border-radius:8px;border:1px solid #e5e7eb;font-size:13px;background:#fff;color:#374151;cursor:pointer;">
+                <option value="date_desc">Date (newest)</option>
+                <option value="date_asc">Date (oldest)</option>
+                <option value="amount_desc">Amount (highest)</option>
+                <option value="amount_asc">Amount (lowest)</option>
+              </select>
+            </div>
+
             <!-- List -->
             <div id="cr-receipts-list"><div class="cr-empty" style="text-align:center;padding:30px 0;color:#9ca3af;font-size:13px;">Loading receipts…</div></div>
           </div>
@@ -6807,6 +6822,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   let cr_exp_year = new Date().getFullYear();
   let cr_receipts_cache = [];
   let cr_receipts_loaded = false;
+  let cr_receipt_filter = 'all';
   let cr_exp_mon  = new Date().getMonth();
 
   const CR_EXP_CATS = {
@@ -7262,20 +7278,48 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       </div>`;
   }
 
+  function cr_setReceiptFilter(filter, el) {
+    cr_receipt_filter = filter;
+    document.querySelectorAll('#cr-rf-all,#cr-rf-unsub,#cr-rf-sub').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    cr_renderReceipts();
+  }
+
   function cr_renderReceipts() {
     const el = document.getElementById('cr-receipts-list');
     if (!el) return;
-    const unsub = cr_receipts_cache.filter(r => r.status === 'unsubmitted');
-    const sub   = cr_receipts_cache.filter(r => r.status === 'submitted');
-    el.innerHTML = `
-      <div class="cr-vault-section">
-        <div class="cr-vault-header">Unsubmitted <span class="cr-vault-count">${unsub.length}</span></div>
-        ${unsub.length ? unsub.map(cr_receiptCard).join('') : '<div class="cr-empty">No unsubmitted receipts</div>'}
-      </div>
-      <div class="cr-vault-section">
-        <div class="cr-vault-header">Submitted <span class="cr-vault-count submitted">${sub.length}</span></div>
-        ${sub.length ? sub.map(cr_receiptCard).join('') : '<div class="cr-empty">No submitted receipts</div>'}
-      </div>`;
+
+    const sortVal = (document.getElementById('cr-receipt-sort') || {}).value || 'date_desc';
+    const sortFn = (a, b) => {
+      if (sortVal === 'date_desc')   return (b.date || '').localeCompare(a.date || '');
+      if (sortVal === 'date_asc')    return (a.date || '').localeCompare(b.date || '');
+      if (sortVal === 'amount_desc') return (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0);
+      if (sortVal === 'amount_asc')  return (parseFloat(a.amount) || 0) - (parseFloat(b.amount) || 0);
+      return 0;
+    };
+
+    if (cr_receipt_filter === 'all') {
+      const unsub = cr_receipts_cache.filter(r => r.status === 'unsubmitted').sort(sortFn);
+      const sub   = cr_receipts_cache.filter(r => r.status === 'submitted').sort(sortFn);
+      el.innerHTML = `
+        <div class="cr-vault-section">
+          <div class="cr-vault-header">Unsubmitted <span class="cr-vault-count">${unsub.length}</span></div>
+          ${unsub.length ? unsub.map(cr_receiptCard).join('') : '<div class="cr-empty">No unsubmitted receipts</div>'}
+        </div>
+        <div class="cr-vault-section">
+          <div class="cr-vault-header">Submitted <span class="cr-vault-count submitted">${sub.length}</span></div>
+          ${sub.length ? sub.map(cr_receiptCard).join('') : '<div class="cr-empty">No submitted receipts</div>'}
+        </div>`;
+    } else {
+      const filtered = cr_receipts_cache.filter(r => r.status === cr_receipt_filter).sort(sortFn);
+      const label     = cr_receipt_filter === 'submitted' ? 'Submitted' : 'Unsubmitted';
+      const isSub     = cr_receipt_filter === 'submitted';
+      el.innerHTML = `
+        <div class="cr-vault-section">
+          <div class="cr-vault-header">${label} <span class="cr-vault-count ${isSub ? 'submitted' : ''}">${filtered.length}</span></div>
+          ${filtered.length ? filtered.map(cr_receiptCard).join('') : `<div class="cr-empty">No ${label.toLowerCase()} receipts</div>`}
+        </div>`;
+    }
   }
 
 </script>
