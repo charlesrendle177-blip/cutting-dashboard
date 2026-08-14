@@ -1840,6 +1840,38 @@
       .biz-scale-table th, .biz-scale-table td { padding: 8px 7px; font-size: 11px; }
     }
 
+    /* ── Entity switcher ── */
+    .biz-entity-switcher { display: flex; gap: 10px; padding: 16px 24px 16px; background: #fff; border-bottom: 1.5px solid rgba(0,0,0,0.06); }
+    .biz-ent-btn { flex: 1; padding: 14px 18px; border: 2px solid #e5e7eb; border-radius: 12px; background: #f9fafb; cursor: pointer; font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s; }
+    .biz-ent-btn:hover { border-color: #c7d2fe; background: #f0f9ff; }
+    .biz-ent-btn.active { background: #eff6ff; border-color: #1e40af; }
+    .biz-ent-title { font-size: 14px; font-weight: 700; color: #374151; display: block; margin-bottom: 2px; }
+    .biz-ent-sub { font-size: 11px; color: #9ca3af; }
+    .biz-ent-btn.active .biz-ent-title { color: #1e40af; }
+    .biz-ent-btn.active .biz-ent-sub { color: #6b7280; }
+
+    /* ── CR Revenue sections ── */
+    .cr-section { display: none; }
+    .cr-section.active { display: block; }
+    .cr-pnl-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+    .cr-pnl-row:last-child { border-bottom: none; }
+    .cr-pnl-label { font-size: 13px; color: #6b7280; }
+    .cr-pnl-val { font-size: 14px; font-weight: 700; color: #0d2345; }
+    .cr-pnl-row.total .cr-pnl-label { font-weight: 700; color: #0d2345; font-size: 14px; }
+    .cr-pnl-row.total .cr-pnl-val { font-size: 18px; }
+    .cr-pnl-row.divider { border-top: 2px solid #e5e7eb; padding-top: 12px; margin-top: 4px; }
+    .cr-exp-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #f3f4f6; gap: 12px; }
+    .cr-exp-row:last-child { border-bottom: none; }
+    .cr-exp-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #fff; background: #6b7280; border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
+    .cr-tax-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+    .cr-tax-row:last-child { border-bottom: none; }
+    .cr-tax-key { color: #6b7280; }
+    .cr-tax-val { font-weight: 600; color: #0d2345; }
+    @media (max-width: 600px) {
+      .biz-entity-switcher { padding: 12px 14px; gap: 8px; }
+      .biz-ent-btn { padding: 12px 14px; }
+    }
+
   </style>
 </head>
 <body>
@@ -2872,6 +2904,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     <div class="biz-wrap">
 
+      <!-- Entity switcher -->
+      <div class="biz-entity-switcher">
+        <button id="biz-ent-vidaire" class="biz-ent-btn active" onclick="biz_switchEntity('vidaire')">
+          <span class="biz-ent-title">📡 Vidaire</span>
+          <span class="biz-ent-sub">B2B SaaS · client retainers</span>
+        </button>
+        <button id="biz-ent-cr" class="biz-ent-btn" onclick="biz_switchEntity('cr')">
+          <span class="biz-ent-title">🧾 CR Revenue</span>
+          <span class="biz-ent-sub">Sole trader · P&amp;L &amp; tax</span>
+        </button>
+      </div>
+
+      <!-- Vidaire entity -->
+      <div id="biz-vidaire-entity">
       <div class="biz-tabs">
         <button class="biz-tab active" onclick="biz_showTab('biz-overview',this);biz_updateOverview()">Overview</button>
         <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
@@ -3175,6 +3221,105 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         </div><!-- /biz-onboard -->
 
       </div><!-- /biz-main -->
+      </div><!-- /biz-vidaire-entity -->
+
+      <!-- CR Revenue entity -->
+      <div id="biz-cr-entity" style="display:none;">
+        <div class="biz-tabs">
+          <button class="biz-tab cr-tab active" onclick="cr_showTab('cr-overview',this);cr_renderOverview()">Overview</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-income',this);cr_renderIncome()">Income</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-expenses',this);cr_renderExpenses()">Expenses</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-tax',this);cr_renderTax()">Tax</button>
+        </div>
+        <div class="biz-main">
+
+          <!-- CR OVERVIEW -->
+          <div id="cr-overview" class="cr-section active">
+            <div class="biz-section-header">
+              <h2>P&amp;L Summary</h2>
+              <p>Sole trader profit &amp; loss — <span id="cr-ov-year-label">2025–26</span></p>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:18px;">
+              <button id="cr-yr-prev-btn" onclick="cr_changeYear(-1)" class="biz-btn-ghost">&#8249;</button>
+              <span id="cr-ov-yr-display" style="font-size:14px;font-weight:700;color:#374151;padding:4px 10px;background:#f3f4f6;border-radius:8px;"></span>
+              <button onclick="cr_changeYear(1)" class="biz-btn-ghost">&#8250;</button>
+            </div>
+            <div class="biz-card" style="margin-bottom:14px;">
+              <div class="biz-card-label">Income vs Expenses</div>
+              <div id="cr-pnl-body"></div>
+            </div>
+            <div class="biz-card">
+              <div class="biz-card-label accent">Tax Estimate</div>
+              <div id="cr-tax-summary-body"></div>
+            </div>
+          </div>
+
+          <!-- CR INCOME -->
+          <div id="cr-income" class="cr-section">
+            <div class="biz-section-header"><h2>Income</h2></div>
+            <div class="biz-month-nav">
+              <button onclick="cr_changeIncMonth(-1)" class="biz-month-btn">&#8249;</button>
+              <span id="cr-inc-month-label" class="biz-month-label"></span>
+              <button onclick="cr_changeIncMonth(1)" class="biz-month-btn">&#8250;</button>
+            </div>
+            <div class="biz-card" style="margin-bottom:14px;">
+              <div class="biz-card-label">Log Income — <span id="cr-inc-form-month"></span></div>
+              <div class="biz-form-grid" style="margin-bottom:12px;">
+                <div><label class="biz-form-label">Date</label><input type="date" id="cr-inc-date"></div>
+                <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-inc-amount" placeholder="0" min="0" step="0.01"></div>
+                <div><label class="biz-form-label">Source</label><input type="text" id="cr-inc-source" placeholder="e.g. TMMB commission"></div>
+                <div><label class="biz-form-label">Notes</label><input type="text" id="cr-inc-notes" placeholder="Optional"></div>
+              </div>
+              <button onclick="cr_addIncome()" class="biz-btn biz-btn-primary">+ Log Income</button>
+            </div>
+            <div id="cr-inc-list"></div>
+          </div>
+
+          <!-- CR EXPENSES -->
+          <div id="cr-expenses" class="cr-section">
+            <div class="biz-section-header"><h2>Expenses</h2></div>
+            <div class="biz-month-nav">
+              <button onclick="cr_changeExpMonth(-1)" class="biz-month-btn">&#8249;</button>
+              <span id="cr-exp-month-label" class="biz-month-label"></span>
+              <button onclick="cr_changeExpMonth(1)" class="biz-month-btn">&#8250;</button>
+            </div>
+            <div class="biz-card" style="margin-bottom:14px;">
+              <div class="biz-card-label">Log Expense — <span id="cr-exp-form-month"></span></div>
+              <div class="biz-form-grid" style="margin-bottom:12px;">
+                <div><label class="biz-form-label">Date</label><input type="date" id="cr-exp-date"></div>
+                <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-exp-amount" placeholder="0" min="0" step="0.01"></div>
+                <div>
+                  <label class="biz-form-label">Category</label>
+                  <select id="cr-exp-cat">
+                    <option value="software">Software &amp; Tools</option>
+                    <option value="marketing">Marketing &amp; Ads</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="professional">Professional Fees</option>
+                    <option value="travel">Travel &amp; Transport</option>
+                    <option value="office">Office &amp; Supplies</option>
+                    <option value="subscriptions">Subscriptions</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div><label class="biz-form-label">Description</label><input type="text" id="cr-exp-desc" placeholder="e.g. Claude Pro"></div>
+              </div>
+              <button onclick="cr_addExpense()" class="biz-btn biz-btn-primary">+ Log Expense</button>
+            </div>
+            <div id="cr-exp-list"></div>
+          </div>
+
+          <!-- CR TAX -->
+          <div id="cr-tax" class="cr-section">
+            <div class="biz-section-header">
+              <h2>Tax Breakdown</h2>
+              <p>UK sole trader — income tax &amp; Class 4 NI</p>
+            </div>
+            <div id="cr-tax-body"></div>
+          </div>
+
+        </div><!-- /biz-main CR -->
+      </div><!-- /biz-cr-entity -->
+
     </div><!-- /biz-wrap -->
 
   </div>
@@ -5829,7 +5974,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -5894,6 +6039,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             if (key === 'biz_goals') {
               localStorage.setItem(BIZ_GOALS_KEY, JSON.stringify(value));
               biz_renderGoals(); biz_updateOverview();
+            }
+            if (key === 'cr_income') {
+              localStorage.setItem('cr_income', JSON.stringify(value));
+            }
+            if (key === 'cr_expenses') {
+              localStorage.setItem('cr_expenses', JSON.stringify(value));
             }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
@@ -6574,6 +6725,283 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
         </div>`;
     }).join('');
+  }
+
+  // ============================================================
+  // CR REVENUE — sole trader P&L, income, expenses, tax
+  // ============================================================
+
+  const CR_INCOME_KEY   = 'cr_income';
+  const CR_EXPENSES_KEY = 'cr_expenses';
+
+  let cr_taxYear = (function() {
+    const now = new Date();
+    return now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  })();
+
+  let cr_inc_year = new Date().getFullYear();
+  let cr_inc_mon  = new Date().getMonth();
+  let cr_exp_year = new Date().getFullYear();
+  let cr_exp_mon  = new Date().getMonth();
+
+  const CR_EXP_CATS = {
+    software:      { label: 'Software & Tools',    color: '#6366f1' },
+    marketing:     { label: 'Marketing & Ads',      color: '#ec4899' },
+    equipment:     { label: 'Equipment',            color: '#0ea5e9' },
+    professional:  { label: 'Professional Fees',    color: '#8b5cf6' },
+    travel:        { label: 'Travel & Transport',   color: '#f59e0b' },
+    office:        { label: 'Office & Supplies',    color: '#10b981' },
+    subscriptions: { label: 'Subscriptions',        color: '#14b8a6' },
+    other:         { label: 'Other',                color: '#6b7280' },
+  };
+
+  function cr_getIncome()   { try { return JSON.parse(localStorage.getItem(CR_INCOME_KEY)   || '[]'); } catch { return []; } }
+  function cr_getExpenses() { try { return JSON.parse(localStorage.getItem(CR_EXPENSES_KEY) || '[]'); } catch { return []; } }
+
+  function cr_saveIncome(d) {
+    localStorage.setItem(CR_INCOME_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: CR_INCOME_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+  function cr_saveExpenses(d) {
+    localStorage.setItem(CR_EXPENSES_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: CR_EXPENSES_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+  }
+
+  function cr_taxYearRange(y) {
+    return { start: `${y}-04-06`, end: `${y+1}-04-05`, label: `${y}–${String(y+1).slice(2)}` };
+  }
+
+  function cr_taxCalc(profit) {
+    const allowance = 12570;
+    const basicTop  = 50270;
+    if (profit <= allowance) return { incomeTax: 0, ni: 0, total: 0 };
+    const taxable  = profit - allowance;
+    const basicBand = Math.min(taxable, basicTop - allowance);
+    const higherBand = Math.max(0, taxable - (basicTop - allowance));
+    const incomeTax = basicBand * 0.20 + higherBand * 0.40;
+    const niBand1   = Math.min(profit - allowance, basicTop - allowance);
+    const niBand2   = Math.max(0, profit - basicTop);
+    const ni        = Math.max(0, niBand1) * 0.09 + Math.max(0, niBand2) * 0.02;
+    return { incomeTax: Math.round(incomeTax), ni: Math.round(ni), total: Math.round(incomeTax + ni) };
+  }
+
+  function biz_switchEntity(e) {
+    document.getElementById('biz-vidaire-entity').style.display = e === 'vidaire' ? '' : 'none';
+    document.getElementById('biz-cr-entity').style.display      = e === 'cr'      ? '' : 'none';
+    document.getElementById('biz-ent-vidaire').classList.toggle('active', e === 'vidaire');
+    document.getElementById('biz-ent-cr').classList.toggle('active', e === 'cr');
+    if (e === 'cr') { cr_renderOverview(); cr_renderIncomeNav(); cr_renderExpNav(); }
+  }
+
+  function cr_showTab(id, btn) {
+    document.querySelectorAll('.cr-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.cr-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function cr_changeYear(d) { cr_taxYear += d; cr_renderOverview(); }
+
+  function cr_renderOverview() {
+    const ty  = cr_taxYearRange(cr_taxYear);
+    const inc = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const exp = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const totalInc  = inc.reduce((s, r) => s + (r.amount || 0), 0);
+    const totalExp  = exp.reduce((s, r) => s + (r.amount || 0), 0);
+    const profit    = totalInc - totalExp;
+    const tax       = cr_taxCalc(profit);
+    const netProfit = profit - tax.total;
+
+    const yrEl = document.getElementById('cr-ov-yr-display');
+    const yrLblEl = document.getElementById('cr-ov-year-label');
+    if (yrEl)    yrEl.textContent   = `Tax year ${ty.label}`;
+    if (yrLblEl) yrLblEl.textContent = ty.label;
+
+    const pnlEl = document.getElementById('cr-pnl-body');
+    if (pnlEl) pnlEl.innerHTML = `
+      <div class="cr-pnl-row"><span class="cr-pnl-label">Total Income</span><span class="cr-pnl-val" style="color:#059669;">+£${totalInc.toLocaleString('en-GB', {minimumFractionDigits:2})}</span></div>
+      <div class="cr-pnl-row"><span class="cr-pnl-label">Total Expenses</span><span class="cr-pnl-val" style="color:#dc2626;">−£${totalExp.toLocaleString('en-GB', {minimumFractionDigits:2})}</span></div>
+      <div class="cr-pnl-row total divider"><span class="cr-pnl-label">Gross Profit</span><span class="cr-pnl-val" style="color:${profit>=0?'#0d2345':'#dc2626'};">£${profit.toLocaleString('en-GB', {minimumFractionDigits:2})}</span></div>
+      <div class="cr-pnl-row"><span class="cr-pnl-label">Tax Estimate</span><span class="cr-pnl-val" style="color:#d97706;">−£${tax.total.toLocaleString()}</span></div>
+      <div class="cr-pnl-row total"><span class="cr-pnl-label">Net Profit (after tax)</span><span class="cr-pnl-val" style="color:${netProfit>=0?'#059669':'#dc2626'};">£${netProfit.toLocaleString('en-GB', {minimumFractionDigits:2})}</span></div>`;
+
+    const sumEl = document.getElementById('cr-tax-summary-body');
+    if (sumEl) {
+      const eff = profit > 0 ? Math.round((tax.total / profit) * 100) : 0;
+      const monthly = profit > 0 ? Math.round(tax.total / 12) : 0;
+      sumEl.innerHTML = `
+        <div class="cr-pnl-row"><span class="cr-pnl-label">Income Tax</span><span class="cr-pnl-val">£${tax.incomeTax.toLocaleString()}</span></div>
+        <div class="cr-pnl-row"><span class="cr-pnl-label">Class 4 NI</span><span class="cr-pnl-val">£${tax.ni.toLocaleString()}</span></div>
+        <div class="cr-pnl-row total divider"><span class="cr-pnl-label">Total Tax Liability</span><span class="cr-pnl-val" style="color:#d97706;">£${tax.total.toLocaleString()}</span></div>
+        <div class="cr-pnl-row"><span class="cr-pnl-label">Effective Rate</span><span class="cr-pnl-val">${eff}%</span></div>
+        <div class="cr-pnl-row"><span class="cr-pnl-label">Set aside monthly</span><span class="cr-pnl-val" style="color:#1e40af;">£${monthly.toLocaleString()}</span></div>`;
+    }
+  }
+
+  // Income tab
+  function cr_incMonthKey()  { return `${cr_inc_year}-${String(cr_inc_mon + 1).padStart(2, '0')}`; }
+  function cr_incMonthName() { return new Date(cr_inc_year, cr_inc_mon, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
+
+  function cr_changeIncMonth(d) {
+    if (d < 0) { cr_inc_mon === 0 ? (cr_inc_mon = 11, cr_inc_year--) : cr_inc_mon--; }
+    else       { cr_inc_mon === 11 ? (cr_inc_mon = 0, cr_inc_year++) : cr_inc_mon++; }
+    cr_renderIncome();
+  }
+  function cr_renderIncomeNav() {
+    const lbl = document.getElementById('cr-inc-month-label');
+    const flbl = document.getElementById('cr-inc-form-month');
+    const dateEl = document.getElementById('cr-inc-date');
+    if (lbl)    lbl.textContent  = cr_incMonthName();
+    if (flbl)   flbl.textContent = cr_incMonthName();
+    if (dateEl && !dateEl.value) dateEl.value = `${cr_inc_year}-${String(cr_inc_mon+1).padStart(2,'0')}-01`;
+  }
+  function cr_renderIncome() {
+    cr_renderIncomeNav();
+    const key  = cr_incMonthKey();
+    const rows = cr_getIncome().filter(r => r.date && r.date.startsWith(key)).sort((a,b) => b.date.localeCompare(a.date));
+    const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
+    const el = document.getElementById('cr-inc-list');
+    if (!el) return;
+    if (!rows.length) { el.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:20px 0;text-align:center;">No income logged for ${cr_incMonthName()}</div>`; return; }
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 4px;border-bottom:2px solid #e5e7eb;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;">Total</span>
+        <span style="font-size:16px;font-weight:800;color:#059669;">£${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+      </div>` +
+    rows.map(r => `
+      <div class="cr-exp-row">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#0d2345;">${r.source || '—'}</div>
+          <div style="font-size:11px;color:#9ca3af;">${biz_fmtDate(r.date)}${r.notes ? ' · ' + r.notes : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:14px;font-weight:700;color:#059669;">£${(r.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+          <button onclick="cr_deleteIncome(${r.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;">×</button>
+        </div>
+      </div>`).join('');
+  }
+  function cr_addIncome() {
+    const date   = document.getElementById('cr-inc-date').value;
+    const amount = parseFloat(document.getElementById('cr-inc-amount').value);
+    const source = document.getElementById('cr-inc-source').value.trim();
+    const notes  = document.getElementById('cr-inc-notes').value.trim();
+    if (!date || isNaN(amount) || amount <= 0) return;
+    const data = cr_getIncome();
+    data.push({ id: Date.now(), date, amount, source, notes });
+    cr_saveIncome(data);
+    document.getElementById('cr-inc-amount').value = '';
+    document.getElementById('cr-inc-source').value = '';
+    document.getElementById('cr-inc-notes').value  = '';
+    cr_renderIncome();
+  }
+  function cr_deleteIncome(id) {
+    cr_saveIncome(cr_getIncome().filter(r => r.id !== id));
+    cr_renderIncome();
+  }
+
+  // Expenses tab
+  function cr_expMonthKey()  { return `${cr_exp_year}-${String(cr_exp_mon + 1).padStart(2, '0')}`; }
+  function cr_expMonthName() { return new Date(cr_exp_year, cr_exp_mon, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
+
+  function cr_changeExpMonth(d) {
+    if (d < 0) { cr_exp_mon === 0 ? (cr_exp_mon = 11, cr_exp_year--) : cr_exp_mon--; }
+    else       { cr_exp_mon === 11 ? (cr_exp_mon = 0, cr_exp_year++) : cr_exp_mon++; }
+    cr_renderExpenses();
+  }
+  function cr_renderExpNav() {
+    const lbl  = document.getElementById('cr-exp-month-label');
+    const flbl = document.getElementById('cr-exp-form-month');
+    const dateEl = document.getElementById('cr-exp-date');
+    if (lbl)    lbl.textContent  = cr_expMonthName();
+    if (flbl)   flbl.textContent = cr_expMonthName();
+    if (dateEl && !dateEl.value) dateEl.value = `${cr_exp_year}-${String(cr_exp_mon+1).padStart(2,'0')}-01`;
+  }
+  function cr_renderExpenses() {
+    cr_renderExpNav();
+    const key  = cr_expMonthKey();
+    const rows = cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).sort((a,b) => b.date.localeCompare(a.date));
+    const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
+    const el = document.getElementById('cr-exp-list');
+    if (!el) return;
+    if (!rows.length) { el.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:20px 0;text-align:center;">No expenses logged for ${cr_expMonthName()}</div>`; return; }
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 4px;border-bottom:2px solid #e5e7eb;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.05em;">Total</span>
+        <span style="font-size:16px;font-weight:800;color:#dc2626;">£${total.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+      </div>` +
+    rows.map(r => {
+      const cat = CR_EXP_CATS[r.cat] || CR_EXP_CATS.other;
+      return `
+        <div class="cr-exp-row">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <span class="cr-exp-cat" style="background:${cat.color};">${cat.label}</span>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:#0d2345;">${r.desc || '—'}</div>
+            <div style="font-size:11px;color:#9ca3af;">${biz_fmtDate(r.date)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span style="font-size:14px;font-weight:700;color:#dc2626;">£${(r.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+            <button onclick="cr_deleteExpense(${r.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  function cr_addExpense() {
+    const date   = document.getElementById('cr-exp-date').value;
+    const amount = parseFloat(document.getElementById('cr-exp-amount').value);
+    const cat    = document.getElementById('cr-exp-cat').value;
+    const desc   = document.getElementById('cr-exp-desc').value.trim();
+    if (!date || isNaN(amount) || amount <= 0) return;
+    const data = cr_getExpenses();
+    data.push({ id: Date.now(), date, amount, cat, desc });
+    cr_saveExpenses(data);
+    document.getElementById('cr-exp-amount').value = '';
+    document.getElementById('cr-exp-desc').value   = '';
+    cr_renderExpenses();
+  }
+  function cr_deleteExpense(id) {
+    cr_saveExpenses(cr_getExpenses().filter(r => r.id !== id));
+    cr_renderExpenses();
+  }
+
+  // Tax tab
+  function cr_renderTax() {
+    const ty     = cr_taxYearRange(cr_taxYear);
+    const inc    = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const exp    = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const totalInc = inc.reduce((s, r) => s + (r.amount || 0), 0);
+    const totalExp = exp.reduce((s, r) => s + (r.amount || 0), 0);
+    const profit   = totalInc - totalExp;
+    const tax      = cr_taxCalc(profit);
+    const allowance = 12570;
+    const taxable   = Math.max(0, profit - allowance);
+    const eff       = profit > 0 ? (tax.total / profit * 100).toFixed(1) : '0.0';
+    const setAside  = profit > 0 ? Math.round(tax.total / 12) : 0;
+
+    const el = document.getElementById('cr-tax-body');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="biz-card" style="margin-bottom:14px;">
+        <div class="biz-card-label">Tax year ${ty.label} · ${ty.start} → ${ty.end}</div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Total Income</span><span class="cr-tax-val">£${totalInc.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Allowable Expenses</span><span class="cr-tax-val">£${totalExp.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+        <div class="cr-tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;"><span class="cr-tax-key" style="color:#0d2345;">Taxable Profit</span><span class="cr-tax-val" style="color:#0d2345;">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+      </div>
+      <div class="biz-card" style="margin-bottom:14px;">
+        <div class="biz-card-label accent">Income Tax Calculation</div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Personal Allowance</span><span class="cr-tax-val">£12,570</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Taxable after allowance</span><span class="cr-tax-val">£${taxable.toLocaleString()}</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Income Tax (20% / 40%)</span><span class="cr-tax-val">£${tax.incomeTax.toLocaleString()}</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Class 4 NI (9% / 2%)</span><span class="cr-tax-val">£${tax.ni.toLocaleString()}</span></div>
+        <div class="cr-tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;"><span class="cr-tax-key" style="font-weight:700;color:#0d2345;">Total Tax Liability</span><span class="cr-tax-val" style="color:#d97706;font-size:16px;">£${tax.total.toLocaleString()}</span></div>
+      </div>
+      <div class="biz-card" style="background:#eff6ff;border-color:#c7d2fe;">
+        <div class="biz-card-label" style="color:#1e40af;">What to do with this</div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Effective tax rate</span><span class="cr-tax-val">${eff}%</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Set aside monthly</span><span class="cr-tax-val" style="color:#1e40af;font-size:15px;">£${setAside.toLocaleString()}/mo</span></div>
+        <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on Jan 2025 rates. Personal allowance £12,570. Does not include Class 2 NI or payment-on-account. Verify with your accountant.</div>
+      </div>`;
   }
 
 </script>
