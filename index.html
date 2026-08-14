@@ -1840,15 +1840,7 @@
       .biz-scale-table th, .biz-scale-table td { padding: 8px 7px; font-size: 11px; }
     }
 
-    /* ── Entity switcher ── */
-    .biz-entity-switcher { display: flex; gap: 10px; padding: 16px 24px 16px; background: #fff; border-bottom: 1.5px solid rgba(0,0,0,0.06); }
-    .biz-ent-btn { flex: 1; padding: 14px 18px; border: 2px solid #e5e7eb; border-radius: 12px; background: #f9fafb; cursor: pointer; font-family: 'Inter', sans-serif; text-align: left; transition: all 0.15s; }
-    .biz-ent-btn:hover { border-color: #c7d2fe; background: #f0f9ff; }
-    .biz-ent-btn.active { background: #eff6ff; border-color: #1e40af; }
-    .biz-ent-title { font-size: 14px; font-weight: 700; color: #374151; display: block; margin-bottom: 2px; }
-    .biz-ent-sub { font-size: 11px; color: #9ca3af; }
-    .biz-ent-btn.active .biz-ent-title { color: #1e40af; }
-    .biz-ent-btn.active .biz-ent-sub { color: #6b7280; }
+    /* -- Entity landing -- */
 
     /* ── CR Revenue sections ── */
     .cr-section { display: none; }
@@ -1868,8 +1860,6 @@
     .cr-tax-key { color: #6b7280; }
     .cr-tax-val { font-weight: 600; color: #0d2345; }
     @media (max-width: 600px) {
-      .biz-entity-switcher { padding: 12px 14px; gap: 8px; }
-      .biz-ent-btn { padding: 12px 14px; }
     }
 
   </style>
@@ -2896,28 +2886,36 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   <div class="section-view">
 
     <div class="section-header">
-      <button class="back-btn" onclick="navigate('home')">←</button>
+      <button class="back-btn" id="biz-back-btn" onclick="biz_backOrHome()">←</button>
       <div class="hdr-dot" style="background:var(--amber)"></div>
-      <div class="hdr-title">Business</div>
-      <div class="hdr-crumb">Charles' Hub / Business</div>
+      <div class="hdr-title" id="biz-hdr-title">Business</div>
+      <div class="hdr-crumb" id="biz-hdr-crumb">Charles' Hub / Business</div>
     </div>
 
     <div class="biz-wrap">
 
-      <!-- Entity switcher -->
-      <div class="biz-entity-switcher">
-        <button id="biz-ent-vidaire" class="biz-ent-btn active" onclick="biz_switchEntity('vidaire')">
-          <span class="biz-ent-title">📡 Vidaire</span>
-          <span class="biz-ent-sub">B2B SaaS · client retainers</span>
-        </button>
-        <button id="biz-ent-cr" class="biz-ent-btn" onclick="biz_switchEntity('cr')">
-          <span class="biz-ent-title">🧾 CR Revenue</span>
-          <span class="biz-ent-sub">Sole trader · P&amp;L &amp; tax</span>
-        </button>
+      <!-- Entity landing page -->
+      <div id="biz-entity-landing" class="biz-main" style="padding-top:32px;">
+        <div style="margin-bottom:24px;">
+          <div style="font-size:22px;font-weight:800;color:#0d2345;letter-spacing:-0.5px;margin-bottom:4px;">Business</div>
+          <div style="font-size:13px;color:#6b7280;">Select a business to view its dashboard</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div onclick="biz_switchEntity('vidaire')" style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px 24px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#1e40af';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fff'">
+            <div style="font-size:30px;margin-bottom:12px;">📡</div>
+            <div style="font-size:17px;font-weight:800;color:#0d2345;margin-bottom:4px;">Vidaire</div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.5;">B2B SaaS cold outreach platform · client retainers · MRR tracking</div>
+          </div>
+          <div onclick="biz_switchEntity('cr')" style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px 24px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#1e40af';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fff'">
+            <div style="font-size:30px;margin-bottom:12px;">🧾</div>
+            <div style="font-size:17px;font-weight:800;color:#0d2345;margin-bottom:4px;">CR Revenue</div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.5;">Sole trader · income &amp; expenses · P&amp;L · UK tax estimate</div>
+          </div>
+        </div>
       </div>
 
       <!-- Vidaire entity -->
-      <div id="biz-vidaire-entity">
+      <div id="biz-vidaire-entity" style="display:none;">
       <div class="biz-tabs">
         <button class="biz-tab active" onclick="biz_showTab('biz-overview',this);biz_updateOverview()">Overview</button>
         <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
@@ -6785,12 +6783,39 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return { incomeTax: Math.round(incomeTax), ni: Math.round(ni), total: Math.round(incomeTax + ni) };
   }
 
+  let biz_activeEntity = null;
+
   function biz_switchEntity(e) {
-    document.getElementById('biz-vidaire-entity').style.display = e === 'vidaire' ? '' : 'none';
-    document.getElementById('biz-cr-entity').style.display      = e === 'cr'      ? '' : 'none';
-    document.getElementById('biz-ent-vidaire').classList.toggle('active', e === 'vidaire');
-    document.getElementById('biz-ent-cr').classList.toggle('active', e === 'cr');
-    if (e === 'cr') { cr_renderOverview(); cr_renderIncomeNav(); cr_renderExpNav(); }
+    biz_activeEntity = e;
+    document.getElementById('biz-entity-landing').style.display  = 'none';
+    document.getElementById('biz-vidaire-entity').style.display  = e === 'vidaire' ? '' : 'none';
+    document.getElementById('biz-cr-entity').style.display       = e === 'cr'      ? '' : 'none';
+    const titleEl = document.getElementById('biz-hdr-title');
+    const crumbEl = document.getElementById('biz-hdr-crumb');
+    if (e === 'vidaire') {
+      if (titleEl) titleEl.textContent = 'Vidaire';
+      if (crumbEl) crumbEl.textContent = 'Business / Vidaire';
+      biz_updateOverview();
+    } else {
+      if (titleEl) titleEl.textContent = 'CR Revenue';
+      if (crumbEl) crumbEl.textContent = 'Business / CR Revenue';
+      cr_renderOverview(); cr_renderIncomeNav(); cr_renderExpNav();
+    }
+  }
+
+  function biz_backOrHome() {
+    if (biz_activeEntity) {
+      biz_activeEntity = null;
+      document.getElementById('biz-entity-landing').style.display = '';
+      document.getElementById('biz-vidaire-entity').style.display = 'none';
+      document.getElementById('biz-cr-entity').style.display      = 'none';
+      const titleEl = document.getElementById('biz-hdr-title');
+      const crumbEl = document.getElementById('biz-hdr-crumb');
+      if (titleEl) titleEl.textContent = 'Business';
+      if (crumbEl) crumbEl.textContent = 'Charles\' Hub / Business';
+    } else {
+      navigate('home');
+    }
   }
 
   function cr_showTab(id, btn) {
