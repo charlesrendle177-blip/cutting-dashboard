@@ -2383,6 +2383,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div id="tmmb-locked-body"></div>
           </div>
 
+          <!-- Payment plan tracker — hidden when no active plans -->
+          <div id="tmmb-plans-card" class="card" style="margin-bottom:14px;display:none;border-color:#bfdbfe;">
+            <div class="card-label" style="color:#1e40af;">💳 Payment Plans</div>
+            <div id="tmmb-plans-body"></div>
+          </div>
+
           <div class="tmmb-ov-2col">
             <div class="card">
               <div class="card-label">This Month</div>
@@ -4968,6 +4974,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>`).join('')
         : '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Log calls to see objection patterns</div>';
     tmmb_renderClawback();
+    tmmb_renderPaymentPlans();
     }
   }
 
@@ -5033,6 +5040,72 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <span style="font-size:15px;font-weight:800;color:#059669;">£${total.toLocaleString()}</span>
       </div>`;
     }
+  }
+
+  function tmmb_renderPaymentPlans() {
+    const card = document.getElementById('tmmb-plans-card');
+    const body = document.getElementById('tmmb-plans-body');
+    if (!card || !body) return;
+
+    const now = Date.now();
+    const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
+    const planLabel = { deposit:'Dep', plan2:'2m', plan3:'3m', plan4:'4m', plan6:'6m', plan12:'12m' };
+    const planCalls = tmmb_getCalls().filter(c =>
+      c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)
+    );
+
+    if (!planCalls.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    body.innerHTML = planCalls
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(c => {
+        const n           = tmmb_paytypeMonths(c.paytype);
+        const perPayment  = Math.round((c.dealValue || 4000) / n);
+        const closeDate   = new Date(c.date + 'T12:00:00');
+
+        const slots = Array.from({ length: n }, (_, i) => {
+          const due = new Date(closeDate);
+          due.setMonth(due.getMonth() + i);
+          const daysFromNow = Math.floor((due.getTime() - now) / 86400000);
+          return { due, daysFromNow, num: i + 1 };
+        });
+
+        const nextDue = slots.find(s => s.daysFromNow >= 0);
+        const allDone = slots.every(s => s.daysFromNow < 0);
+
+        const slotsHtml = slots.map(s => {
+          let bg, col, label;
+          if (s.daysFromNow < 0) {
+            bg = '#d1fae5'; col = '#059669'; label = '✓';
+          } else if (s.daysFromNow === 0) {
+            bg = '#fee2e2'; col = '#ef4444'; label = 'Today';
+          } else if (s.daysFromNow <= 7) {
+            bg = '#fee2e2'; col = '#ef4444'; label = `${s.daysFromNow}d`;
+          } else if (s.daysFromNow <= 30) {
+            bg = '#fef3c7'; col = '#d97706'; label = `${s.daysFromNow}d`;
+          } else {
+            bg = '#f3f4f6'; col = '#9ca3af';
+            label = s.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+          }
+          return `<span style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;" title="Payment ${s.num}/${n} — ${s.due.toLocaleDateString('en-GB')}">${label}</span>`;
+        }).join('');
+
+        const nextLabel = allDone
+          ? `<span style="font-size:11px;font-weight:700;color:#059669;">Complete ✓</span>`
+          : `<span style="font-size:11px;color:var(--label);">Next: <strong>${nextDue.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</strong></span>`;
+
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+            <div>
+              <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+              <span style="font-size:11px;color:var(--label);margin-left:7px;">Plan · ${planLabel[c.paytype]} · £${perPayment.toLocaleString()}/mo</span>
+            </div>
+            ${nextLabel}
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">${slotsHtml}</div>
+        </div>`;
+      }).join('');
   }
 
   function tmmb_scoreBar(label, score) {
