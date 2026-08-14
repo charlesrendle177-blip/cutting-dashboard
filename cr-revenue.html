@@ -33,8 +33,8 @@
   .tab-btn { flex-shrink: 0; padding: 14px 20px; font-size: 13px; font-weight: 600; font-family: inherit; border: none; background: none; cursor: pointer; color: rgba(13,35,69,0.42); border-bottom: 2px solid transparent; margin-bottom: -1.5px; transition: color 0.15s; white-space: nowrap; }
   .tab-btn.active { color: #1e40af; border-bottom-color: #1e40af; font-weight: 700; }
 
-  /* Content */
-  .tab-content { display: none; padding: 24px 24px; max-width: 960px; margin: 0 auto; }
+  /* Content — full width, no max-width cap */
+  .tab-content { display: none; padding: 20px 24px; }
   .tab-content.active { display: block; }
   .section-title { font-size: 20px; font-weight: 800; color: #0d2345; margin-bottom: 4px; letter-spacing: -0.4px; }
   .section-sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
@@ -42,7 +42,8 @@
   /* Cards */
   .card { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
   .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 12px; }
-  .card-label.blue { color: #1e40af; }
+  .card-label.blue   { color: #1e40af; }
+  .card-label.purple { color: #7c3aed; }
 
   /* P&L rows */
   .pnl-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
@@ -80,6 +81,27 @@
   .empty { color: #9ca3af; font-size: 13px; padding: 20px 0; text-align: center; }
   .total-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 4px; border-bottom: 2px solid #e5e7eb; margin-bottom: 4px; }
   .total-bar-label { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Receipt vault */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .rf-pill { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e5e7eb; background: #fff; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; color: #374151; transition: all 0.15s; }
+  .rf-pill.active { background: #0d2345; color: #fff; border-color: #0d2345; }
+  .rf-pill:hover:not(.active) { background: rgba(0,0,0,0.04); }
+  .sort-select { margin-left: auto; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 13px; font-family: inherit; background: #fff; color: #374151; cursor: pointer; }
+  .vault-section { margin-bottom: 20px; }
+  .vault-header { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .vault-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
+  .vault-count.sub { background: #d1fae5; color: #065f46; }
+  .receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; background: #fff; border: 1.5px solid #e5e7eb; margin-bottom: 8px; }
+  .receipt-icon { width: 40px; height: 40px; border-radius: 8px; background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .receipt-meta { flex: 1; min-width: 0; }
+  .receipt-name { font-size: 13px; font-weight: 700; color: #0d2345; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .receipt-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .receipt-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .receipt-amount { font-size: 14px; font-weight: 800; color: #0d2345; }
+  .receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .view-btn { font-size: 12px; padding: 4px 12px; border-radius: 6px; border: 1.5px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; font-family: inherit; }
+  .view-btn:hover { background: #f3f4f6; }
 </style>
 </head>
 <body>
@@ -113,11 +135,28 @@
     <button class="tab-btn" onclick="showTab('tab-income',this);renderIncome()">Income</button>
     <button class="tab-btn" onclick="showTab('tab-expenses',this);renderExpenses()">Expenses</button>
     <button class="tab-btn" onclick="showTab('tab-tax',this);renderTax()">Tax</button>
+    <button class="tab-btn" onclick="showTab('tab-receipts',this);renderReceipts()">Receipts</button>
   </div>
 
   <!-- Overview -->
   <div id="tab-overview" class="tab-content active">
     <div style="padding-top:4px;">
+
+      <!-- Tax year countdown -->
+      <div style="background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:28px 24px 20px;text-align:center;margin-bottom:18px;overflow:hidden;">
+        <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Tax Year Ends</div>
+        <div id="cr-tyr-date" style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:14px;">5 April 2027</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:2px;">
+          <span id="cr-tyr-days" style="font-size:80px;font-weight:900;color:#fff;line-height:1;letter-spacing:-3px;">—</span>
+          <span style="font-size:22px;font-weight:700;color:rgba(255,255,255,0.5);">days</span>
+        </div>
+        <div id="cr-tyr-hms" style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:18px;">— h — m — s</div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:8px;height:6px;margin:0 8px 8px;">
+          <div id="cr-tyr-bar" style="height:100%;border-radius:8px;background:#93c5fd;transition:width 1s linear;width:0%;"></div>
+        </div>
+        <div id="cr-tyr-pct" style="font-size:11px;color:rgba(255,255,255,0.35);">0% of tax year elapsed</div>
+      </div>
+
       <div class="section-title">P&L Summary</div>
       <div class="section-sub">Sole trader profit &amp; loss</div>
       <div class="yr-nav">
@@ -132,6 +171,10 @@
       <div class="card">
         <div class="card-label blue">Tax Estimate</div>
         <div id="tax-summary-body"></div>
+      </div>
+      <div class="card">
+        <div class="card-label purple">Basic Rate Target</div>
+        <div id="tax-target-body"></div>
       </div>
     </div>
   </div>
@@ -166,6 +209,24 @@
     <div class="section-sub">UK sole trader — income tax &amp; Class 4 NI</div>
     <div id="tax-body"></div>
   </div>
+
+  <!-- Receipts (read-only) -->
+  <div id="tab-receipts" class="tab-content">
+    <div class="section-title">Receipt Vault</div>
+    <div class="section-sub">All uploaded expense receipts</div>
+    <div class="filter-bar">
+      <button class="rf-pill active" id="rf-all"   onclick="setReceiptFilter('all',this)">All</button>
+      <button class="rf-pill"        id="rf-unsub"  onclick="setReceiptFilter('unsubmitted',this)">Unsubmitted</button>
+      <button class="rf-pill"        id="rf-sub"    onclick="setReceiptFilter('submitted',this)">Submitted</button>
+      <select class="sort-select" id="receipt-sort" onchange="renderReceipts()">
+        <option value="date_desc">Date (newest)</option>
+        <option value="date_asc">Date (oldest)</option>
+        <option value="amount_desc">Amount (highest)</option>
+        <option value="amount_asc">Amount (lowest)</option>
+      </select>
+    </div>
+    <div id="receipt-list"><div class="empty">Loading receipts…</div></div>
+  </div>
 </div>
 
 <script>
@@ -173,9 +234,11 @@ const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
-let incomeData   = [];
-let expenseData  = [];
-let taxYear      = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+let incomeData  = [];
+let expenseData = [];
+let receiptData = [];
+let receiptFilter = 'all';
+let taxYear = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1;
 let incYear = new Date().getFullYear(), incMon = new Date().getMonth();
 let expYear = new Date().getFullYear(), expMon = new Date().getMonth();
 
@@ -190,7 +253,13 @@ const EXP_CATS = {
   other:         { label:'Other',               color:'#6b7280' },
 };
 
-// Auth
+const RECEIPT_CAT_LABELS = {
+  software:'Software & Tools', marketing:'Marketing & Ads', equipment:'Equipment',
+  professional:'Professional Fees', travel:'Travel & Transport', office:'Office & Supplies',
+  subscriptions:'Subscriptions', other:'Other',
+};
+
+// ── Auth ────────────────────────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
@@ -208,11 +277,24 @@ async function doSignOut() {
 }
 
 async function loadAndShow() {
+  // Load income + expenses from cr_shared (Supabase, auth-gated)
   const { data } = await sb.from('cr_shared').select('key, value');
   for (const row of (data || [])) {
     if (row.key === 'cr_income')   incomeData  = row.value || [];
     if (row.key === 'cr_expenses') expenseData = row.value || [];
   }
+
+  // Load receipts from the Vercel API (no auth needed there, service-role server-side)
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    });
+    const d = await r.json();
+    receiptData = d.receipts || [];
+  } catch { receiptData = []; }
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   renderOverview();
@@ -220,12 +302,11 @@ async function loadAndShow() {
   renderExpNav();
 }
 
-// Check existing session on load
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) loadAndShow();
 });
 
-// Tabs
+// ── Tabs ────────────────────────────────────────────────────────────────────
 function showTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -233,7 +314,7 @@ function showTab(id, btn) {
   btn.classList.add('active');
 }
 
-// Year
+// ── Helpers ─────────────────────────────────────────────────────────────────
 function taxYearRange(y) {
   return { start:`${y}-04-06`, end:`${y+1}-04-05`, label:`${y}–${String(y+1).slice(2)}` };
 }
@@ -252,9 +333,10 @@ function taxCalc(profit) {
   return { incomeTax: Math.round(it), ni: Math.round(ni), total: Math.round(it + ni) };
 }
 
-function fmt(n) { return '£' + (n||0).toLocaleString('en-GB', {minimumFractionDigits:2}); }
+function fmt(n)     { return '£' + (n||0).toLocaleString('en-GB', {minimumFractionDigits:2}); }
 function fmtDate(s) { if (!s) return ''; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
 
+// ── Overview ─────────────────────────────────────────────────────────────────
 function renderOverview() {
   const ty  = taxYearRange(taxYear);
   const inc = incomeData.filter(r => r.date >= ty.start && r.date <= ty.end);
@@ -275,14 +357,40 @@ function renderOverview() {
     <div class="pnl-row total"><span class="pnl-label">Net Profit (after tax)</span><span class="pnl-val" style="color:${net>=0?'#059669':'#dc2626'};">${fmt(net)}</span></div>`;
 
   const eff = profit > 0 ? Math.round(tax.total/profit*100) : 0;
+  const monthly = profit > 0 ? Math.round(tax.total/12) : 0;
   document.getElementById('tax-summary-body').innerHTML = `
     <div class="pnl-row"><span class="pnl-label">Income Tax</span><span class="pnl-val">£${tax.incomeTax.toLocaleString()}</span></div>
     <div class="pnl-row"><span class="pnl-label">Class 4 NI</span><span class="pnl-val">£${tax.ni.toLocaleString()}</span></div>
     <div class="pnl-row total"><span class="pnl-label">Total Tax Liability</span><span class="pnl-val" style="color:#d97706;">£${tax.total.toLocaleString()}</span></div>
-    <div class="pnl-row"><span class="pnl-label">Effective Rate</span><span class="pnl-val">${eff}%</span></div>`;
+    <div class="pnl-row"><span class="pnl-label">Effective Rate</span><span class="pnl-val">${eff}%</span></div>
+    <div class="pnl-row"><span class="pnl-label">Set aside monthly</span><span class="pnl-val" style="color:#1e40af;">£${monthly.toLocaleString()}/mo</span></div>`;
+
+  // Basic rate target card
+  const CEILING   = 50270;
+  const headroom  = CEILING - profit;
+  const onTrack   = profit <= CEILING;
+  const pct       = Math.min(100, Math.max(0, Math.round((profit / CEILING) * 100)));
+  const barColour = onTrack ? '#059669' : '#dc2626';
+  const neededExp = onTrack ? 0 : Math.ceil(profit - CEILING);
+  document.getElementById('tax-target-body').innerHTML = `
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Goal: keep taxable profit under £50,270 to stay in the 20% basic rate band</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:600;color:#374151;">Current profit</span>
+      <span style="font-size:15px;font-weight:800;color:${barColour};">${fmt(profit)}</span>
+    </div>
+    <div style="background:#f3f4f6;border-radius:8px;height:10px;overflow:hidden;margin-bottom:6px;">
+      <div style="height:100%;width:${pct}%;background:${barColour};border-radius:8px;transition:width 0.4s;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-bottom:12px;">
+      <span>£0</span><span style="color:#7c3aed;font-weight:700;">£50,270 ceiling</span>
+    </div>
+    ${onTrack
+      ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;font-size:13px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom — staying in 20% basic rate band</div>`
+      : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over the threshold — need £${neededExp.toLocaleString()} more in expenses</div>`
+    }`;
 }
 
-// Income
+// ── Income ───────────────────────────────────────────────────────────────────
 function incMonthName() { return new Date(incYear, incMon, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
 function incMonthKey()  { return `${incYear}-${String(incMon+1).padStart(2,'0')}`; }
 function changeIncMonth(d) {
@@ -309,7 +417,7 @@ function renderIncome() {
       </div>`).join('');
 }
 
-// Expenses
+// ── Expenses ─────────────────────────────────────────────────────────────────
 function expMonthName() { return new Date(expYear, expMon, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
 function expMonthKey()  { return `${expYear}-${String(expMon+1).padStart(2,'0')}`; }
 function changeExpMonth(d) {
@@ -342,7 +450,7 @@ function renderExpenses() {
     }).join('');
 }
 
-// Tax
+// ── Tax ──────────────────────────────────────────────────────────────────────
 function renderTax() {
   const ty  = taxYearRange(taxYear);
   const inc = incomeData.filter(r=>r.date>=ty.start&&r.date<=ty.end);
@@ -375,6 +483,112 @@ function renderTax() {
       <div class="tax-row"><span class="tax-key">Monthly set-aside</span><span class="tax-val" style="color:#1e40af;font-size:15px;">£${monthly.toLocaleString()}/mo</span></div>
       <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on 2025–26 rates. Verify with your accountant.</div>
     </div>`;
+}
+
+// ── Receipts (read-only) ─────────────────────────────────────────────────────
+function setReceiptFilter(filter, el) {
+  receiptFilter = filter;
+  document.querySelectorAll('#rf-all,#rf-unsub,#rf-sub').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderReceipts();
+}
+
+async function viewReceipt(path) {
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'url', path }),
+    });
+    const d = await r.json();
+    if (d.url) window.open(d.url, '_blank');
+    else alert('Could not get download link.');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function receiptCard(r) {
+  const statusColour = r.status === 'submitted' ? '#059669' : '#d97706';
+  const catLabel     = RECEIPT_CAT_LABELS[r.category] || r.category;
+  const sub          = [r.date ? fmtDate(r.date) : '', catLabel].filter(Boolean).join(' · ');
+  const amountStr    = r.amount ? fmt(parseFloat(r.amount)) : '';
+  return `
+    <div class="receipt-card">
+      <div class="receipt-icon">PDF</div>
+      <div class="receipt-meta">
+        <div class="receipt-name">${r.original_name}</div>
+        <div class="receipt-sub">${sub}</div>
+        ${r.description ? `<div class="receipt-sub">${r.description}</div>` : ''}
+      </div>
+      <div class="receipt-right">
+        ${amountStr ? `<div class="receipt-amount">${amountStr}</div>` : ''}
+        <div class="receipt-status" style="color:${statusColour};">${r.status}</div>
+        <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View PDF</button>
+      </div>
+    </div>`;
+}
+
+// ── Tax Year Countdown ───────────────────────────────────────────────────────
+function updateTaxCountdown() {
+  const now = new Date();
+  const yr  = now.getFullYear();
+  let end   = new Date(yr, 3, 5, 23, 59, 59);   // April 5 end of day
+  if (now > end) end = new Date(yr + 1, 3, 5, 23, 59, 59);
+  const start  = new Date(end.getFullYear() - 1, 3, 6, 0, 0, 0); // April 6 prior year
+
+  const diff    = Math.max(0, end - now);
+  const pct     = Math.min(100, Math.round(((now - start) / (end - start)) * 100));
+  const days    = Math.floor(diff / 86400000);
+  const hours   = Math.floor((diff % 86400000) / 3600000);
+  const mins    = Math.floor((diff % 3600000)  / 60000);
+  const secs    = Math.floor((diff % 60000)    / 1000);
+  const dateStr = end.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const css = (id, p, v) => { const e = document.getElementById(id); if (e) e.style[p] = v; };
+  set('cr-tyr-date', dateStr);
+  set('cr-tyr-days', days);
+  set('cr-tyr-hms',  `${hours}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`);
+  set('cr-tyr-pct',  `${pct}% of tax year elapsed`);
+  css('cr-tyr-bar', 'width', `${pct}%`);
+}
+updateTaxCountdown();
+setInterval(updateTaxCountdown, 1000);
+
+function renderReceipts() {
+  const el = document.getElementById('receipt-list');
+  if (!el) return;
+
+  const sortVal = (document.getElementById('receipt-sort') || {}).value || 'date_desc';
+  const sortFn = (a, b) => {
+    if (sortVal === 'date_desc')   return (b.date || '').localeCompare(a.date || '');
+    if (sortVal === 'date_asc')    return (a.date || '').localeCompare(b.date || '');
+    if (sortVal === 'amount_desc') return (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0);
+    if (sortVal === 'amount_asc')  return (parseFloat(a.amount) || 0) - (parseFloat(b.amount) || 0);
+    return 0;
+  };
+
+  if (receiptFilter === 'all') {
+    const unsub = receiptData.filter(r => r.status === 'unsubmitted').sort(sortFn);
+    const sub   = receiptData.filter(r => r.status === 'submitted').sort(sortFn);
+    el.innerHTML = `
+      <div class="vault-section">
+        <div class="vault-header">Unsubmitted <span class="vault-count">${unsub.length}</span></div>
+        ${unsub.length ? unsub.map(receiptCard).join('') : '<div class="empty">No unsubmitted receipts</div>'}
+      </div>
+      <div class="vault-section">
+        <div class="vault-header">Submitted <span class="vault-count sub">${sub.length}</span></div>
+        ${sub.length ? sub.map(receiptCard).join('') : '<div class="empty">No submitted receipts</div>'}
+      </div>`;
+  } else {
+    const filtered = receiptData.filter(r => r.status === receiptFilter).sort(sortFn);
+    const label    = receiptFilter === 'submitted' ? 'Submitted' : 'Unsubmitted';
+    const isSub    = receiptFilter === 'submitted';
+    el.innerHTML = `
+      <div class="vault-section">
+        <div class="vault-header">${label} <span class="vault-count ${isSub ? 'sub' : ''}">${filtered.length}</span></div>
+        ${filtered.length ? filtered.map(receiptCard).join('') : `<div class="empty">No ${label.toLowerCase()} receipts</div>`}
+      </div>`;
+  }
 }
 </script>
 </body>
