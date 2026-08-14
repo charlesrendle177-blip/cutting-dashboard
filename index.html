@@ -6839,6 +6839,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   let cr_receipts_cache = [];
   let cr_receipts_loaded = false;
   let cr_receipt_filter = 'all';
+  let cr_editing_receipt_id = null;
   let cr_exp_mon  = new Date().getMonth();
 
   const CR_EXP_CATS = {
@@ -7299,13 +7300,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   const CR_CAT_LABELS = { software:'Software & Tools', marketing:'Marketing & Ads', equipment:'Equipment', professional:'Professional Fees', travel:'Travel & Transport', office:'Office & Supplies', subscriptions:'Subscriptions', other:'Other' };
+  const CR_CAT_OPTIONS = Object.entries(CR_CAT_LABELS).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
 
   function cr_receiptCard(r) {
-    const statusColour  = r.status === 'submitted' ? '#059669' : '#d97706';
-    const amountStr     = r.amount ? `£${parseFloat(r.amount).toFixed(2)}` : '';
-    const dateStr       = r.date   ? biz_fmtDate(r.date) : '';
-    const catStr        = CR_CAT_LABELS[r.category] || r.category;
-    const sub           = [dateStr, catStr].filter(Boolean).join(' · ');
+    if (cr_editing_receipt_id === r.id) return cr_receiptEditForm(r);
+    const statusColour = r.status === 'submitted' ? '#059669' : '#d97706';
+    const amountStr    = r.amount ? `£${parseFloat(r.amount).toFixed(2)}` : '';
+    const dateStr      = r.date   ? biz_fmtDate(r.date) : '';
+    const catStr       = CR_CAT_LABELS[r.category] || r.category;
+    const sub          = [dateStr, catStr].filter(Boolean).join(' · ');
     return `
       <div class="cr-receipt-card">
         <div class="cr-receipt-icon">PDF</div>
@@ -7319,11 +7322,49 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div class="cr-receipt-status" style="color:${statusColour};">${r.status}</div>
           <div class="cr-receipt-btns">
             <button class="cr-btn-sm" onclick="cr_viewReceipt('${r.storage_path}')">View</button>
+            <button class="cr-btn-sm" onclick="cr_editing_receipt_id=${r.id};cr_renderReceipts()" style="border-color:#6366f1;color:#6366f1;">Edit</button>
             <button class="cr-btn-sm ${r.status === 'submitted' ? 'unsubmit' : 'submit'}" onclick="cr_toggleReceiptStatus(${r.id},'${r.status}')">${r.status === 'submitted' ? 'Unsubmit' : 'Submit'}</button>
             <button class="cr-btn-sm del" onclick="cr_deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
           </div>
         </div>
       </div>`;
+  }
+
+  function cr_receiptEditForm(r) {
+    const catOpts = Object.entries(CR_CAT_LABELS).map(([v,l]) =>
+      `<option value="${v}" ${r.category === v ? 'selected' : ''}>${l}</option>`).join('');
+    const inp = 'width:100%;padding:6px 8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;';
+    const lbl = 'font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;';
+    return `
+      <div class="cr-receipt-card" style="flex-direction:column;gap:10px;background:#f0f4ff;border-color:#c7d2fe;">
+        <div style="font-size:12px;font-weight:700;color:#1e40af;">Editing: ${r.original_name}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="${lbl}">Amount (£)</label><input type="number" id="cr-re-amount" value="${r.amount || ''}" placeholder="0.00" step="0.01" min="0" style="${inp}"></div>
+          <div><label style="${lbl}">Date</label><input type="date" id="cr-re-date" value="${r.date || ''}" style="${inp}"></div>
+          <div><label style="${lbl}">Category</label><select id="cr-re-cat" style="${inp}">${catOpts}</select></div>
+          <div><label style="${lbl}">Description</label><input type="text" id="cr-re-desc" value="${r.description || ''}" placeholder="Optional" style="${inp}"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="cr_saveReceiptEdit(${r.id})" class="cr-btn-sm" style="border-color:#059669;color:#059669;padding:5px 14px;">Save</button>
+          <button onclick="cr_editing_receipt_id=null;cr_renderReceipts()" class="cr-btn-sm" style="padding:5px 14px;">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  async function cr_saveReceiptEdit(id) {
+    const amount      = document.getElementById('cr-re-amount').value;
+    const date        = document.getElementById('cr-re-date').value;
+    const category    = document.getElementById('cr-re-cat').value;
+    const description = document.getElementById('cr-re-desc').value;
+    await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id,
+        amount: amount ? parseFloat(amount) : null,
+        date: date || null, category, description: description || null }),
+    });
+    cr_editing_receipt_id = null;
+    await cr_loadReceipts();
   }
 
   function cr_setReceiptFilter(filter, el) {

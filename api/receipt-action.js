@@ -45,17 +45,29 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url });
   }
 
-  // ── update (toggle submitted/unsubmitted) ─────────────────────────────────
+  // ── update (status toggle OR metadata edit) ───────────────────────────────
   if (action === 'update') {
-    const { id, status } = body;
-    if (!id || !status) return res.status(400).json({ error: 'id and status required' });
-    if (!['submitted', 'unsubmitted'].includes(status)) {
-      return res.status(400).json({ error: 'status must be submitted or unsubmitted' });
+    const { id, status, amount, date, category, description } = body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+
+    const patch = {};
+    if (status !== undefined) {
+      if (!['submitted', 'unsubmitted'].includes(status)) {
+        return res.status(400).json({ error: 'status must be submitted or unsubmitted' });
+      }
+      patch.status = status;
     }
+    if (amount      !== undefined) patch.amount      = amount;
+    if (date        !== undefined) patch.date        = date || null;
+    if (category    !== undefined) patch.category    = category;
+    if (description !== undefined) patch.description = description || null;
+
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'Nothing to update' });
+
     const r = await fetch(`${SB_URL}/rest/v1/cr_receipts?id=eq.${id}`, {
       method: 'PATCH',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(patch),
     });
     if (!r.ok) return res.status(500).json({ error: 'Update failed' });
     return res.status(200).json({ ok: true });
