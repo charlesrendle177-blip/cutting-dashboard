@@ -6759,10 +6759,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function cr_saveIncome(d) {
     localStorage.setItem(CR_INCOME_KEY, JSON.stringify(d));
     if (sb) sb.from('hub_data').upsert({ key: CR_INCOME_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: CR_INCOME_KEY, value: d }),
+    }).catch(() => {});
   }
   function cr_saveExpenses(d) {
     localStorage.setItem(CR_EXPENSES_KEY, JSON.stringify(d));
     if (sb) sb.from('hub_data').upsert({ key: CR_EXPENSES_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: CR_EXPENSES_KEY, value: d }),
+    }).catch(() => {});
   }
 
   function cr_taxYearRange(y) {
