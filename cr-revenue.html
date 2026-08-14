@@ -194,7 +194,43 @@
   <!-- Expenses -->
   <div id="tab-expenses" class="tab-content">
     <div class="section-title">Expenses</div>
-    <div class="section-sub">All expense entries</div>
+    <div class="section-sub">Log and view expense entries</div>
+
+    <!-- Add expense card -->
+    <div class="card" style="margin-bottom:16px;">
+      <button onclick="toggleExpForm()" class="login-btn" style="margin-top:0;">+ Log Expense</button>
+      <div id="exp-form" style="display:none;margin-top:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label class="login-label">Date</label>
+            <input type="date" id="exp-add-date" class="login-input" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="login-label">Amount (£)</label>
+            <input type="number" id="exp-add-amount" class="login-input" placeholder="0.00" min="0" step="0.01" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="login-label">Category</label>
+            <select id="exp-add-cat" class="login-input" style="margin-bottom:0;">
+              <option value="software">Software &amp; Tools</option>
+              <option value="marketing">Marketing &amp; Ads</option>
+              <option value="equipment">Equipment</option>
+              <option value="professional">Professional Fees</option>
+              <option value="travel">Travel &amp; Transport</option>
+              <option value="office">Office &amp; Supplies</option>
+              <option value="subscriptions">Subscriptions</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="login-label">Description</label>
+            <input type="text" id="exp-add-desc" class="login-input" placeholder="e.g. Adobe Acrobat" style="margin-bottom:0;">
+          </div>
+        </div>
+        <button id="exp-save-btn" onclick="addExpense()" class="login-btn" style="margin-top:0;">Save Expense</button>
+      </div>
+    </div>
+
     <div class="mo-nav">
       <button class="mo-btn" onclick="changeExpMonth(-1)">&#8249;</button>
       <span class="mo-label" id="exp-mo-label"></span>
@@ -210,10 +246,51 @@
     <div id="tax-body"></div>
   </div>
 
-  <!-- Receipts (read-only) -->
+  <!-- Receipts -->
   <div id="tab-receipts" class="tab-content">
     <div class="section-title">Receipt Vault</div>
-    <div class="section-sub">All uploaded expense receipts</div>
+    <div class="section-sub">Upload and manage expense receipts (PDF)</div>
+
+    <!-- Upload card -->
+    <div class="card" style="margin-bottom:16px;">
+      <button onclick="toggleUploadForm()" class="login-btn" style="margin-top:0;">+ Upload Receipt</button>
+      <div id="upload-form" style="display:none;margin-top:16px;">
+        <div style="margin-bottom:10px;">
+          <label class="login-label">PDF File (max 10 MB)</label>
+          <input type="file" id="receipt-file" accept=".pdf" class="login-input" style="margin-bottom:0;padding:8px;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label class="login-label">Amount (£)</label>
+            <input type="number" id="receipt-amount" class="login-input" placeholder="0.00" min="0" step="0.01" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="login-label">Date</label>
+            <input type="date" id="receipt-date" class="login-input" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label class="login-label">Category</label>
+            <select id="receipt-cat" class="login-input" style="margin-bottom:0;">
+              <option value="software">Software &amp; Tools</option>
+              <option value="marketing">Marketing &amp; Ads</option>
+              <option value="equipment">Equipment</option>
+              <option value="professional">Professional Fees</option>
+              <option value="travel">Travel &amp; Transport</option>
+              <option value="office">Office &amp; Supplies</option>
+              <option value="subscriptions">Subscriptions</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="login-label">Description</label>
+            <input type="text" id="receipt-desc" class="login-input" placeholder="Optional" style="margin-bottom:0;">
+          </div>
+        </div>
+        <button id="receipt-save-btn" onclick="uploadReceipt()" class="login-btn" style="margin-top:0;">Save Receipt</button>
+      </div>
+    </div>
+
+    <!-- Filter + sort -->
     <div class="filter-bar">
       <button class="rf-pill active" id="rf-all"   onclick="setReceiptFilter('all',this)">All</button>
       <button class="rf-pill"        id="rf-unsub"  onclick="setReceiptFilter('unsubmitted',this)">Unsubmitted</button>
@@ -485,19 +562,97 @@ function renderTax() {
     </div>`;
 }
 
-// ── Receipts (read-only) ─────────────────────────────────────────────────────
-function setReceiptFilter(filter, el) {
-  receiptFilter = filter;
-  document.querySelectorAll('#rf-all,#rf-unsub,#rf-sub').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  renderReceipts();
+// ── Expenses — write ────────────────────────────────────────────────────────
+function toggleExpForm() {
+  const f = document.getElementById('exp-form');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+}
+
+async function addExpense() {
+  const date   = document.getElementById('exp-add-date').value;
+  const amount = parseFloat(document.getElementById('exp-add-amount').value);
+  const cat    = document.getElementById('exp-add-cat').value;
+  const desc   = document.getElementById('exp-add-desc').value.trim();
+  if (!date || !amount || isNaN(amount)) { alert('Date and amount are required.'); return; }
+
+  const entry = { id: Date.now(), date, amount, cat, desc: desc || '' };
+  expenseData  = [...expenseData, entry];
+
+  const btn = document.getElementById('exp-save-btn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'cr_expenses', value: expenseData }),
+    });
+    if (!(await r.json()).ok) throw new Error('Sync failed');
+    ['exp-add-date','exp-add-amount','exp-add-desc'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('exp-form').style.display = 'none';
+    renderExpenses();
+  } catch(e) {
+    expenseData = expenseData.filter(x => x.id !== entry.id); // rollback
+    alert('Save failed: ' + e.message);
+  } finally {
+    btn.textContent = 'Save Expense'; btn.disabled = false;
+  }
+}
+
+// ── Receipts — write ─────────────────────────────────────────────────────────
+function toggleUploadForm() {
+  const f = document.getElementById('upload-form');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+}
+
+async function uploadReceipt() {
+  const fileInput = document.getElementById('receipt-file');
+  const file = fileInput && fileInput.files[0];
+  if (!file) { alert('Please select a PDF file.'); return; }
+  if (file.size > 10 * 1024 * 1024) { alert('PDF is too large (max 10 MB).'); return; }
+
+  const amount   = document.getElementById('receipt-amount').value;
+  const date     = document.getElementById('receipt-date').value;
+  const category = document.getElementById('receipt-cat').value;
+  const desc     = document.getElementById('receipt-desc').value;
+
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const btn = document.getElementById('receipt-save-btn');
+  btn.textContent = 'Uploading…'; btn.disabled = true;
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: file.name, base64, amount: amount ? parseFloat(amount) : null, date: date || null, category, description: desc || null }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Unknown error');
+    fileInput.value = '';
+    ['receipt-amount','receipt-date','receipt-desc'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('upload-form').style.display = 'none';
+    // Reload receipts list
+    const list = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    });
+    receiptData = (await list.json()).receipts || [];
+    renderReceipts();
+  } catch(e) {
+    alert('Upload failed: ' + e.message);
+  } finally {
+    btn.textContent = 'Save Receipt'; btn.disabled = false;
+  }
 }
 
 async function viewReceipt(path) {
   try {
     const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'url', path }),
     });
     const d = await r.json();
@@ -506,11 +661,44 @@ async function viewReceipt(path) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+async function toggleReceiptStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'submitted' ? 'unsubmitted' : 'submitted';
+  await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'update', id, status: newStatus }),
+  });
+  const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'list' }),
+  });
+  receiptData = (await r.json()).receipts || [];
+  renderReceipts();
+}
+
+async function deleteReceipt(id, path) {
+  if (!confirm('Delete this receipt? This cannot be undone.')) return;
+  await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'delete', id, path }),
+  });
+  receiptData = receiptData.filter(r => r.id !== id);
+  renderReceipts();
+}
+
+// ── Receipts — render ────────────────────────────────────────────────────────
+function setReceiptFilter(filter, el) {
+  receiptFilter = filter;
+  document.querySelectorAll('#rf-all,#rf-unsub,#rf-sub').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderReceipts();
+}
+
 function receiptCard(r) {
   const statusColour = r.status === 'submitted' ? '#059669' : '#d97706';
   const catLabel     = RECEIPT_CAT_LABELS[r.category] || r.category;
   const sub          = [r.date ? fmtDate(r.date) : '', catLabel].filter(Boolean).join(' · ');
   const amountStr    = r.amount ? fmt(parseFloat(r.amount)) : '';
+  const isSub        = r.status === 'submitted';
   return `
     <div class="receipt-card">
       <div class="receipt-icon">PDF</div>
@@ -522,7 +710,11 @@ function receiptCard(r) {
       <div class="receipt-right">
         ${amountStr ? `<div class="receipt-amount">${amountStr}</div>` : ''}
         <div class="receipt-status" style="color:${statusColour};">${r.status}</div>
-        <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View PDF</button>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View</button>
+          <button class="view-btn" style="border-color:${statusColour};color:${statusColour};" onclick="toggleReceiptStatus(${r.id},'${r.status}')">${isSub ? 'Unsubmit' : 'Submit'}</button>
+          <button class="view-btn" style="border-color:#fca5a5;color:#dc2626;" onclick="deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+        </div>
       </div>
     </div>`;
 }

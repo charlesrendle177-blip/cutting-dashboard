@@ -1,8 +1,23 @@
-// Syncs cr_income and cr_expenses from the main hub into the cr_shared table.
-// Uses the Supabase service role key so it can write past RLS.
+// Syncs cr_income and cr_expenses bidirectionally: writes to BOTH cr_shared
+// (Clare's read table) and hub_data (Charles's hub table) so either side can
+// write and the other sees the update via Supabase realtime.
 // REQUIRES Vercel env var: SUPABASE_SERVICE_ROLE_KEY
 
 const SB_URL = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
+
+async function upsert(table, key, value, serviceKey) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=key`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
+  });
+  if (!r.ok) throw new Error(`${table} write failed: ${await r.text()}`);
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,20 +40,14 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'key must be cr_income or cr_expenses' });
   }
 
-  const r = await fetch(`${SB_URL}/rest/v1/cr_shared?on_conflict=key`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
-  });
-
-  if (!r.ok) {
-    const err = await r.text();
-    return res.status(500).json({ error: `Supabase write failed: ${err}` });
+  try {
+    // Write to both tables in parallel so Charles's realtime fires too
+    await Promise.all([
+      upsert('cr_shared', key, value, serviceKey),
+      upsert('hub_data',  key, value, serviceKey),
+    ]);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
   }
 
   return res.status(200).json({ ok: true, key });
