@@ -5042,12 +5042,29 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     }
   }
 
+  function tmmb_getPlanPayments() {
+    try { return JSON.parse(localStorage.getItem('tmmb_plan_payments') || '{}'); } catch { return {}; }
+  }
+  function tmmb_savePlanPayments(p) {
+    localStorage.setItem('tmmb_plan_payments', JSON.stringify(p));
+    if (sb) sb.from('hub_data')
+      .upsert({ key: 'tmmb_plan_payments', value: p, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .then(({ error }) => { if (error) console.error('[hub_sync] plan_payments save failed:', error); });
+  }
+  function tmmb_togglePayment(callId, payNum) {
+    const p = tmmb_getPlanPayments();
+    const k = `${callId}_${payNum}`;
+    p[k] = !p[k];
+    tmmb_savePlanPayments(p);
+    tmmb_renderPaymentPlans();
+  }
+
   function tmmb_renderPaymentPlans() {
     const card = document.getElementById('tmmb-plans-card');
     const body = document.getElementById('tmmb-plans-body');
     if (!card || !body) return;
 
-    const now = Date.now();
+    const now      = Date.now();
     const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
     const planLabel = { deposit:'Dep', plan2:'2m', plan3:'3m', plan4:'4m', plan6:'6m', plan12:'12m' };
     const planCalls = tmmb_getCalls().filter(c =>
@@ -5057,29 +5074,36 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!planCalls.length) { card.style.display = 'none'; return; }
     card.style.display = 'block';
 
+    const paid = tmmb_getPlanPayments();
+
     body.innerHTML = planCalls
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map(c => {
-        const n           = tmmb_paytypeMonths(c.paytype);
-        const perPayment  = Math.round((c.dealValue || 4000) / n);
-        const closeDate   = new Date(c.date + 'T12:00:00');
+        const n          = tmmb_paytypeMonths(c.paytype);
+        const perPayment = Math.round((c.dealValue || 4000) / n);
+        const closeDate  = new Date(c.date + 'T12:00:00');
 
         const slots = Array.from({ length: n }, (_, i) => {
-          const due = new Date(closeDate);
+          const due         = new Date(closeDate);
           due.setMonth(due.getMonth() + i);
           const daysFromNow = Math.floor((due.getTime() - now) / 86400000);
-          return { due, daysFromNow, num: i + 1 };
+          const payNum      = i + 1;
+          // Payment 1 auto-paid at close; rest checked against stored state
+          const isPaid      = payNum === 1 || !!paid[`${c.id}_${payNum}`];
+          return { due, daysFromNow, num: payNum, isPaid };
         });
 
-        const nextDue = slots.find(s => s.daysFromNow >= 0);
-        const allDone = slots.every(s => s.daysFromNow < 0);
+        const allPaid = slots.every(s => s.isPaid);
+        const nextUnpaid = slots.find(s => !s.isPaid);
 
         const slotsHtml = slots.map(s => {
           let bg, col, label;
-          if (s.daysFromNow < 0) {
+          if (s.isPaid) {
             bg = '#d1fae5'; col = '#059669'; label = '✓';
+          } else if (s.daysFromNow < 0) {
+            bg = '#fee2e2'; col = '#dc2626'; label = `${Math.abs(s.daysFromNow)}d overdue`;
           } else if (s.daysFromNow === 0) {
-            bg = '#fee2e2'; col = '#ef4444'; label = 'Today';
+            bg = '#fee2e2'; col = '#dc2626'; label = 'Today';
           } else if (s.daysFromNow <= 7) {
             bg = '#fee2e2'; col = '#ef4444'; label = `${s.daysFromNow}d`;
           } else if (s.daysFromNow <= 30) {
@@ -5088,20 +5112,35 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             bg = '#f3f4f6'; col = '#9ca3af';
             label = s.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
           }
-          return `<span style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;" title="Payment ${s.num}/${n} — ${s.due.toLocaleDateString('en-GB')}">${label}</span>`;
+          const clickable = s.num > 1;
+          const tip = s.isPaid ? `Payment ${s.num} paid — click to unmark` : `Payment ${s.num} — ${s.due.toLocaleDateString('en-GB')} — click to mark paid`;
+          return `<span
+            ${clickable ? `onclick="tmmb_togglePayment(${c.id},${s.num})" title="${tip}"` : `title="Collected at close"`}
+            style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;${clickable ? 'cursor:pointer;' : ''}"
+          >${label}</span>`;
         }).join('');
 
-        const nextLabel = allDone
-          ? `<span style="font-size:11px;font-weight:700;color:#059669;">Complete ✓</span>`
-          : `<span style="font-size:11px;color:var(--label);">Next: <strong>${nextDue.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</strong></span>`;
+        const paidCount   = slots.filter(s => s.isPaid).length;
+        const paidTotal   = paidCount * perPayment;
+        const grandTotal  = n * perPayment;
+
+        const statusLabel = allPaid
+          ? `<span style="font-size:11px;font-weight:700;color:#059669;">All paid ✓</span>`
+          : nextUnpaid
+            ? `<span style="font-size:11px;color:var(--label);">Next: <strong>${nextUnpaid.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</strong></span>`
+            : '';
 
         return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <div>
               <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
-              <span style="font-size:11px;color:var(--label);margin-left:7px;">Plan · ${planLabel[c.paytype]} · £${perPayment.toLocaleString()}/mo</span>
+              <span style="font-size:11px;color:var(--label);margin-left:7px;">Plan · ${planLabel[c.paytype]}</span>
             </div>
-            ${nextLabel}
+            ${statusLabel}
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+            <span style="font-size:12px;color:#059669;font-weight:600;">£${paidTotal.toLocaleString()} paid of £${grandTotal.toLocaleString()}</span>
+            ${!allPaid && nextUnpaid ? `<span style="font-size:11px;color:var(--label);">£${perPayment.toLocaleString()} due ${nextUnpaid.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</span>` : ''}
           </div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;">${slotsHtml}</div>
         </div>`;
