@@ -2370,6 +2370,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
           </div>
 
+          <!-- Payment plan tracker — hidden when no active plans -->
+          <div id="tmmb-plans-card" class="card" style="margin-bottom:14px;display:none;border-color:#bfdbfe;">
+            <div class="card-label" style="color:#1e40af;">💳 Payment Plans</div>
+            <div id="tmmb-plans-body"></div>
+          </div>
+
           <!-- Clawback window alert — hidden when nothing at risk -->
           <div id="tmmb-clawback-card" class="card" style="margin-bottom:14px;display:none;border-color:#fde68a;">
             <div class="card-label" style="color:#d97706;">⏱ Clawback Window Open</div>
@@ -2381,12 +2387,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div id="tmmb-locked-card" class="card" style="margin-bottom:14px;display:none;border-color:#a7f3d0;">
             <div class="card-label" style="color:#059669;">🔒 Commission Locked</div>
             <div id="tmmb-locked-body"></div>
-          </div>
-
-          <!-- Payment plan tracker — hidden when no active plans -->
-          <div id="tmmb-plans-card" class="card" style="margin-bottom:14px;display:none;border-color:#bfdbfe;">
-            <div class="card-label" style="color:#1e40af;">💳 Payment Plans</div>
-            <div id="tmmb-plans-body"></div>
           </div>
 
           <div class="tmmb-ov-2col">
