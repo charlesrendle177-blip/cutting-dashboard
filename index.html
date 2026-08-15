@@ -7026,17 +7026,35 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return { start: `${y}-04-06`, end: `${y+1}-04-05`, label: `${y}–${String(y+1).slice(2)}` };
   }
 
-  function cr_taxCalc(profit) {
-    const allowance = 12570;
-    const basicTop  = 50270;
-    if (profit <= allowance) return { incomeTax: 0, ni: 0, total: 0 };
-    const taxable  = profit - allowance;
-    const basicBand = Math.min(taxable, basicTop - allowance);
-    const higherBand = Math.max(0, taxable - (basicTop - allowance));
-    const incomeTax = basicBand * 0.20 + higherBand * 0.40;
-    const niBand1   = Math.min(profit - allowance, basicTop - allowance);
-    const niBand2   = Math.max(0, profit - basicTop);
-    const ni        = Math.max(0, niBand1) * 0.09 + Math.max(0, niBand2) * 0.02;
+  function cr_getEmpIncome(y) {
+    return parseFloat(localStorage.getItem(`cr_emp_income_${y ?? cr_taxYear}`) || '0') || 0;
+  }
+  function cr_saveEmpIncome() {
+    const val = parseFloat(document.getElementById('cr-emp-income-input').value) || 0;
+    localStorage.setItem(`cr_emp_income_${cr_taxYear}`, val);
+    cr_renderTax();
+    cr_renderOverview();
+  }
+
+  function cr_taxCalc(profit, empIncome = 0) {
+    const totalAllowance = 12570;
+    const basicTop       = 50270;
+    // Employment income absorbs part of the personal allowance first
+    const remainingAllowance = Math.max(0, totalAllowance - empIncome);
+    if (profit <= remainingAllowance) return { incomeTax: 0, ni: 0, total: 0 };
+    const taxable = profit - remainingAllowance;
+    // How much of the basic rate band has employment income already filled?
+    const empTaxable = Math.max(0, empIncome - totalAllowance);
+    const basicBandRemaining = Math.max(0, (basicTop - totalAllowance) - empTaxable);
+    const basicBandForSE = Math.min(taxable, basicBandRemaining);
+    const higherBandForSE = Math.max(0, taxable - basicBandRemaining);
+    const incomeTax = basicBandForSE * 0.20 + higherBandForSE * 0.40;
+    // Class 4 NI thresholds reduced by employment income (HMRC annual maximum rules)
+    const niLower = Math.max(0, 12570 - empIncome);
+    const niUpper = Math.max(0, 50270 - empIncome);
+    const niBand1 = Math.max(0, Math.min(profit, niUpper) - niLower);
+    const niBand2 = Math.max(0, profit - Math.max(niUpper, niLower));
+    const ni = Math.max(0, niBand1) * 0.09 + Math.max(0, niBand2) * 0.02;
     return { incomeTax: Math.round(incomeTax), ni: Math.round(ni), total: Math.round(incomeTax + ni) };
   }
 
@@ -7092,7 +7110,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const totalInc  = inc.reduce((s, r) => s + (r.amount || 0), 0);
     const totalExp  = exp.reduce((s, r) => s + (r.amount || 0), 0);
     const profit    = totalInc - totalExp;
-    const tax       = cr_taxCalc(profit);
+    const empIncome = cr_getEmpIncome(cr_taxYear);
+    const tax       = cr_taxCalc(profit, empIncome);
     const netProfit = profit - tax.total;
 
     const yrEl = document.getElementById('cr-ov-yr-display');
@@ -7444,30 +7463,44 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   // Tax tab
   function cr_renderTax() {
-    const ty     = cr_taxYearRange(cr_taxYear);
-    const inc    = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
-    const exp    = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const ty       = cr_taxYearRange(cr_taxYear);
+    const inc      = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const exp      = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
     const totalInc = inc.reduce((s, r) => s + (r.amount || 0), 0);
     const totalExp = exp.reduce((s, r) => s + (r.amount || 0), 0);
     const profit   = totalInc - totalExp;
-    const tax      = cr_taxCalc(profit);
-    const allowance = 12570;
-    const taxable   = Math.max(0, profit - allowance);
-    const eff       = profit > 0 ? (tax.total / profit * 100).toFixed(1) : '0.0';
-    const setAside  = profit > 0 ? Math.round(tax.total / 12) : 0;
+    const empIncome = cr_getEmpIncome(cr_taxYear);
+    const tax      = cr_taxCalc(profit, empIncome);
+    const remainingAllowance = Math.max(0, 12570 - empIncome);
+    const taxable  = Math.max(0, profit - remainingAllowance);
+    const eff      = profit > 0 ? (tax.total / profit * 100).toFixed(1) : '0.0';
+    const setAside = profit > 0 ? Math.round(tax.total / 12) : 0;
 
     const el = document.getElementById('cr-tax-body');
     if (!el) return;
     el.innerHTML = `
       <div class="biz-card" style="margin-bottom:14px;">
+        <div class="biz-card-label">Employment Income (PAYE) — ${ty.label}</div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Gross employment income this tax year. This reduces your personal allowance available for self-employment — enter the amount from your P60 or final payslip.</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:14px;font-weight:600;color:#374151;">£</span>
+          <input type="number" id="cr-emp-income-input" value="${empIncome || ''}" placeholder="0.00" min="0" step="0.01" style="flex:1;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;">
+          <button onclick="cr_saveEmpIncome()" class="biz-btn biz-btn-primary" style="padding:9px 18px;white-space:nowrap;">Save</button>
+        </div>
+        ${empIncome > 0 ? `<div style="font-size:11px;color:#6b7280;margin-top:8px;background:#fef3c7;border-radius:8px;padding:8px 10px;">£${empIncome.toLocaleString('en-GB',{minimumFractionDigits:2})} of your £12,570 personal allowance has been used by employment — leaving <strong>£${remainingAllowance.toLocaleString('en-GB',{minimumFractionDigits:2})}</strong> for self-employment.</div>` : ''}
+      </div>
+      <div class="biz-card" style="margin-bottom:14px;">
         <div class="biz-card-label">Tax year ${ty.label} · ${ty.start} → ${ty.end}</div>
-        <div class="cr-tax-row"><span class="cr-tax-key">Total Income</span><span class="cr-tax-val">£${totalInc.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Self-Employment Income</span><span class="cr-tax-val">£${totalInc.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
         <div class="cr-tax-row"><span class="cr-tax-key">Allowable Expenses</span><span class="cr-tax-val">£${totalExp.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
-        <div class="cr-tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;"><span class="cr-tax-key" style="color:#0d2345;">Taxable Profit</span><span class="cr-tax-val" style="color:#0d2345;">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+        <div class="cr-tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;"><span class="cr-tax-key" style="color:#0d2345;">Self-Employment Profit</span><span class="cr-tax-val" style="color:#0d2345;">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
       </div>
       <div class="biz-card" style="margin-bottom:14px;">
         <div class="biz-card-label accent">Income Tax Calculation</div>
         <div class="cr-tax-row"><span class="cr-tax-key">Personal Allowance</span><span class="cr-tax-val">£12,570</span></div>
+        ${empIncome > 0 ? `
+        <div class="cr-tax-row"><span class="cr-tax-key" style="color:#d97706;">Less: Employment income</span><span class="cr-tax-val" style="color:#d97706;">−£${empIncome.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+        <div class="cr-tax-row"><span class="cr-tax-key">Remaining allowance for SE</span><span class="cr-tax-val">£${remainingAllowance.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>` : ''}
         <div class="cr-tax-row"><span class="cr-tax-key">Taxable after allowance</span><span class="cr-tax-val">£${taxable.toLocaleString()}</span></div>
         <div class="cr-tax-row"><span class="cr-tax-key">Income Tax (20% / 40%)</span><span class="cr-tax-val">£${tax.incomeTax.toLocaleString()}</span></div>
         <div class="cr-tax-row"><span class="cr-tax-key">Class 4 NI (9% / 2%)</span><span class="cr-tax-val">£${tax.ni.toLocaleString()}</span></div>
@@ -7521,7 +7554,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const totalInc  = inc.reduce((s, r) => s + (r.amount || 0), 0);
     const totalExp  = exp.reduce((s, r) => s + (r.amount || 0), 0);
     const profit    = totalInc - totalExp;
-    const tax       = cr_taxCalc(profit);
+    const empIncome = cr_getEmpIncome(cr_taxYear);
+    const tax       = cr_taxCalc(profit, empIncome);
+    const remainingAllowance = Math.max(0, 12570 - empIncome);
 
     const fmt = n => '£' + parseFloat(n || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
@@ -7568,10 +7603,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   <div class="sub">Generated ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })} · Period: ${ty.start} to ${ty.end}</div>
 
   <h2>Summary</h2>
+  ${empIncome > 0 ? `<p style="font-size:12px;color:#d97706;background:#fef3c7;border-radius:8px;padding:8px 12px;margin-bottom:12px;">Employment income (PAYE): ${fmt(empIncome)} — reduces personal allowance available for self-employment to ${fmt(remainingAllowance)}.</p>` : ''}
   <div class="summary-grid">
-    <div class="summary-box"><div class="summary-label">Total Income</div><div class="summary-val">${fmt(totalInc)}</div></div>
+    <div class="summary-box"><div class="summary-label">SE Income</div><div class="summary-val">${fmt(totalInc)}</div></div>
     <div class="summary-box"><div class="summary-label">Total Expenses</div><div class="summary-val">${fmt(totalExp)}</div></div>
-    <div class="summary-box"><div class="summary-label">Net Profit</div><div class="summary-val${profit < 0 ? ' accent' : ''}">${fmt(profit)}</div></div>
+    <div class="summary-box"><div class="summary-label">SE Profit</div><div class="summary-val${profit < 0 ? ' accent' : ''}">${fmt(profit)}</div></div>
+    ${empIncome > 0 ? `<div class="summary-box"><div class="summary-label">Employment Income</div><div class="summary-val">${fmt(empIncome)}</div></div>` : ''}
     <div class="summary-box"><div class="summary-label">Income Tax</div><div class="summary-val accent">${fmt(tax.incomeTax)}</div></div>
     <div class="summary-box"><div class="summary-label">Class 4 NI</div><div class="summary-val accent">${fmt(tax.ni)}</div></div>
     <div class="summary-box"><div class="summary-label">Total Tax Liability</div><div class="summary-val accent">${fmt(tax.total)}</div></div>
