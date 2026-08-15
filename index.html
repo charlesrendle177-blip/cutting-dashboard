@@ -7480,16 +7480,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!el) return;
     el.innerHTML = `
       <div class="biz-card" style="margin-bottom:14px;">
-        <div class="biz-card-label">Employment Income (PAYE) — ${ty.label}</div>
-        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Gross employment income this tax year. This reduces your personal allowance available for self-employment — enter the amount from your P60 or final payslip.</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:14px;font-weight:600;color:#374151;">£</span>
-          <input type="number" id="cr-emp-income-input" value="${empIncome || ''}" placeholder="0.00" min="0" step="0.01" style="flex:1;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;">
-          <button onclick="cr_saveEmpIncome()" class="biz-btn biz-btn-primary" style="padding:9px 18px;white-space:nowrap;">Save</button>
-        </div>
-        ${empIncome > 0 ? `<div style="font-size:11px;color:#6b7280;margin-top:8px;background:#fef3c7;border-radius:8px;padding:8px 10px;">£${empIncome.toLocaleString('en-GB',{minimumFractionDigits:2})} of your £12,570 personal allowance has been used by employment — leaving <strong>£${remainingAllowance.toLocaleString('en-GB',{minimumFractionDigits:2})}</strong> for self-employment.</div>` : ''}
-      </div>
-      <div class="biz-card" style="margin-bottom:14px;">
         <div class="biz-card-label">Tax year ${ty.label} · ${ty.start} → ${ty.end}</div>
         <div class="cr-tax-row"><span class="cr-tax-key">Self-Employment Income</span><span class="cr-tax-val">£${totalInc.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
         <div class="cr-tax-row"><span class="cr-tax-key">Allowable Expenses</span><span class="cr-tax-val">£${totalExp.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
