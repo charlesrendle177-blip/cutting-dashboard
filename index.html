@@ -7178,23 +7178,24 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const BASIC_RATE_CEILING = 50270;
     const targetEl = document.getElementById('cr-tax-target-body');
     if (targetEl) {
-      const headroom  = BASIC_RATE_CEILING - profit;
-      const onTrack   = profit <= BASIC_RATE_CEILING;
-      const pct       = Math.min(100, Math.max(0, Math.round((profit / BASIC_RATE_CEILING) * 100)));
+      const effectiveCeiling = BASIC_RATE_CEILING - empIncome;
+      const headroom  = effectiveCeiling - profit;
+      const onTrack   = profit <= effectiveCeiling;
+      const pct       = Math.min(100, Math.max(0, Math.round(((profit + empIncome) / BASIC_RATE_CEILING) * 100)));
       const barColour = onTrack ? '#059669' : '#dc2626';
-      const neededExp = onTrack ? 0 : Math.ceil(profit - BASIC_RATE_CEILING);
+      const neededExp = onTrack ? 0 : Math.ceil(profit - effectiveCeiling);
       targetEl.innerHTML = `
-        <div style="font-size:11px;color:#6b7280;margin-bottom:8px;line-height:1.4;">Stay under £50,270 profit — 20% basic rate band</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:8px;line-height:1.4;">Stay under £50,270 total income — 20% basic rate band${empIncome > 0 ? ` · £${empIncome.toLocaleString('en-GB')} used by employment` : ''}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <span style="font-size:12px;font-weight:600;color:#374151;">Current profit</span>
+          <span style="font-size:12px;font-weight:600;color:#374151;">SE profit</span>
           <span style="font-size:14px;font-weight:800;color:${barColour};">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
         </div>
         <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
           <div style="height:100%;width:${pct}%;background:${barColour};border-radius:6px;transition:width 0.4s;"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:10px;"><span>£0</span><span style="color:#7c3aed;font-weight:700;">£50,270 ceiling</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:10px;"><span>£0</span><span style="color:#7c3aed;font-weight:700;">£${effectiveCeiling.toLocaleString('en-GB')} SE ceiling</span></div>
         ${onTrack
-          ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:8px 10px;font-size:12px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom</div>`
+          ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:8px 10px;font-size:12px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom remaining</div>`
           : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px;font-size:12px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over — need £${neededExp.toLocaleString()} more in expenses</div>`
         }`;
     }
