@@ -3398,17 +3398,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div id="cr-exp-list"></div>
 
-            <!-- Budget limits panel -->
-            <div class="biz-card" style="margin-top:14px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="cr_toggleBudgetPanel()">
-                <div class="biz-card-label" style="margin-bottom:0;">📊 Monthly Budgets</div>
-                <div id="cr-budget-chevron" style="font-size:11px;color:#9ca3af;">▼</div>
-              </div>
-              <div id="cr-budget-panel" style="display:none;margin-top:14px;">
-                <div id="cr-budget-list"></div>
-              </div>
-            </div>
-
             <!-- Recurring expenses panel -->
             <div class="biz-card" style="margin-top:14px;">
               <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="cr_toggleRecurringPanel()">
@@ -3459,16 +3448,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div id="cr-tax-body"></div>
             <button onclick="cr_exportTaxYear()" class="biz-btn biz-btn-primary" style="width:100%;margin-top:14px;">Export for Accountant</button>
-
-            <!-- Tax Pot Tracker -->
-            <div class="biz-card" style="margin-top:14px;background:#fefce8;border-color:#fde68a;">
-              <div class="biz-card-label" style="color:#92400e;">Tax Pot</div>
-              <div id="cr-tax-pot-body"></div>
-              <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
-                <input type="number" id="cr-pot-input" placeholder="Amount saved so far (£)" min="0" step="0.01" style="flex:1;padding:9px 12px;border:1.5px solid #fde68a;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fffde7;">
-                <button onclick="cr_savePot()" style="padding:9px 18px;background:#92400e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Save</button>
-              </div>
-            </div>
 
             <!-- HMRC Payment Log -->
             <div class="biz-card" style="margin-top:14px;">
@@ -7303,7 +7282,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
   function cr_renderExpenses() {
     cr_autoGenerateRecurring();
-    if (cr_budget_panel_open) cr_renderBudgets();
     cr_renderExpNav();
     const key  = cr_expMonthKey();
     const rows = cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).sort((a,b) => b.date.localeCompare(a.date));
@@ -7352,73 +7330,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     cr_renderExpenses();
   }
 
-  // ── Budget Limits ─────────────────────────────────────────────────────────────
-  const CR_BUDGETS_KEY = 'cr_exp_budgets';
-  let cr_budget_panel_open = false;
-  function cr_getExpBudgets() { try { return JSON.parse(localStorage.getItem(CR_BUDGETS_KEY) || '{}'); } catch { return {}; } }
-  function cr_saveExpBudgets(d) { localStorage.setItem(CR_BUDGETS_KEY, JSON.stringify(d)); }
-
-  function cr_toggleBudgetPanel() {
-    cr_budget_panel_open = !cr_budget_panel_open;
-    const panel   = document.getElementById('cr-budget-panel');
-    const chevron = document.getElementById('cr-budget-chevron');
-    if (panel)   panel.style.display = cr_budget_panel_open ? '' : 'none';
-    if (chevron) chevron.textContent  = cr_budget_panel_open ? '▲' : '▼';
-    if (cr_budget_panel_open) cr_renderBudgets();
-  }
-
-  function cr_renderBudgets() {
-    const el = document.getElementById('cr-budget-list');
-    if (!el) return;
-    const key      = cr_expMonthKey();
-    const spent    = {};
-    cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).forEach(r => {
-      spent[r.cat] = (spent[r.cat] || 0) + (r.amount || 0);
-    });
-    const budgets  = cr_getExpBudgets();
-    const catKeys  = Object.keys(CR_EXP_CATS);
-    el.innerHTML = catKeys.map(k => {
-      const cat    = CR_EXP_CATS[k];
-      const used   = spent[k] || 0;
-      const limit  = budgets[k] || 0;
-      const pct    = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
-      const colour = pct >= 100 ? '#dc2626' : pct >= 80 ? '#f59e0b' : '#059669';
-      return `
-        <div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:12px;font-weight:700;color:#374151;">${cat.label}</span>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:12px;font-weight:600;color:${colour};">£${used.toFixed(0)}${limit ? ' / £' + limit : ''}</span>
-              <input type="number" value="${limit || ''}" placeholder="Set limit" min="0" step="1"
-                onchange="cr_setBudget('${k}', this.value)"
-                style="width:70px;padding:3px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:11px;text-align:right;">
-            </div>
-          </div>
-          ${limit > 0 ? `
-            <div style="background:#f3f4f6;border-radius:99px;height:6px;overflow:hidden;">
-              <div style="height:100%;width:${pct.toFixed(1)}%;background:${colour};border-radius:99px;transition:width 0.4s;"></div>
-            </div>
-            ${pct >= 100 ? `<div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px;">Over budget by £${(used-limit).toFixed(0)}</div>` : pct >= 80 ? `<div style="font-size:10px;color:#f59e0b;font-weight:600;margin-top:2px;">£${(limit-used).toFixed(0)} remaining</div>` : ''}
-          ` : '<div style="font-size:10px;color:#d1d5db;margin-top:2px;">No limit set — enter amount above</div>'}
-        </div>`;
-    }).join('');
-  }
-
-  function cr_setBudget(cat, val) {
-    const budgets = cr_getExpBudgets();
-    const num = parseFloat(val);
-    if (num > 0) budgets[cat] = num;
-    else delete budgets[cat];
-    cr_saveExpBudgets(budgets);
-  }
-
-  // ── Tax Pot & HMRC Payments ───────────────────────────────────────────────────
-  function cr_savePot() {
-    const val = parseFloat(document.getElementById('cr-pot-input').value) || 0;
-    localStorage.setItem(`cr_tax_pot_${cr_taxYear}`, val);
-    cr_renderTax();
-  }
-
+  // ── HMRC Payments ─────────────────────────────────────────────────────────────
   function cr_getHmrcPayments() { try { return JSON.parse(localStorage.getItem(`cr_hmrc_payments_${cr_taxYear}`) || '[]'); } catch { return []; } }
   function cr_saveHmrcPayments(d) { localStorage.setItem(`cr_hmrc_payments_${cr_taxYear}`, JSON.stringify(d)); }
 
@@ -7591,32 +7503,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-tax-row"><span class="cr-tax-key">Set aside monthly</span><span class="cr-tax-val" style="color:#1e40af;font-size:15px;">£${setAside.toLocaleString()}/mo</span></div>
         <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on Jan 2025 rates. Personal allowance £12,570. Does not include Class 2 NI or payment-on-account. Verify with your accountant.</div>
       </div>`;
-
-    // Tax Pot
-    const potEl = document.getElementById('cr-tax-pot-body');
-    if (potEl) {
-      const saved = parseFloat(localStorage.getItem(`cr_tax_pot_${cr_taxYear}`)) || 0;
-      const target = tax.total;
-      const gap = Math.max(0, target - saved);
-      const pct = target > 0 ? Math.min(100, (saved / target) * 100) : 0;
-      const colour = pct >= 100 ? '#059669' : pct >= 60 ? '#f59e0b' : '#dc2626';
-      const potInput = document.getElementById('cr-pot-input');
-      if (potInput && !potInput.value) potInput.value = saved || '';
-      potEl.innerHTML = `
-        <div style="font-size:11px;color:#92400e;margin-bottom:10px;">Put aside money from your income so you're ready for your January self-assessment bill.</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:12px;color:#92400e;">Saved</span>
-          <span style="font-size:14px;font-weight:800;color:${colour};">£${saved.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:#92400e;">Target (estimated tax)</span>
-          <span style="font-size:14px;font-weight:800;color:#92400e;">£${target.toLocaleString()}</span>
-        </div>
-        <div style="background:#fde68a;border-radius:99px;height:8px;overflow:hidden;margin-bottom:5px;">
-          <div style="height:100%;width:${pct.toFixed(1)}%;background:${colour};border-radius:99px;transition:width 0.4s;"></div>
-        </div>
-        <div style="font-size:11px;color:#92400e;text-align:right;">${pct >= 100 ? '✓ Fully covered' : `£${gap.toLocaleString('en-GB',{minimumFractionDigits:2})} still to save`}</div>`;
-    }
 
     // HMRC Payment Log
     const hmrcEl = document.getElementById('cr-hmrc-body');
