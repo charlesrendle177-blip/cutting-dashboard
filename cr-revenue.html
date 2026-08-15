@@ -92,7 +92,10 @@
   .vault-header { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
   .vault-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
   .vault-count.sub { background: #d1fae5; color: #065f46; }
-  .receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; background: #fff; border: 1.5px solid #e5e7eb; margin-bottom: 8px; }
+  .receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; background: #fff; border: 1.5px solid #e5e7eb; margin-bottom: 8px; flex-direction: column; gap: 0; }
+  .receipt-row  { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
+  .receipt-preview { margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; width: 100%; }
+  .receipt-preview embed { display: block; width: 100%; height: 240px; border: none; }
   .receipt-icon { width: 40px; height: 40px; border-radius: 8px; background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .receipt-meta { flex: 1; min-width: 0; }
   .receipt-name { font-size: 13px; font-weight: 700; color: #0d2345; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -383,6 +386,8 @@ let expenseData = [];
 let receiptData = [];
 let receiptFilter = 'all';
 let editingReceiptId = null;
+let previewId = null;
+const previewUrls = {};
 let taxYear = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1;
 let incYear = new Date().getFullYear(), incMon = new Date().getMonth();
 let expYear = new Date().getFullYear(), expMon = new Date().getMonth();
@@ -671,6 +676,40 @@ async function addExpense() {
   }
 }
 
+// ── Receipt preview & duplicate ──────────────────────────────────────────────
+async function togglePreview(id, path) {
+  if (previewId === id) { previewId = null; renderReceipts(); return; }
+  previewId = id;
+  renderReceipts();
+  if (!previewUrls[id]) {
+    try {
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'url', path }),
+      });
+      const data = await r.json();
+      previewUrls[id] = data.url || '';
+    } catch { previewUrls[id] = ''; }
+  }
+  if (previewId === id) renderReceipts();
+}
+
+async function duplicateReceipt(id, btn) {
+  btn.textContent = '…'; btn.disabled = true;
+  try {
+    await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'duplicate', id }),
+    });
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    });
+    receiptData = (await r.json()).receipts || [];
+    renderReceipts();
+  } catch { btn.textContent = 'Repeat'; btn.disabled = false; }
+}
+
 // ── Receipts — write ─────────────────────────────────────────────────────────
 function toggleUploadForm() {
   const f = document.getElementById('upload-form');
@@ -773,24 +812,40 @@ function receiptCard(r) {
   const sub          = [r.date ? fmtDate(r.date) : '', catLabel].filter(Boolean).join(' · ');
   const amountStr    = r.amount ? fmt(parseFloat(r.amount)) : '';
   const isSub        = r.status === 'submitted';
+  const isPreviewing = previewId === r.id;
+  const previewUrl   = previewUrls[r.id];
   return `
     <div class="receipt-card">
-      <div class="receipt-icon">PDF</div>
-      <div class="receipt-meta">
-        <div class="receipt-name">${r.original_name}</div>
-        <div class="receipt-sub">${sub}</div>
-        ${r.description ? `<div class="receipt-sub">${r.description}</div>` : ''}
-      </div>
-      <div class="receipt-right">
-        ${amountStr ? `<div class="receipt-amount">${amountStr}</div>` : ''}
-        <div class="receipt-status" style="color:${statusColour};">${r.status}</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
-          <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View</button>
-          <button class="view-btn" style="border-color:#6366f1;color:#6366f1;" onclick="editingReceiptId=${r.id};renderReceipts()">Edit</button>
-          <button class="view-btn" style="border-color:${statusColour};color:${statusColour};" onclick="toggleReceiptStatus(${r.id},'${r.status}')">${isSub ? 'Unsubmit' : 'Submit'}</button>
-          <button class="view-btn" style="border-color:#fca5a5;color:#dc2626;" onclick="deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+      <div class="receipt-row">
+        <button onclick="togglePreview(${r.id},'${r.storage_path}')"
+                class="receipt-icon"
+                style="cursor:pointer;border:none;background:${isPreviewing ? '#dbeafe' : '#fee2e2'};color:${isPreviewing ? '#1d4ed8' : '#dc2626'};"
+                title="${isPreviewing ? 'Close preview' : 'Preview receipt'}">
+          ${isPreviewing ? '▲' : 'PDF'}
+        </button>
+        <div class="receipt-meta">
+          <div class="receipt-name">${r.original_name}</div>
+          <div class="receipt-sub">${sub}</div>
+          ${r.description ? `<div class="receipt-sub">${r.description}</div>` : ''}
+        </div>
+        <div class="receipt-right">
+          ${amountStr ? `<div class="receipt-amount">${amountStr}</div>` : ''}
+          <div class="receipt-status" style="color:${statusColour};">${r.status}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View</button>
+            <button class="view-btn" style="border-color:#0891b2;color:#0891b2;" onclick="duplicateReceipt(${r.id},this)" title="Duplicate to next month">Repeat</button>
+            <button class="view-btn" style="border-color:#6366f1;color:#6366f1;" onclick="editingReceiptId=${r.id};renderReceipts()">Edit</button>
+            <button class="view-btn" style="border-color:${statusColour};color:${statusColour};" onclick="toggleReceiptStatus(${r.id},'${r.status}')">${isSub ? 'Unsubmit' : 'Submit'}</button>
+            <button class="view-btn" style="border-color:#fca5a5;color:#dc2626;" onclick="deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+          </div>
         </div>
       </div>
+      ${isPreviewing ? `
+        <div class="receipt-preview">
+          ${previewUrl
+            ? `<embed src="${previewUrl}" type="application/pdf" width="100%" height="240">`
+            : '<div style="padding:16px;text-align:center;font-size:12px;color:#6b7280;">Loading preview…</div>'}
+        </div>` : ''}
     </div>`;
 }
 

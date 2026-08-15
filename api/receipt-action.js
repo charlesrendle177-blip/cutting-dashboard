@@ -94,5 +94,37 @@ module.exports = async (req, res) => {
     return res.status(200).json({ ok: true });
   }
 
+  // ── duplicate (copy row with date +1 month, same file) ───────────────────
+  if (action === 'duplicate') {
+    const { id } = body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const gr = await fetch(`${SB_URL}/rest/v1/cr_receipts?id=eq.${id}&select=*`, { headers });
+    if (!gr.ok) return res.status(500).json({ error: 'Fetch failed' });
+    const rows = await gr.json();
+    if (!rows.length) return res.status(404).json({ error: 'Receipt not found' });
+    const orig = rows[0];
+    let newDate = null;
+    if (orig.date) {
+      const d = new Date(orig.date);
+      d.setMonth(d.getMonth() + 1);
+      newDate = d.toISOString().slice(0, 10);
+    }
+    const ir = await fetch(`${SB_URL}/rest/v1/cr_receipts`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({
+        storage_path: orig.storage_path,
+        original_name: orig.original_name,
+        amount: orig.amount,
+        date: newDate,
+        category: orig.category,
+        description: orig.description,
+        status: 'unsubmitted',
+      }),
+    });
+    if (!ir.ok) return res.status(500).json({ error: 'Duplicate insert failed' });
+    return res.status(200).json({ ok: true });
+  }
+
   return res.status(400).json({ error: `Unknown action: ${action}` });
 };

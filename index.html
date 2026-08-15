@@ -1872,7 +1872,9 @@
     .cr-receipt-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
     .cr-receipt-amount { font-size: 14px; font-weight: 800; color: #0d2345; }
     .cr-receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
-    .cr-receipt-btns { display: flex; gap: 4px; margin-top: 2px; }
+    .cr-receipt-btns { display: flex; gap: 4px; margin-top: 2px; flex-wrap: wrap; justify-content: flex-end; }
+    .cr-receipt-preview { margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; }
+    .cr-receipt-preview embed { display: block; width: 100%; height: 240px; border: none; }
     /* ── Invoice Vault ── */
     .cr-inv-card { display:flex;align-items:flex-start;gap:12px;padding:14px 12px;border-radius:12px;background:#f9fafb;border:1px solid #f3f4f6;margin-bottom:8px; }
     .cr-inv-meta { flex:1;min-width:0; }
@@ -6925,6 +6927,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   let cr_receipts_loaded = false;
   let cr_receipt_filter = 'all';
   let cr_editing_receipt_id = null;
+  let cr_preview_id = null;
+  const cr_preview_urls = {};
   let cr_exp_mon  = new Date().getMonth();
 
   const CR_EXP_CATS = {
@@ -7394,24 +7398,40 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const dateStr      = r.date   ? biz_fmtDate(r.date) : '';
     const catStr       = CR_CAT_LABELS[r.category] || r.category;
     const sub          = [dateStr, catStr].filter(Boolean).join(' · ');
+    const isPreviewing = cr_preview_id === r.id;
+    const previewUrl   = cr_preview_urls[r.id];
     return `
-      <div class="cr-receipt-card">
-        <div class="cr-receipt-icon">PDF</div>
-        <div class="cr-receipt-meta">
-          <div class="cr-receipt-name">${r.original_name}</div>
-          <div class="cr-receipt-sub">${sub}</div>
-          ${r.description ? `<div class="cr-receipt-sub">${r.description}</div>` : ''}
-        </div>
-        <div class="cr-receipt-actions">
-          ${amountStr ? `<div class="cr-receipt-amount">${amountStr}</div>` : ''}
-          <div class="cr-receipt-status" style="color:${statusColour};">${r.status}</div>
-          <div class="cr-receipt-btns">
-            <button class="cr-btn-sm" onclick="cr_viewReceipt('${r.storage_path}')">View</button>
-            <button class="cr-btn-sm" onclick="cr_editing_receipt_id=${r.id};cr_renderReceipts()" style="border-color:#6366f1;color:#6366f1;">Edit</button>
-            <button class="cr-btn-sm ${r.status === 'submitted' ? 'unsubmit' : 'submit'}" onclick="cr_toggleReceiptStatus(${r.id},'${r.status}')">${r.status === 'submitted' ? 'Unsubmit' : 'Submit'}</button>
-            <button class="cr-btn-sm del" onclick="cr_deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+      <div class="cr-receipt-card" style="flex-direction:column;gap:0;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <button onclick="cr_togglePreview(${r.id},'${r.storage_path}')"
+                  class="cr-receipt-icon"
+                  style="cursor:pointer;border:none;background:${isPreviewing ? '#dbeafe' : '#fee2e2'};color:${isPreviewing ? '#1d4ed8' : '#dc2626'};"
+                  title="${isPreviewing ? 'Close preview' : 'Preview receipt'}">
+            ${isPreviewing ? '▲' : 'PDF'}
+          </button>
+          <div class="cr-receipt-meta">
+            <div class="cr-receipt-name">${r.original_name}</div>
+            <div class="cr-receipt-sub">${sub}</div>
+            ${r.description ? `<div class="cr-receipt-sub">${r.description}</div>` : ''}
+          </div>
+          <div class="cr-receipt-actions">
+            ${amountStr ? `<div class="cr-receipt-amount">${amountStr}</div>` : ''}
+            <div class="cr-receipt-status" style="color:${statusColour};">${r.status}</div>
+            <div class="cr-receipt-btns">
+              <button class="cr-btn-sm" onclick="cr_viewReceipt('${r.storage_path}')">View</button>
+              <button class="cr-btn-sm" onclick="cr_duplicateReceipt(${r.id},this)" style="border-color:#0891b2;color:#0891b2;" title="Duplicate to next month">Repeat</button>
+              <button class="cr-btn-sm" onclick="cr_editing_receipt_id=${r.id};cr_renderReceipts()" style="border-color:#6366f1;color:#6366f1;">Edit</button>
+              <button class="cr-btn-sm ${r.status === 'submitted' ? 'unsubmit' : 'submit'}" onclick="cr_toggleReceiptStatus(${r.id},'${r.status}')">${r.status === 'submitted' ? 'Unsubmit' : 'Submit'}</button>
+              <button class="cr-btn-sm del" onclick="cr_deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
+            </div>
           </div>
         </div>
+        ${isPreviewing ? `
+          <div class="cr-receipt-preview">
+            ${previewUrl
+              ? `<embed src="${previewUrl}" type="application/pdf" width="100%" height="240">`
+              : '<div style="padding:16px;text-align:center;font-size:12px;color:#6b7280;">Loading preview…</div>'}
+          </div>` : ''}
       </div>`;
   }
 
@@ -7489,6 +7509,35 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     } catch {
       if (statusEl) { statusEl.textContent = '⚠ Scan failed — fill in manually.'; statusEl.style.color = '#d97706'; statusEl.style.background = '#fffbeb'; }
     }
+  }
+
+  async function cr_togglePreview(id, path) {
+    if (cr_preview_id === id) { cr_preview_id = null; cr_renderReceipts(); return; }
+    cr_preview_id = id;
+    cr_renderReceipts();
+    if (!cr_preview_urls[id]) {
+      try {
+        const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'url', path }),
+        });
+        const data = await r.json();
+        cr_preview_urls[id] = data.url || '';
+      } catch { cr_preview_urls[id] = ''; }
+    }
+    if (cr_preview_id === id) cr_renderReceipts();
+  }
+
+  async function cr_duplicateReceipt(id, btn) {
+    btn.textContent = '…'; btn.disabled = true;
+    try {
+      await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'duplicate', id }),
+      });
+      cr_receipts_loaded = false;
+      await cr_loadReceipts();
+    } catch { btn.textContent = 'Repeat'; btn.disabled = false; }
   }
 
   // ── MILEAGE TRACKER ────────────────────────────────────────────────────────
