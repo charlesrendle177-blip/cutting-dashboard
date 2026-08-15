@@ -3402,6 +3402,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <p>UK sole trader — income tax &amp; Class 4 NI</p>
             </div>
             <div id="cr-tax-body"></div>
+            <button onclick="cr_exportTaxYear()" class="biz-btn biz-btn-primary" style="width:100%;margin-top:14px;">Export for Accountant</button>
           </div>
 
           <!-- CR RECEIPTS -->
@@ -7269,6 +7270,119 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-tax-row"><span class="cr-tax-key">Set aside monthly</span><span class="cr-tax-val" style="color:#1e40af;font-size:15px;">£${setAside.toLocaleString()}/mo</span></div>
         <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on Jan 2025 rates. Personal allowance £12,570. Does not include Class 2 NI or payment-on-account. Verify with your accountant.</div>
       </div>`;
+  }
+
+  function cr_exportTaxYear() {
+    const ty        = cr_taxYearRange(cr_taxYear);
+    const inc       = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const exp       = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
+    const miles     = cr_getMileage().filter(t => t.date >= ty.start && t.date <= ty.end);
+    const receipts  = cr_receipts_cache.filter(r => r.date >= ty.start && r.date <= ty.end);
+
+    const totalInc  = inc.reduce((s, r) => s + (r.amount || 0), 0);
+    const totalExp  = exp.reduce((s, r) => s + (r.amount || 0), 0);
+    const profit    = totalInc - totalExp;
+    const tax       = cr_taxCalc(profit);
+    const bizMiles  = miles.reduce((s, t) => s + (parseFloat(t.miles) || 0), 0);
+    const totalMiles = parseFloat(localStorage.getItem(`cr_total_miles_${cr_taxYear}`)) || 0;
+    const bizPct    = totalMiles > 0 ? (bizMiles / totalMiles * 100).toFixed(1) : 'N/A';
+
+    const fmt = n => '£' + parseFloat(n || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+    const expCats = {};
+    exp.forEach(e => { expCats[e.cat] = (expCats[e.cat] || 0) + (e.amount || 0); });
+
+    const incRows = [...inc].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(r =>
+      `<tr><td>${fmtDate(r.date)}</td><td>${r.client||r.desc||'—'}</td><td style="text-align:right">${fmt(r.amount)}</td></tr>`).join('');
+
+    const expCatRows = Object.entries(expCats).sort((a,b) => b[1]-a[1]).map(([k,v]) =>
+      `<tr><td style="text-transform:capitalize">${k}</td><td style="text-align:right">${fmt(v)}</td></tr>`).join('');
+
+    const expRows = [...exp].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(r =>
+      `<tr><td>${fmtDate(r.date)}</td><td style="text-transform:capitalize">${r.cat||'—'}</td><td>${r.desc||'—'}</td><td style="text-align:right">${fmt(r.amount)}</td></tr>`).join('');
+
+    const recRows = [...receipts].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(r =>
+      `<tr><td>${fmtDate(r.date)}</td><td style="text-transform:capitalize">${r.category||'—'}</td><td>${r.description||r.original_name||'—'}</td><td style="text-align:right">${r.amount ? fmt(r.amount) : '—'}</td><td>${r.status==='submitted'?'✓ Submitted':'Unsubmitted'}</td></tr>`).join('');
+
+    const mileRows = [...miles].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t =>
+      `<tr><td>${fmtDate(t.date)}</td><td>${t.from||'?'} → ${t.to||'?'}</td><td>${t.purpose||'—'}</td><td style="text-align:right">${parseFloat(t.miles).toFixed(0)} mi</td></tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>Tax Year ${ty.label} — Accountant Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 32px 40px; }
+  h1 { font-size: 22px; font-weight: 800; color: #0d2345; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #6b7280; margin-bottom: 32px; }
+  h2 { font-size: 14px; font-weight: 700; color: #0d2345; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #0d2345; text-transform: uppercase; letter-spacing: 0.06em; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+  .summary-box { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+  .summary-label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .summary-val { font-size: 20px; font-weight: 900; color: #0d2345; }
+  .summary-val.accent { color: #d97706; }
+  .summary-val.green { color: #059669; }
+  .note { font-size: 11px; color: #9ca3af; margin-top: 32px; padding-top: 12px; border-top: 1px solid #f3f4f6; }
+  @media print { body { padding: 20px; } .no-print { display: none; } }
+</style>
+</head><body>
+  <h1>Self Assessment — Tax Year ${ty.label}</h1>
+  <div class="sub">Generated ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })} · Period: ${ty.start} to ${ty.end}</div>
+
+  <h2>Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-box"><div class="summary-label">Total Income</div><div class="summary-val">${fmt(totalInc)}</div></div>
+    <div class="summary-box"><div class="summary-label">Total Expenses</div><div class="summary-val">${fmt(totalExp)}</div></div>
+    <div class="summary-box"><div class="summary-label">Net Profit</div><div class="summary-val${profit < 0 ? ' accent' : ''}">${fmt(profit)}</div></div>
+    <div class="summary-box"><div class="summary-label">Income Tax</div><div class="summary-val accent">${fmt(tax.incomeTax)}</div></div>
+    <div class="summary-box"><div class="summary-label">Class 4 NI</div><div class="summary-val accent">${fmt(tax.ni)}</div></div>
+    <div class="summary-box"><div class="summary-label">Total Tax Liability</div><div class="summary-val accent">${fmt(tax.total)}</div></div>
+  </div>
+
+  <h2>Income (${inc.length} entries)</h2>
+  <table><thead><tr><th>Date</th><th>Client / Description</th><th style="text-align:right">Amount</th></tr></thead>
+  <tbody>${incRows || '<tr><td colspan="3" style="color:#9ca3af">No income entries</td></tr>'}</tbody>
+  <tfoot><tr><td colspan="2" style="font-weight:700;padding-top:10px;">Total</td><td style="font-weight:700;text-align:right;padding-top:10px;">${fmt(totalInc)}</td></tr></tfoot>
+  </table>
+
+  <h2>Expenses by Category</h2>
+  <table><thead><tr><th>Category</th><th style="text-align:right">Total</th></tr></thead>
+  <tbody>${expCatRows || '<tr><td colspan="2" style="color:#9ca3af">No expenses</td></tr>'}</tbody>
+  <tfoot><tr><td style="font-weight:700;padding-top:10px;">Total</td><td style="font-weight:700;text-align:right;padding-top:10px;">${fmt(totalExp)}</td></tr></tfoot>
+  </table>
+
+  <h2>Expense Detail (${exp.length} entries)</h2>
+  <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+  <tbody>${expRows || '<tr><td colspan="4" style="color:#9ca3af">No expenses</td></tr>'}</tbody>
+  </table>
+
+  <h2>Mileage &amp; Business Use (${miles.length} trips)</h2>
+  <table><thead><tr><th>Date</th><th>Route</th><th>Purpose</th><th style="text-align:right">Miles</th></tr></thead>
+  <tbody>${mileRows || '<tr><td colspan="4" style="color:#9ca3af">No trips logged</td></tr>'}</tbody>
+  <tfoot>
+    <tr><td colspan="3" style="font-weight:700;padding-top:10px;">Business Miles</td><td style="font-weight:700;text-align:right;padding-top:10px;">${bizMiles.toFixed(0)} mi</td></tr>
+    <tr><td colspan="3" style="color:#6b7280">Total Annual Miles</td><td style="text-align:right;color:#6b7280">${totalMiles > 0 ? totalMiles.toLocaleString('en-GB') + ' mi' : '—'}</td></tr>
+    <tr><td colspan="3" style="font-weight:700;color:#0d2345">Business Use %</td><td style="font-weight:700;text-align:right;color:#0d2345">${bizPct}${bizPct !== 'N/A' ? '%' : ''}</td></tr>
+  </tfoot>
+  </table>
+
+  <h2>Receipt Log (${receipts.length} receipts)</h2>
+  <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th><th>Status</th></tr></thead>
+  <tbody>${recRows || '<tr><td colspan="5" style="color:#9ca3af">No receipts for this period</td></tr>'}</tbody>
+  </table>
+
+  <div class="note">Prepared from Charles Rendle's business dashboard · Tax figures are estimates based on Jan 2025 HMRC rates (personal allowance £12,570, basic rate 20%, higher rate 40%, Class 4 NI 9%/2%). Verify all figures with your accountant before submission.</div>
+  <script>window.onload = () => window.print();<\/script>
+</body></html>`;
+
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
   }
 
   // ── Tax Year Countdown ───────────────────────────────────────────────────────
