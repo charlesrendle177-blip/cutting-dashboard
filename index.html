@@ -1873,6 +1873,25 @@
     .cr-receipt-amount { font-size: 14px; font-weight: 800; color: #0d2345; }
     .cr-receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
     .cr-receipt-btns { display: flex; gap: 4px; margin-top: 2px; }
+    /* ── Invoice Vault ── */
+    .cr-inv-card { display:flex;align-items:flex-start;gap:12px;padding:14px 12px;border-radius:12px;background:#f9fafb;border:1px solid #f3f4f6;margin-bottom:8px; }
+    .cr-inv-meta { flex:1;min-width:0; }
+    .cr-inv-client { font-size:14px;font-weight:700;color:#0d2345;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .cr-inv-sub { font-size:11px;color:#6b7280;margin-top:2px; }
+    .cr-inv-actions { display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0; }
+    .cr-inv-amount { font-size:15px;font-weight:800;color:#0d2345; }
+    .cr-inv-status { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em; }
+    .cr-inv-filter-pill { padding:4px 12px;border-radius:999px;border:1.5px solid #e5e7eb;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#6b7280; }
+    .cr-inv-filter-pill.active { border-color:#0d2345;background:#0d2345;color:#fff; }
+    /* ── Mileage ── */
+    .cr-mile-card { display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:#f9fafb;border:1px solid #f3f4f6;margin-bottom:8px; }
+    .cr-mile-icon { width:36px;height:36px;border-radius:8px;background:#fef3c7;color:#d97706;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .cr-mile-meta { flex:1;min-width:0; }
+    .cr-mile-route { font-size:13px;font-weight:700;color:#0d2345; }
+    .cr-mile-sub { font-size:11px;color:#6b7280;margin-top:2px; }
+    .cr-mile-right { display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0; }
+    .cr-mile-miles { font-size:14px;font-weight:800;color:#0d2345; }
+    .cr-mile-claim { font-size:11px;color:#059669;font-weight:600; }
     .cr-btn-sm { font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb; background: #fff; color: #374151; }
     .cr-btn-sm.submit  { border-color: #d97706; color: #d97706; background: transparent; }
     .cr-btn-sm.unsubmit { border-color: #059669; color: #059669; background: transparent; }
@@ -3248,25 +3267,38 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-expenses',this);cr_renderExpenses()">Expenses</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-tax',this);cr_renderTax()">Tax</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-receipts',this);cr_loadReceipts()">Receipts</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-mileage',this);cr_renderMileage()">Mileage</button>
+          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-invoices',this);cr_renderInvoices()">Invoice Vault</button>
         </div>
         <div class="biz-main">
 
           <!-- CR OVERVIEW -->
           <div id="cr-overview" class="cr-section active">
 
-            <!-- Tax year countdown -->
-            <div style="background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:28px 24px 20px;text-align:center;margin-bottom:18px;overflow:hidden;">
-              <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Tax Year Ends</div>
-              <div id="cr-tyr-date" style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:14px;">5 April 2027</div>
-              <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:2px;">
-                <span id="cr-tyr-days" style="font-size:80px;font-weight:900;color:#fff;line-height:1;letter-spacing:-3px;">—</span>
-                <span style="font-size:22px;font-weight:700;color:rgba(255,255,255,0.5);">days</span>
+            <!-- Hero row: Countdown + Basic Rate Target -->
+            <div style="display:flex;gap:12px;margin-bottom:18px;align-items:stretch;flex-wrap:wrap;">
+
+              <!-- Countdown (left, slightly smaller) -->
+              <div style="flex:1;min-width:180px;background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:20px 16px 16px;text-align:center;overflow:hidden;display:flex;flex-direction:column;justify-content:center;">
+                <div style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Tax Year Ends</div>
+                <div id="cr-tyr-date" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:10px;">5 April 2027</div>
+                <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:1px;">
+                  <span id="cr-tyr-days" style="font-size:54px;font-weight:900;color:#fff;line-height:1;letter-spacing:-2px;">—</span>
+                  <span style="font-size:15px;font-weight:700;color:rgba(255,255,255,0.5);">days</span>
+                </div>
+                <div id="cr-tyr-hms" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:14px;">— h — m — s</div>
+                <div style="background:rgba(255,255,255,0.12);border-radius:6px;height:5px;margin:0 4px 6px;">
+                  <div id="cr-tyr-bar" style="height:100%;border-radius:6px;background:#93c5fd;transition:width 1s linear;width:0%;"></div>
+                </div>
+                <div id="cr-tyr-pct" style="font-size:10px;color:rgba(255,255,255,0.35);">0% of tax year elapsed</div>
               </div>
-              <div id="cr-tyr-hms" style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:18px;">— h — m — s</div>
-              <div style="background:rgba(255,255,255,0.12);border-radius:8px;height:6px;margin:0 8px 8px;">
-                <div id="cr-tyr-bar" style="height:100%;border-radius:8px;background:#93c5fd;transition:width 1s linear;width:0%;"></div>
+
+              <!-- Basic Rate Target (right) -->
+              <div class="biz-card" style="flex:1;min-width:180px;margin-bottom:0;">
+                <div class="biz-card-label" style="color:#7c3aed;">Basic Rate Target</div>
+                <div id="cr-tax-target-body"></div>
               </div>
-              <div id="cr-tyr-pct" style="font-size:11px;color:rgba(255,255,255,0.35);">0% of tax year elapsed</div>
+
             </div>
 
             <div class="biz-section-header">
@@ -3282,13 +3314,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="biz-card-label">Income vs Expenses</div>
               <div id="cr-pnl-body"></div>
             </div>
-            <div class="biz-card" style="margin-bottom:14px;">
+            <div class="biz-card">
               <div class="biz-card-label accent">Tax Estimate</div>
               <div id="cr-tax-summary-body"></div>
-            </div>
-            <div class="biz-card">
-              <div class="biz-card-label" style="color:#7c3aed;">Basic Rate Target</div>
-              <div id="cr-tax-target-body"></div>
             </div>
           </div>
 
@@ -3368,7 +3396,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div id="cr-receipt-form" style="display:none;margin-top:14px;">
                 <div style="margin-bottom:12px;">
                   <label class="biz-form-label">PDF File (max 10 MB)</label>
-                  <input type="file" id="cr-receipt-file" accept=".pdf" style="width:100%;padding:6px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;">
+                  <input type="file" id="cr-receipt-file" accept=".pdf" onchange="cr_scanReceipt(this)" style="width:100%;padding:6px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;">
+                  <div id="cr-scan-status" style="display:none;margin-top:6px;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;"></div>
                 </div>
                 <div class="biz-form-grid" style="margin-bottom:12px;">
                   <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-receipt-amount" placeholder="0.00" min="0" step="0.01"></div>
@@ -3409,6 +3438,54 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
             <!-- List -->
             <div id="cr-receipts-list"><div class="cr-empty" style="text-align:center;padding:30px 0;color:#9ca3af;font-size:13px;">Loading receipts…</div></div>
+          </div>
+
+          <!-- CR MILEAGE -->
+          <div id="cr-mileage" class="cr-section">
+            <div class="biz-section-header">
+              <h2>Mileage</h2>
+              <p>HMRC approved rates: 45p/mile (first 10,000) · 25p/mile after</p>
+            </div>
+            <div id="cr-mileage-body"></div>
+            <div class="biz-card" style="margin-top:14px;">
+              <div class="biz-card-label">Log Trip</div>
+              <div class="biz-form-grid" style="margin-bottom:12px;">
+                <div><label class="biz-form-label">Date</label><input type="date" id="cr-mile-date"></div>
+                <div><label class="biz-form-label">Miles</label><input type="number" id="cr-mile-miles" placeholder="e.g. 45" min="0.1" step="0.1"></div>
+                <div><label class="biz-form-label">From</label><input type="text" id="cr-mile-from" placeholder="e.g. Bristol"></div>
+                <div><label class="biz-form-label">To</label><input type="text" id="cr-mile-to" placeholder="e.g. London"></div>
+                <div style="grid-column:1/-1;"><label class="biz-form-label">Purpose</label><input type="text" id="cr-mile-purpose" placeholder="e.g. Client meeting"></div>
+              </div>
+              <button onclick="cr_addMileageTrip()" class="biz-btn biz-btn-primary">+ Log Trip</button>
+            </div>
+          </div>
+
+          <!-- CR INVOICE VAULT -->
+          <div id="cr-invoices" class="cr-section">
+            <div class="biz-section-header">
+              <h2>Invoice Vault</h2>
+              <p>Track issued, paid, and overdue invoices for Vidaire clients</p>
+            </div>
+            <div id="cr-invoices-body"></div>
+            <div class="biz-card" style="margin-top:14px;">
+              <div class="biz-card-label">New Invoice</div>
+              <div class="biz-form-grid" style="margin-bottom:12px;">
+                <div><label class="biz-form-label">Client</label><input type="text" id="cr-inv-client" placeholder="e.g. Acme Ltd"></div>
+                <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-inv-amount" placeholder="0.00" min="0" step="0.01"></div>
+                <div><label class="biz-form-label">Invoice No.</label><input type="text" id="cr-inv-number" placeholder="INV-001"></div>
+                <div>
+                  <label class="biz-form-label">Status</label>
+                  <select id="cr-inv-status">
+                    <option value="draft">Draft</option>
+                    <option value="issued" selected>Issued</option>
+                  </select>
+                </div>
+                <div><label class="biz-form-label">Issue Date</label><input type="date" id="cr-inv-issue"></div>
+                <div><label class="biz-form-label">Due Date</label><input type="date" id="cr-inv-due"></div>
+                <div style="grid-column:1/-1;"><label class="biz-form-label">Notes</label><input type="text" id="cr-inv-notes" placeholder="Optional"></div>
+              </div>
+              <button onclick="cr_addInvoice()" class="biz-btn biz-btn-primary">+ Add Invoice</button>
+            </div>
           </div>
 
         </div><!-- /biz-main CR -->
@@ -6068,7 +6145,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_mileage', 'cr_invoices']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -6139,6 +6216,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             }
             if (key === 'cr_expenses') {
               localStorage.setItem('cr_expenses', JSON.stringify(value));
+            }
+            if (key === 'cr_mileage') {
+              localStorage.setItem('cr_mileage', JSON.stringify(value));
+              if (document.getElementById('cr-mileage') && document.getElementById('cr-mileage').classList.contains('active')) cr_renderMileage();
+            }
+            if (key === 'cr_invoices') {
+              localStorage.setItem('cr_invoices', JSON.stringify(value));
+              if (document.getElementById('cr-invoices') && document.getElementById('cr-invoices').classList.contains('active')) cr_renderInvoices();
             }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
@@ -6980,18 +7065,18 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const barColour = onTrack ? '#059669' : '#dc2626';
       const neededExp = onTrack ? 0 : Math.ceil(profit - BASIC_RATE_CEILING);
       targetEl.innerHTML = `
-        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Goal: keep taxable profit under £50,270 to stay in the 20% basic rate band</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;color:#374151;">Current profit</span>
-          <span style="font-size:15px;font-weight:800;color:${barColour};">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:8px;line-height:1.4;">Stay under £50,270 profit — 20% basic rate band</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-size:12px;font-weight:600;color:#374151;">Current profit</span>
+          <span style="font-size:14px;font-weight:800;color:${barColour};">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
         </div>
-        <div style="background:#f3f4f6;border-radius:8px;height:10px;overflow:hidden;margin-bottom:6px;">
-          <div style="height:100%;width:${pct}%;background:${barColour};border-radius:8px;transition:width 0.4s;"></div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
+          <div style="height:100%;width:${pct}%;background:${barColour};border-radius:6px;transition:width 0.4s;"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-bottom:12px;"><span>£0</span><span style="color:#7c3aed;font-weight:700;">£50,270 ceiling</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:10px;"><span>£0</span><span style="color:#7c3aed;font-weight:700;">£50,270 ceiling</span></div>
         ${onTrack
-          ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;font-size:13px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom — staying in 20% basic rate band</div>`
-          : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over the threshold — log an extra £${neededExp.toLocaleString()} in expenses to get back under</div>`
+          ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:8px 10px;font-size:12px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom</div>`
+          : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px;font-size:12px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over — need £${neededExp.toLocaleString()} more in expenses</div>`
         }`;
     }
   }
@@ -7372,6 +7457,225 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.querySelectorAll('#cr-rf-all,#cr-rf-unsub,#cr-rf-sub').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     cr_renderReceipts();
+  }
+
+  // ── AI RECEIPT SCAN ────────────────────────────────────────────────────────
+
+  async function cr_scanReceipt(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('cr-scan-status');
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#6366f1'; statusEl.style.background = '#eef2ff'; statusEl.textContent = '⏳ Reading receipt with AI…'; }
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-scan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        if (data.amount != null) document.getElementById('cr-receipt-amount').value = data.amount;
+        if (data.date)           document.getElementById('cr-receipt-date').value   = data.date;
+        if (data.category) { const sel = document.getElementById('cr-receipt-cat'); if (sel) sel.value = data.category; }
+        if (statusEl) { statusEl.textContent = '✅ AI filled the fields — check and save.'; statusEl.style.color = '#059669'; statusEl.style.background = '#ecfdf5'; }
+      } else {
+        if (statusEl) { statusEl.textContent = '⚠ Could not read receipt — fill in manually.'; statusEl.style.color = '#d97706'; statusEl.style.background = '#fffbeb'; }
+      }
+    } catch {
+      if (statusEl) { statusEl.textContent = '⚠ Scan failed — fill in manually.'; statusEl.style.color = '#d97706'; statusEl.style.background = '#fffbeb'; }
+    }
+  }
+
+  // ── MILEAGE TRACKER ────────────────────────────────────────────────────────
+
+  const CR_MILEAGE_KEY = 'cr_mileage';
+
+  function cr_getMileage() { try { return JSON.parse(localStorage.getItem(CR_MILEAGE_KEY) || '[]'); } catch { return []; } }
+
+  function cr_saveMileage(d) {
+    localStorage.setItem(CR_MILEAGE_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: CR_MILEAGE_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: CR_MILEAGE_KEY, value: d }),
+    }).catch(() => {});
+  }
+
+  function cr_mileageClaim(miles) {
+    return Math.min(miles, 10000) * 0.45 + Math.max(0, miles - 10000) * 0.25;
+  }
+
+  function cr_renderMileage() {
+    const { start, end } = cr_taxYearRange(cr_taxYear);
+    const all        = cr_getMileage().filter(t => t.date >= start && t.date <= end);
+    const totalMiles = all.reduce((s, t) => s + (parseFloat(t.miles) || 0), 0);
+    const totalClaim = cr_mileageClaim(totalMiles);
+    const remaining  = Math.max(0, 10000 - totalMiles);
+    const pct        = Math.min(100, (totalMiles / 10000) * 100);
+    const el = document.getElementById('cr-mileage-body');
+    if (!el) return;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+        <div class="biz-card" style="text-align:center;padding:16px 10px;">
+          <div style="font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Total Miles</div>
+          <div style="font-size:28px;font-weight:900;color:#0d2345;">${totalMiles.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${remaining > 0 ? remaining.toFixed(0) + ' to 10k threshold' : 'Over 10k threshold'}</div>
+        </div>
+        <div class="biz-card" style="text-align:center;padding:16px 10px;">
+          <div style="font-size:10px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Tax Deduction</div>
+          <div style="font-size:28px;font-weight:900;color:#059669;">£${totalClaim.toFixed(0)}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${totalMiles <= 10000 ? '45p/mile rate' : 'Mixed rate active'}</div>
+        </div>
+      </div>
+      <div style="background:#f3f4f6;border-radius:8px;height:8px;margin-bottom:6px;overflow:hidden;">
+        <div style="height:100%;border-radius:8px;background:linear-gradient(90deg,#059669,#34d399);width:${pct.toFixed(1)}%;transition:width 0.5s;"></div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;text-align:right;margin-bottom:18px;">${pct.toFixed(0)}% of 10,000-mile 45p threshold</div>
+      <div>
+        ${all.length === 0
+          ? '<div class="cr-empty" style="text-align:center;padding:24px 0;">No trips logged this tax year</div>'
+          : [...all].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t => `
+            <div class="cr-mile-card">
+              <div class="cr-mile-icon">🚗</div>
+              <div class="cr-mile-meta">
+                <div class="cr-mile-route">${t.from||'?'} → ${t.to||'?'}</div>
+                <div class="cr-mile-sub">${t.date ? new Date(t.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''} · ${t.purpose||''}</div>
+              </div>
+              <div class="cr-mile-right">
+                <div class="cr-mile-miles">${parseFloat(t.miles).toFixed(0)} mi</div>
+                <button onclick="cr_deleteMileageTrip('${t.id}')" style="font-size:10px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;margin-top:4px;">Delete</button>
+              </div>
+            </div>`).join('')}
+      </div>`;
+  }
+
+  function cr_addMileageTrip() {
+    const date    = document.getElementById('cr-mile-date').value;
+    const from    = document.getElementById('cr-mile-from').value.trim();
+    const to      = document.getElementById('cr-mile-to').value.trim();
+    const miles   = parseFloat(document.getElementById('cr-mile-miles').value);
+    const purpose = document.getElementById('cr-mile-purpose').value.trim();
+    if (!date || !from || !to || !miles || miles <= 0) { alert('Date, from, to, and miles are required.'); return; }
+    const trips = cr_getMileage();
+    trips.push({ id: `m${Date.now()}`, date, from, to, miles, purpose, tax_year: cr_taxYear });
+    cr_saveMileage(trips);
+    ['cr-mile-date','cr-mile-from','cr-mile-to','cr-mile-miles','cr-mile-purpose'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    cr_renderMileage();
+  }
+
+  function cr_deleteMileageTrip(id) {
+    if (!confirm('Delete this trip?')) return;
+    cr_saveMileage(cr_getMileage().filter(t => t.id !== id));
+    cr_renderMileage();
+  }
+
+  // ── INVOICE VAULT ──────────────────────────────────────────────────────────
+
+  const CR_INVOICES_KEY = 'cr_invoices';
+  let cr_inv_filter = 'all';
+
+  function cr_getInvoices() { try { return JSON.parse(localStorage.getItem(CR_INVOICES_KEY) || '[]'); } catch { return []; } }
+
+  function cr_saveInvoices(d) {
+    localStorage.setItem(CR_INVOICES_KEY, JSON.stringify(d));
+    if (sb) sb.from('hub_data').upsert({ key: CR_INVOICES_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
+    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: CR_INVOICES_KEY, value: d }),
+    }).catch(() => {});
+  }
+
+  function cr_isOverdue(inv) {
+    return inv.status === 'issued' && inv.due_date && inv.due_date < new Date().toISOString().slice(0,10);
+  }
+
+  function cr_renderInvoices() {
+    const all         = cr_getInvoices();
+    const outstanding = all.filter(i => i.status === 'issued' || i.status === 'draft').reduce((s,i) => s + (parseFloat(i.amount)||0), 0);
+    const paid        = all.filter(i => i.status === 'paid').reduce((s,i) => s + (parseFloat(i.amount)||0), 0);
+    const overdueList = all.filter(cr_isOverdue);
+    const filtered    = cr_inv_filter === 'all'    ? all
+                      : cr_inv_filter === 'overdue' ? overdueList
+                      : all.filter(i => i.status === cr_inv_filter);
+    const el = document.getElementById('cr-invoices-body');
+    if (!el) return;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
+        <div class="biz-card" style="padding:12px 8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:3px;">Outstanding</div>
+          <div style="font-size:18px;font-weight:900;color:#0d2345;">£${outstanding.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="biz-card" style="padding:12px 8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:#059669;text-transform:uppercase;margin-bottom:3px;">Paid</div>
+          <div style="font-size:18px;font-weight:900;color:#059669;">£${paid.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="biz-card" style="padding:12px 8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:#dc2626;text-transform:uppercase;margin-bottom:3px;">Overdue</div>
+          <div style="font-size:18px;font-weight:900;color:#dc2626;">${overdueList.length}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+        ${['all','draft','issued','overdue','paid'].map(f => `
+          <button class="cr-inv-filter-pill${cr_inv_filter===f?' active':''}" onclick="cr_inv_filter='${f}';cr_renderInvoices()">
+            ${f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>`).join('')}
+      </div>
+      <div>
+        ${filtered.length === 0
+          ? '<div class="cr-empty" style="text-align:center;padding:24px 0;">No invoices</div>'
+          : [...filtered].sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||'')).map(inv => {
+              const overdue     = cr_isOverdue(inv);
+              const statusColor = inv.status==='paid'?'#059669':overdue?'#dc2626':inv.status==='issued'?'#d97706':'#9ca3af';
+              const statusLabel = overdue ? 'OVERDUE' : inv.status.toUpperCase();
+              return `<div class="cr-inv-card">
+                <div class="cr-inv-meta">
+                  <div class="cr-inv-client">${inv.client||'Unknown'}</div>
+                  <div class="cr-inv-sub">${inv.number?inv.number+' · ':''}Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+                  ${inv.notes?`<div class="cr-inv-sub">${inv.notes}</div>`:''}
+                </div>
+                <div class="cr-inv-actions">
+                  <div class="cr-inv-amount">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+                  <div class="cr-inv-status" style="color:${statusColor};">${statusLabel}</div>
+                  <div style="display:flex;gap:4px;margin-top:4px;">
+                    ${inv.status!=='paid'?`<button class="cr-btn-sm" style="border-color:#059669;color:#059669;" onclick="cr_markInvoicePaid('${inv.id}')">Paid</button>`:''}
+                    <button class="cr-btn-sm" style="border-color:#dc2626;color:#dc2626;" onclick="cr_deleteInvoice('${inv.id}')">Del</button>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+      </div>`;
+  }
+
+  function cr_addInvoice() {
+    const client     = document.getElementById('cr-inv-client').value.trim();
+    const amount     = parseFloat(document.getElementById('cr-inv-amount').value);
+    const number     = document.getElementById('cr-inv-number').value.trim();
+    const issue_date = document.getElementById('cr-inv-issue').value;
+    const due_date   = document.getElementById('cr-inv-due').value;
+    const notes      = document.getElementById('cr-inv-notes').value.trim();
+    const status     = document.getElementById('cr-inv-status').value;
+    if (!client || !amount || isNaN(amount) || !issue_date) { alert('Client, amount, and issue date are required.'); return; }
+    const invs = cr_getInvoices();
+    invs.push({ id: `inv${Date.now()}`, client, amount, number, issue_date, due_date, notes, status });
+    cr_saveInvoices(invs);
+    ['cr-inv-client','cr-inv-amount','cr-inv-number','cr-inv-issue','cr-inv-due','cr-inv-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    cr_renderInvoices();
+  }
+
+  function cr_markInvoicePaid(id) {
+    cr_saveInvoices(cr_getInvoices().map(i => i.id === id ? { ...i, status: 'paid' } : i));
+    cr_renderInvoices();
+  }
+
+  function cr_deleteInvoice(id) {
+    if (!confirm('Delete this invoice?')) return;
+    cr_saveInvoices(cr_getInvoices().filter(i => i.id !== id));
+    cr_renderInvoices();
   }
 
   function cr_renderReceipts() {

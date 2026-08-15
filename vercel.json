@@ -9,9 +9,11 @@
     { "source": "/api/renpho-sync",     "destination": "/api/renpho-sync.js" },
     { "source": "/api/cr-share-sync",   "destination": "/api/cr-share-sync.js" },
     { "source": "/api/receipt-upload",  "destination": "/api/receipt-upload.js" },
-    { "source": "/api/receipt-action",  "destination": "/api/receipt-action.js" }
+    { "source": "/api/receipt-action",  "destination": "/api/receipt-action.js" },
+    { "source": "/api/receipt-scan",    "destination": "/api/receipt-scan.js" }
   ],
   "functions": {
-    "api/receipt-upload.js": { "maxDuration": 30, "memory": 1024 }
+    "api/receipt-upload.js": { "maxDuration": 30, "memory": 1024 },
+    "api/receipt-scan.js":   { "maxDuration": 30, "memory": 512 }
   }
 }

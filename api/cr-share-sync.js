@@ -36,8 +36,8 @@ module.exports = async (req, res) => {
   }
 
   const { key, value } = body;
-  if (!key || !['cr_income', 'cr_expenses'].includes(key)) {
-    return res.status(400).json({ error: 'key must be cr_income or cr_expenses' });
+  if (!key || !['cr_income', 'cr_expenses', 'cr_mileage', 'cr_invoices'].includes(key)) {
+    return res.status(400).json({ error: 'key must be cr_income, cr_expenses, cr_mileage, or cr_invoices' });
   }
 
   try {

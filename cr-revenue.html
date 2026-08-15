@@ -102,6 +102,24 @@
   .receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
   .view-btn { font-size: 12px; padding: 4px 12px; border-radius: 6px; border: 1.5px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; font-family: inherit; }
   .view-btn:hover { background: #f3f4f6; }
+  /* Invoice Vault */
+  .inv-card { display:flex;align-items:flex-start;gap:12px;padding:14px 12px;border-radius:12px;background:#f9fafb;border:1.5px solid #e5e7eb;margin-bottom:8px; }
+  .inv-meta { flex:1;min-width:0; }
+  .inv-client { font-size:14px;font-weight:700;color:#0d2345;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .inv-sub { font-size:11px;color:#6b7280;margin-top:2px; }
+  .inv-actions { display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0; }
+  .inv-amount { font-size:15px;font-weight:800;color:#0d2345; }
+  .inv-status { font-size:10px;font-weight:700;text-transform:uppercase; }
+  .inv-filter-pill { padding:4px 12px;border-radius:999px;border:1.5px solid #e5e7eb;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;font-family:inherit; }
+  .inv-filter-pill.active { border-color:#0d2345;background:#0d2345;color:#fff; }
+  /* Mileage */
+  .mile-card { display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:#f9fafb;border:1.5px solid #e5e7eb;margin-bottom:8px; }
+  .mile-icon { width:36px;height:36px;border-radius:8px;background:#fef3c7;color:#d97706;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .mile-meta { flex:1;min-width:0; }
+  .mile-route { font-size:13px;font-weight:700;color:#0d2345; }
+  .mile-sub { font-size:11px;color:#6b7280;margin-top:2px; }
+  .mile-right { display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0; }
+  .mile-miles { font-size:14px;font-weight:800;color:#0d2345; }
 </style>
 </head>
 <body>
@@ -136,25 +154,38 @@
     <button class="tab-btn" onclick="showTab('tab-expenses',this);renderExpenses()">Expenses</button>
     <button class="tab-btn" onclick="showTab('tab-tax',this);renderTax()">Tax</button>
     <button class="tab-btn" onclick="showTab('tab-receipts',this);renderReceipts()">Receipts</button>
+    <button class="tab-btn" onclick="showTab('tab-mileage',this);renderMileage()">Mileage</button>
+    <button class="tab-btn" onclick="showTab('tab-invoices',this);renderInvoices()">Invoice Vault</button>
   </div>
 
   <!-- Overview -->
   <div id="tab-overview" class="tab-content active">
     <div style="padding-top:4px;">
 
-      <!-- Tax year countdown -->
-      <div style="background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:28px 24px 20px;text-align:center;margin-bottom:18px;overflow:hidden;">
-        <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Tax Year Ends</div>
-        <div id="cr-tyr-date" style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:14px;">5 April 2027</div>
-        <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:2px;">
-          <span id="cr-tyr-days" style="font-size:80px;font-weight:900;color:#fff;line-height:1;letter-spacing:-3px;">—</span>
-          <span style="font-size:22px;font-weight:700;color:rgba(255,255,255,0.5);">days</span>
+      <!-- Hero row: Countdown + Basic Rate Target -->
+      <div style="display:flex;gap:12px;margin-bottom:18px;align-items:stretch;flex-wrap:wrap;">
+
+        <!-- Countdown (left, slightly smaller) -->
+        <div style="flex:1;min-width:180px;background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:20px 16px 16px;text-align:center;overflow:hidden;display:flex;flex-direction:column;justify-content:center;">
+          <div style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Tax Year Ends</div>
+          <div id="cr-tyr-date" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:10px;">5 April 2027</div>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:1px;">
+            <span id="cr-tyr-days" style="font-size:54px;font-weight:900;color:#fff;line-height:1;letter-spacing:-2px;">—</span>
+            <span style="font-size:15px;font-weight:700;color:rgba(255,255,255,0.5);">days</span>
+          </div>
+          <div id="cr-tyr-hms" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:14px;">— h — m — s</div>
+          <div style="background:rgba(255,255,255,0.12);border-radius:6px;height:5px;margin:0 4px 6px;">
+            <div id="cr-tyr-bar" style="height:100%;border-radius:6px;background:#93c5fd;transition:width 1s linear;width:0%;"></div>
+          </div>
+          <div id="cr-tyr-pct" style="font-size:10px;color:rgba(255,255,255,0.35);">0% of tax year elapsed</div>
         </div>
-        <div id="cr-tyr-hms" style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:18px;">— h — m — s</div>
-        <div style="background:rgba(255,255,255,0.12);border-radius:8px;height:6px;margin:0 8px 8px;">
-          <div id="cr-tyr-bar" style="height:100%;border-radius:8px;background:#93c5fd;transition:width 1s linear;width:0%;"></div>
+
+        <!-- Basic Rate Target (right) -->
+        <div class="card" style="flex:1;min-width:180px;margin-bottom:0;">
+          <div class="card-label purple">Basic Rate Target</div>
+          <div id="tax-target-body"></div>
         </div>
-        <div id="cr-tyr-pct" style="font-size:11px;color:rgba(255,255,255,0.35);">0% of tax year elapsed</div>
+
       </div>
 
       <div class="section-title">P&L Summary</div>
@@ -171,10 +202,6 @@
       <div class="card">
         <div class="card-label blue">Tax Estimate</div>
         <div id="tax-summary-body"></div>
-      </div>
-      <div class="card">
-        <div class="card-label purple">Basic Rate Target</div>
-        <div id="tax-target-body"></div>
       </div>
     </div>
   </div>
@@ -257,7 +284,8 @@
       <div id="upload-form" style="display:none;margin-top:16px;">
         <div style="margin-bottom:10px;">
           <label class="login-label">PDF File (max 10 MB)</label>
-          <input type="file" id="receipt-file" accept=".pdf" class="login-input" style="margin-bottom:0;padding:8px;">
+          <input type="file" id="receipt-file" accept=".pdf" onchange="scanReceipt(this)" class="login-input" style="margin-bottom:0;padding:8px;">
+          <div id="scan-status" style="display:none;margin-top:6px;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div>
@@ -304,6 +332,45 @@
     </div>
     <div id="receipt-list"><div class="empty">Loading receipts…</div></div>
   </div>
+
+  <!-- Mileage -->
+  <div id="tab-mileage" class="tab-content">
+    <div class="section-title">Mileage</div>
+    <div class="section-sub">HMRC approved rates: 45p/mile (first 10,000) · 25p/mile after</div>
+    <div id="tab-mileage-body"></div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-label">Log Trip</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div><label class="login-label">Date</label><input type="date" id="mile-date" class="login-input" style="margin-bottom:0;"></div>
+        <div><label class="login-label">Miles</label><input type="number" id="mile-miles" class="login-input" placeholder="e.g. 45" min="0.1" step="0.1" style="margin-bottom:0;"></div>
+        <div><label class="login-label">From</label><input type="text" id="mile-from" class="login-input" placeholder="e.g. Bristol" style="margin-bottom:0;"></div>
+        <div><label class="login-label">To</label><input type="text" id="mile-to" class="login-input" placeholder="e.g. London" style="margin-bottom:0;"></div>
+        <div style="grid-column:1/-1;"><label class="login-label">Purpose</label><input type="text" id="mile-purpose" class="login-input" placeholder="e.g. Client meeting" style="margin-bottom:0;"></div>
+      </div>
+      <button onclick="addMileageTrip()" class="login-btn" style="margin-top:0;">+ Log Trip</button>
+    </div>
+  </div>
+
+  <!-- Invoice Vault -->
+  <div id="tab-invoices" class="tab-content">
+    <div class="section-title">Invoice Vault</div>
+    <div class="section-sub">Track issued, paid, and overdue invoices</div>
+    <div id="tab-invoices-body"></div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-label">New Invoice</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div><label class="login-label">Client</label><input type="text" id="inv-client" class="login-input" placeholder="e.g. Acme Ltd" style="margin-bottom:0;"></div>
+        <div><label class="login-label">Amount (£)</label><input type="number" id="inv-amount" class="login-input" placeholder="0.00" min="0" step="0.01" style="margin-bottom:0;"></div>
+        <div><label class="login-label">Invoice No.</label><input type="text" id="inv-number" class="login-input" placeholder="INV-001" style="margin-bottom:0;"></div>
+        <div><label class="login-label">Status</label><select id="inv-status" class="login-input" style="margin-bottom:0;"><option value="draft">Draft</option><option value="issued" selected>Issued</option></select></div>
+        <div><label class="login-label">Issue Date</label><input type="date" id="inv-issue" class="login-input" style="margin-bottom:0;"></div>
+        <div><label class="login-label">Due Date</label><input type="date" id="inv-due" class="login-input" style="margin-bottom:0;"></div>
+        <div style="grid-column:1/-1;"><label class="login-label">Notes</label><input type="text" id="inv-notes" class="login-input" placeholder="Optional" style="margin-bottom:0;"></div>
+      </div>
+      <button onclick="addInvoice()" class="login-btn" style="margin-top:0;">+ Add Invoice</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -319,6 +386,9 @@ let editingReceiptId = null;
 let taxYear = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1;
 let incYear = new Date().getFullYear(), incMon = new Date().getMonth();
 let expYear = new Date().getFullYear(), expMon = new Date().getMonth();
+let mileageData  = [];
+let invoicesData = [];
+let invFilter    = 'all';
 
 const EXP_CATS = {
   software:      { label:'Software & Tools',   color:'#6366f1' },
@@ -360,6 +430,8 @@ async function loadAndShow() {
   for (const row of (data || [])) {
     if (row.key === 'cr_income')   incomeData  = row.value || [];
     if (row.key === 'cr_expenses') expenseData = row.value || [];
+    if (row.key === 'cr_mileage')  mileageData = row.value || [];
+    if (row.key === 'cr_invoices') invoicesData = row.value || [];
   }
 
   // Load receipts from the Vercel API (no auth needed there, service-role server-side)
@@ -451,20 +523,20 @@ function renderOverview() {
   const barColour = onTrack ? '#059669' : '#dc2626';
   const neededExp = onTrack ? 0 : Math.ceil(profit - CEILING);
   document.getElementById('tax-target-body').innerHTML = `
-    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Goal: keep taxable profit under £50,270 to stay in the 20% basic rate band</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-size:13px;font-weight:600;color:#374151;">Current profit</span>
-      <span style="font-size:15px;font-weight:800;color:${barColour};">${fmt(profit)}</span>
+    <div style="font-size:11px;color:#6b7280;margin-bottom:8px;line-height:1.4;">Stay under £50,270 profit — 20% basic rate band</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+      <span style="font-size:12px;font-weight:600;color:#374151;">Current profit</span>
+      <span style="font-size:14px;font-weight:800;color:${barColour};">${fmt(profit)}</span>
     </div>
-    <div style="background:#f3f4f6;border-radius:8px;height:10px;overflow:hidden;margin-bottom:6px;">
-      <div style="height:100%;width:${pct}%;background:${barColour};border-radius:8px;transition:width 0.4s;"></div>
+    <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
+      <div style="height:100%;width:${pct}%;background:${barColour};border-radius:6px;transition:width 0.4s;"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:10px;">
       <span>£0</span><span style="color:#7c3aed;font-weight:700;">£50,270 ceiling</span>
     </div>
     ${onTrack
-      ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 14px;font-size:13px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom — staying in 20% basic rate band</div>`
-      : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over the threshold — need £${neededExp.toLocaleString()} more in expenses</div>`
+      ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:8px 10px;font-size:12px;color:#065f46;">&#10003; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} headroom</div>`
+      : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:8px 10px;font-size:12px;color:#991b1b;">&#10007; £${Math.abs(headroom).toLocaleString('en-GB',{minimumFractionDigits:2})} over — need £${neededExp.toLocaleString()} more expenses</div>`
     }`;
 }
 
@@ -791,6 +863,224 @@ function updateTaxCountdown() {
 }
 updateTaxCountdown();
 setInterval(updateTaxCountdown, 1000);
+
+// ── AI Receipt Scan ───────────────────────────────────────────────────────────
+async function scanReceipt(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('scan-status');
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#6366f1'; statusEl.style.background = '#eef2ff'; statusEl.textContent = '⏳ Reading receipt with AI…'; }
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-scan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64 }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      if (data.amount != null) document.getElementById('receipt-amount').value = data.amount;
+      if (data.date)           document.getElementById('receipt-date').value   = data.date;
+      if (data.category) { const sel = document.getElementById('receipt-cat'); if (sel) sel.value = data.category; }
+      if (statusEl) { statusEl.textContent = '✅ AI filled the fields — check and save.'; statusEl.style.color = '#059669'; statusEl.style.background = '#ecfdf5'; }
+    } else {
+      if (statusEl) { statusEl.textContent = '⚠ Could not read receipt — fill in manually.'; statusEl.style.color = '#d97706'; statusEl.style.background = '#fffbeb'; }
+    }
+  } catch {
+    if (statusEl) { statusEl.textContent = '⚠ Scan failed — fill in manually.'; statusEl.style.color = '#d97706'; statusEl.style.background = '#fffbeb'; }
+  }
+}
+
+// ── Mileage ───────────────────────────────────────────────────────────────────
+function mileageClaim(miles) {
+  return Math.min(miles, 10000) * 0.45 + Math.max(0, miles - 10000) * 0.25;
+}
+
+function renderMileage() {
+  const ty         = taxYearRange(taxYear);
+  const all        = mileageData.filter(t => t.date >= ty.start && t.date <= ty.end);
+  const totalMiles = all.reduce((s,t) => s + (parseFloat(t.miles)||0), 0);
+  const totalClaim = mileageClaim(totalMiles);
+  const remaining  = Math.max(0, 10000 - totalMiles);
+  const pct        = Math.min(100, (totalMiles / 10000) * 100);
+  const el = document.getElementById('tab-mileage-body');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+      <div class="card" style="text-align:center;padding:16px 10px;">
+        <div style="font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Total Miles</div>
+        <div style="font-size:28px;font-weight:900;color:#0d2345;">${totalMiles.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${remaining > 0 ? remaining.toFixed(0) + ' to 10k threshold' : 'Over 10k threshold'}</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 10px;">
+        <div style="font-size:10px;font-weight:800;color:#059669;text-transform:uppercase;margin-bottom:4px;">Tax Deduction</div>
+        <div style="font-size:28px;font-weight:900;color:#059669;">£${totalClaim.toFixed(0)}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${totalMiles <= 10000 ? '45p/mile rate' : 'Mixed rate active'}</div>
+      </div>
+    </div>
+    <div style="background:#f3f4f6;border-radius:8px;height:8px;margin-bottom:6px;overflow:hidden;">
+      <div style="height:100%;border-radius:8px;background:linear-gradient(90deg,#059669,#34d399);width:${pct.toFixed(1)}%;"></div>
+    </div>
+    <div style="font-size:11px;color:#9ca3af;text-align:right;margin-bottom:18px;">${pct.toFixed(0)}% of 10,000-mile 45p threshold</div>
+    <div>
+      ${all.length === 0
+        ? '<div class="empty">No trips logged this tax year</div>'
+        : [...all].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t => `
+          <div class="mile-card">
+            <div class="mile-icon">🚗</div>
+            <div class="mile-meta">
+              <div class="mile-route">${t.from||'?'} → ${t.to||'?'}</div>
+              <div class="mile-sub">${t.date?new Date(t.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''} · ${t.purpose||''}</div>
+            </div>
+            <div class="mile-right">
+              <div class="mile-miles">${parseFloat(t.miles).toFixed(0)} mi</div>
+              <button onclick="deleteMileageTrip('${t.id}')" style="font-size:10px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;margin-top:4px;">Delete</button>
+            </div>
+          </div>`).join('')}
+    </div>`;
+}
+
+async function addMileageTrip() {
+  const date    = document.getElementById('mile-date').value;
+  const from    = document.getElementById('mile-from').value.trim();
+  const to      = document.getElementById('mile-to').value.trim();
+  const miles   = parseFloat(document.getElementById('mile-miles').value);
+  const purpose = document.getElementById('mile-purpose').value.trim();
+  if (!date || !from || !to || !miles || miles <= 0) { alert('Date, from, to, and miles are required.'); return; }
+  const trip = { id: `m${Date.now()}`, date, from, to, miles, purpose, tax_year: taxYear };
+  mileageData = [...mileageData, trip];
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'cr_mileage', value: mileageData }),
+    });
+    if (!(await r.json()).ok) throw new Error('Sync failed');
+    ['mile-date','mile-from','mile-to','mile-miles','mile-purpose'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderMileage();
+  } catch(e) {
+    mileageData = mileageData.filter(x => x.id !== trip.id);
+    alert('Save failed: ' + e.message);
+  }
+}
+
+async function deleteMileageTrip(id) {
+  if (!confirm('Delete this trip?')) return;
+  mileageData = mileageData.filter(t => t.id !== id);
+  await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: 'cr_mileage', value: mileageData }),
+  }).catch(() => {});
+  renderMileage();
+}
+
+// ── Invoice Vault ─────────────────────────────────────────────────────────────
+function isOverdue(inv) {
+  return inv.status === 'issued' && inv.due_date && inv.due_date < new Date().toISOString().slice(0,10);
+}
+
+function renderInvoices() {
+  const outstanding = invoicesData.filter(i=>i.status==='issued'||i.status==='draft').reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
+  const paid        = invoicesData.filter(i=>i.status==='paid').reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
+  const overdueList = invoicesData.filter(isOverdue);
+  const filtered    = invFilter==='all'    ? invoicesData
+                    : invFilter==='overdue' ? overdueList
+                    : invoicesData.filter(i=>i.status===invFilter);
+  const el = document.getElementById('tab-invoices-body');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
+      <div class="card" style="padding:12px 8px;text-align:center;">
+        <div style="font-size:9px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:3px;">Outstanding</div>
+        <div style="font-size:18px;font-weight:900;color:#0d2345;">£${outstanding.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+      </div>
+      <div class="card" style="padding:12px 8px;text-align:center;">
+        <div style="font-size:9px;font-weight:800;color:#059669;text-transform:uppercase;margin-bottom:3px;">Paid</div>
+        <div style="font-size:18px;font-weight:900;color:#059669;">£${paid.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+      </div>
+      <div class="card" style="padding:12px 8px;text-align:center;">
+        <div style="font-size:9px;font-weight:800;color:#dc2626;text-transform:uppercase;margin-bottom:3px;">Overdue</div>
+        <div style="font-size:18px;font-weight:900;color:#dc2626;">${overdueList.length}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+      ${['all','draft','issued','overdue','paid'].map(f=>`
+        <button class="inv-filter-pill${invFilter===f?' active':''}" onclick="invFilter='${f}';renderInvoices()">
+          ${f.charAt(0).toUpperCase()+f.slice(1)}
+        </button>`).join('')}
+    </div>
+    <div>
+      ${filtered.length===0
+        ? '<div class="empty">No invoices</div>'
+        : [...filtered].sort((a,b)=>(b.issue_date||'').localeCompare(a.issue_date||'')).map(inv=>{
+            const overdue     = isOverdue(inv);
+            const statusColor = inv.status==='paid'?'#059669':overdue?'#dc2626':inv.status==='issued'?'#d97706':'#9ca3af';
+            const statusLabel = overdue?'OVERDUE':inv.status.toUpperCase();
+            return `<div class="inv-card">
+              <div class="inv-meta">
+                <div class="inv-client">${inv.client||'Unknown'}</div>
+                <div class="inv-sub">${inv.number?inv.number+' · ':''}Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+                ${inv.notes?`<div class="inv-sub">${inv.notes}</div>`:''}
+              </div>
+              <div class="inv-actions">
+                <div class="inv-amount">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
+                <div class="inv-status" style="color:${statusColor};">${statusLabel}</div>
+                <div style="display:flex;gap:4px;margin-top:4px;">
+                  ${inv.status!=='paid'?`<button class="view-btn" style="border-color:#059669;color:#059669;" onclick="markInvoicePaid('${inv.id}')">Paid</button>`:''}
+                  <button class="view-btn" style="border-color:#dc2626;color:#dc2626;" onclick="deleteInvoice('${inv.id}')">Del</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+    </div>`;
+}
+
+async function addInvoice() {
+  const client     = document.getElementById('inv-client').value.trim();
+  const amount     = parseFloat(document.getElementById('inv-amount').value);
+  const number     = document.getElementById('inv-number').value.trim();
+  const issue_date = document.getElementById('inv-issue').value;
+  const due_date   = document.getElementById('inv-due').value;
+  const notes      = document.getElementById('inv-notes').value.trim();
+  const status     = document.getElementById('inv-status').value;
+  if (!client || !amount || isNaN(amount) || !issue_date) { alert('Client, amount, and issue date are required.'); return; }
+  const inv = { id: `inv${Date.now()}`, client, amount, number, issue_date, due_date, notes, status };
+  invoicesData = [...invoicesData, inv];
+  try {
+    const r = await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'cr_invoices', value: invoicesData }),
+    });
+    if (!(await r.json()).ok) throw new Error('Sync failed');
+    ['inv-client','inv-amount','inv-number','inv-issue','inv-due','inv-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderInvoices();
+  } catch(e) {
+    invoicesData = invoicesData.filter(x => x.id !== inv.id);
+    alert('Save failed: ' + e.message);
+  }
+}
+
+async function markInvoicePaid(id) {
+  invoicesData = invoicesData.map(i => i.id===id ? {...i, status:'paid'} : i);
+  await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ key:'cr_invoices', value: invoicesData }),
+  }).catch(()=>{});
+  renderInvoices();
+}
+
+async function deleteInvoice(id) {
+  if (!confirm('Delete this invoice?')) return;
+  invoicesData = invoicesData.filter(i => i.id !== id);
+  await fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ key:'cr_invoices', value: invoicesData }),
+  }).catch(()=>{});
+  renderInvoices();
+}
 
 function renderReceipts() {
   const el = document.getElementById('receipt-list');
