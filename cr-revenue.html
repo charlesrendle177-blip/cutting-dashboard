@@ -329,10 +329,10 @@
               <option value="other">Other</option>
             </select>
           </div>
-          <div>
-            <label class="login-label">Description</label>
-            <input type="text" id="receipt-desc" class="login-input" placeholder="Optional" style="margin-bottom:0;">
-          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="login-label">Notes</label>
+          <textarea id="receipt-desc" placeholder="e.g. Fuel for client visit, MOT before business trip…" rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;outline:none;"></textarea>
         </div>
         <button id="receipt-save-btn" onclick="uploadReceipt()" class="login-btn" style="margin-top:0;">Save Receipt</button>
       </div>

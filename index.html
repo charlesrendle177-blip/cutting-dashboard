@@ -3516,7 +3516,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                       <option value="other">Other</option>
                     </select>
                   </div>
-                  <div><label class="biz-form-label">Description</label><input type="text" id="cr-receipt-desc" placeholder="Optional"></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                  <label class="biz-form-label">Notes</label>
+                  <textarea id="cr-receipt-desc" placeholder="e.g. Fuel for client visit to Bristol, servicing before sales trip…" rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;outline:none;"></textarea>
                 </div>
                 <button id="cr-upload-btn" onclick="cr_uploadReceipt()" class="biz-btn biz-btn-primary">Save Receipt</button>
               </div>
