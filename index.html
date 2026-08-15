@@ -6211,9 +6211,17 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_invoices']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_invoices', `cr_emp_income_${cr_taxYear}`, `cr_hmrc_payments_${cr_taxYear}`]);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
+      if (row.key.startsWith('cr_emp_income_')) {
+        if (row.value != null) localStorage.setItem(row.key, row.value);
+        continue;
+      }
+      if (row.key.startsWith('cr_hmrc_payments_')) {
+        if (Array.isArray(row.value) && row.value.length > 0) localStorage.setItem(row.key, JSON.stringify(row.value));
+        continue;
+      }
       const remote = row.value || [];
       const local  = JSON.parse(localStorage.getItem(row.key) || '[]');
       if (remote.length === 0 && local.length > 0) {
@@ -6279,13 +6287,26 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             }
             if (key === 'cr_income') {
               localStorage.setItem('cr_income', JSON.stringify(value));
+              cr_renderOverview();
+              if (document.getElementById('cr-income')?.classList.contains('active')) cr_renderIncome();
             }
             if (key === 'cr_expenses') {
               localStorage.setItem('cr_expenses', JSON.stringify(value));
+              cr_renderOverview();
+              if (document.getElementById('cr-expenses')?.classList.contains('active')) cr_renderExpenses();
             }
             if (key === 'cr_invoices') {
               localStorage.setItem('cr_invoices', JSON.stringify(value));
-              if (document.getElementById('cr-invoices') && document.getElementById('cr-invoices').classList.contains('active')) cr_renderInvoices();
+              if (document.getElementById('cr-invoices')?.classList.contains('active')) cr_renderInvoices();
+            }
+            if (key.startsWith('cr_hmrc_payments_')) {
+              localStorage.setItem(key, JSON.stringify(value));
+              if (document.getElementById('cr-tax')?.classList.contains('active')) cr_renderTax();
+            }
+            if (key.startsWith('cr_emp_income_')) {
+              localStorage.setItem(key, value);
+              cr_renderOverview();
+              if (document.getElementById('cr-tax')?.classList.contains('active')) cr_renderTax();
             }
           })
           .subscribe(status => hub_setSyncDot(status === 'SUBSCRIBED'));
@@ -7335,7 +7356,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   // ── HMRC Payments ─────────────────────────────────────────────────────────────
   function cr_getHmrcPayments() { try { return JSON.parse(localStorage.getItem(`cr_hmrc_payments_${cr_taxYear}`) || '[]'); } catch { return []; } }
-  function cr_saveHmrcPayments(d) { localStorage.setItem(`cr_hmrc_payments_${cr_taxYear}`, JSON.stringify(d)); }
+  function cr_saveHmrcPayments(d) {
+    localStorage.setItem(`cr_hmrc_payments_${cr_taxYear}`, JSON.stringify(d));
+    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: `cr_hmrc_payments_${cr_taxYear}`, value: d }),
+    }).catch(() => {});
+  }
 
   function cr_addHmrcPayment() {
     const date   = document.getElementById('cr-hmrc-date').value;

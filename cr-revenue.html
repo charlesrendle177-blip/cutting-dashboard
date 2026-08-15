@@ -384,6 +384,7 @@ let expYear = new Date().getFullYear(), expMon = new Date().getMonth();
 let invoicesData = [];
 let invFilter    = 'all';
 let empIncome    = 0;
+let hmrcPayments = [];
 
 const EXP_CATS = {
   software:      { label:'Software & Tools',   color:'#6366f1' },
@@ -427,6 +428,7 @@ async function loadAndShow() {
     if (row.key === 'cr_expenses') expenseData = row.value || [];
     if (row.key === 'cr_invoices') invoicesData = row.value || [];
     if (row.key === `cr_emp_income_${taxYear}`) empIncome = parseFloat(row.value) || 0;
+    if (row.key === `cr_hmrc_payments_${taxYear}`) hmrcPayments = row.value || [];
   }
 
   // Load receipts from the Vercel API (no auth needed there, service-role server-side)
@@ -636,7 +638,20 @@ function renderTax() {
       <div class="tax-row"><span class="tax-key">Effective tax rate</span><span class="tax-val">${eff}%</span></div>
       <div class="tax-row"><span class="tax-key">Monthly set-aside</span><span class="tax-val" style="color:#1e40af;font-size:15px;">£${monthly.toLocaleString()}/mo</span></div>
       <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on 2025–26 rates. Verify with your accountant.</div>
-    </div>`;
+    </div>
+    ${hmrcPayments.length > 0 ? `
+    <div class="card" style="margin-top:14px;">
+      <div class="card-label">HMRC Payments</div>
+      ${[...hmrcPayments].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(p => `
+        <div class="tax-row">
+          <span class="tax-key">${p.date ? new Date(p.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—'}${p.note ? ' · ' + p.note : ''}</span>
+          <span class="tax-val" style="color:#059669;">£${(p.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+        </div>`).join('')}
+      <div class="tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;">
+        <span class="tax-key">Total paid</span>
+        <span class="tax-val" style="color:#059669;">£${hmrcPayments.reduce((s,p)=>s+(p.amount||0),0).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+      </div>
+    </div>` : ''}`;
 }
 
 // ── Expenses — write ────────────────────────────────────────────────────────

@@ -36,8 +36,11 @@ module.exports = async (req, res) => {
   }
 
   const { key, value } = body;
-  if (!key || !['cr_income', 'cr_expenses', 'cr_mileage', 'cr_invoices'].includes(key)) {
-    return res.status(400).json({ error: 'key must be cr_income, cr_expenses, cr_mileage, or cr_invoices' });
+  const ALLOWED_EXACT    = ['cr_income', 'cr_expenses', 'cr_invoices'];
+  const ALLOWED_PREFIXES = ['cr_emp_income_', 'cr_hmrc_payments_'];
+  const allowed = ALLOWED_EXACT.includes(key) || ALLOWED_PREFIXES.some(p => key.startsWith(p));
+  if (!key || !allowed) {
+    return res.status(400).json({ error: 'Key not allowed' });
   }
 
   try {
