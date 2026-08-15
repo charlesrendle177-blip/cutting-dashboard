@@ -383,6 +383,7 @@ let incYear = new Date().getFullYear(), incMon = new Date().getMonth();
 let expYear = new Date().getFullYear(), expMon = new Date().getMonth();
 let invoicesData = [];
 let invFilter    = 'all';
+let empIncome    = 0;
 
 const EXP_CATS = {
   software:      { label:'Software & Tools',   color:'#6366f1' },
@@ -425,6 +426,7 @@ async function loadAndShow() {
     if (row.key === 'cr_income')   incomeData  = row.value || [];
     if (row.key === 'cr_expenses') expenseData = row.value || [];
     if (row.key === 'cr_invoices') invoicesData = row.value || [];
+    if (row.key === `cr_emp_income_${taxYear}`) empIncome = parseFloat(row.value) || 0;
   }
 
   // Load receipts from the Vercel API (no auth needed there, service-role server-side)
@@ -463,15 +465,20 @@ function taxYearRange(y) {
 }
 function changeYear(d) { taxYear += d; renderOverview(); }
 
-function taxCalc(profit) {
-  const allowance = 12570, basicTop = 50270;
-  if (profit <= allowance) return { incomeTax:0, ni:0, total:0 };
-  const taxable   = profit - allowance;
-  const basicBand = Math.min(taxable, basicTop - allowance);
-  const highBand  = Math.max(0, taxable - (basicTop - allowance));
+function taxCalc(profit, emp = 0) {
+  const totalAllowance = 12570, basicTop = 50270;
+  const remainingAllowance = Math.max(0, totalAllowance - emp);
+  if (profit <= remainingAllowance) return { incomeTax:0, ni:0, total:0 };
+  const taxable = profit - remainingAllowance;
+  const empTaxable = Math.max(0, emp - totalAllowance);
+  const basicBandRemaining = Math.max(0, (basicTop - totalAllowance) - empTaxable);
+  const basicBand = Math.min(taxable, basicBandRemaining);
+  const highBand  = Math.max(0, taxable - basicBandRemaining);
   const it  = basicBand * 0.20 + highBand * 0.40;
-  const ni1 = Math.min(profit - allowance, basicTop - allowance);
-  const ni2 = Math.max(0, profit - basicTop);
+  const niLower = Math.max(0, 12570 - emp);
+  const niUpper = Math.max(0, 50270 - emp);
+  const ni1 = Math.max(0, Math.min(profit, niUpper) - niLower);
+  const ni2 = Math.max(0, profit - Math.max(niUpper, niLower));
   const ni  = Math.max(0, ni1) * 0.09 + Math.max(0, ni2) * 0.02;
   return { incomeTax: Math.round(it), ni: Math.round(ni), total: Math.round(it + ni) };
 }
@@ -487,7 +494,7 @@ function renderOverview() {
   const totalInc = inc.reduce((s,r)=>s+(r.amount||0),0);
   const totalExp = exp.reduce((s,r)=>s+(r.amount||0),0);
   const profit   = totalInc - totalExp;
-  const tax      = taxCalc(profit);
+  const tax      = taxCalc(profit, empIncome);
   const net      = profit - tax.total;
   const yrEl     = document.getElementById('yr-display');
   if (yrEl) yrEl.textContent = `Tax year ${ty.label}`;
@@ -601,8 +608,9 @@ function renderTax() {
   const totalInc = inc.reduce((s,r)=>s+(r.amount||0),0);
   const totalExp = exp.reduce((s,r)=>s+(r.amount||0),0);
   const profit   = totalInc - totalExp;
-  const tax      = taxCalc(profit);
-  const taxable  = Math.max(0, profit - 12570);
+  const tax      = taxCalc(profit, empIncome);
+  const remainingAllowance = Math.max(0, 12570 - empIncome);
+  const taxable  = Math.max(0, profit - remainingAllowance);
   const eff      = profit>0?(tax.total/profit*100).toFixed(1):'0.0';
   const monthly  = profit>0?Math.round(tax.total/12):0;
   document.getElementById('tax-body').innerHTML = `
@@ -615,6 +623,9 @@ function renderTax() {
     <div class="card">
       <div class="card-label blue">Income Tax Calculation</div>
       <div class="tax-row"><span class="tax-key">Personal Allowance</span><span class="tax-val">£12,570</span></div>
+      ${empIncome > 0 ? `
+      <div class="tax-row"><span class="tax-key" style="color:#d97706;">Employment income (PAYE)</span><span class="tax-val" style="color:#d97706;">−£${empIncome.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+      <div class="tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;"><span class="tax-key" style="font-weight:700;">Remaining personal allowance</span><span class="tax-val" style="color:#059669;font-weight:700;">£${remainingAllowance.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>` : ''}
       <div class="tax-row"><span class="tax-key">Taxable after allowance</span><span class="tax-val">£${taxable.toLocaleString()}</span></div>
       <div class="tax-row"><span class="tax-key">Income Tax (20% / 40%)</span><span class="tax-val">£${tax.incomeTax.toLocaleString()}</span></div>
       <div class="tax-row"><span class="tax-key">Class 4 NI (9% / 2%)</span><span class="tax-val">£${tax.ni.toLocaleString()}</span></div>
