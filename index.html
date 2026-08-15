@@ -3393,6 +3393,47 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <button onclick="cr_addExpense()" class="biz-btn biz-btn-primary">+ Log Expense</button>
             </div>
             <div id="cr-exp-list"></div>
+
+            <!-- Recurring expenses panel -->
+            <div class="biz-card" style="margin-top:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="cr_toggleRecurringPanel()">
+                <div class="biz-card-label" style="margin-bottom:0;">↻ Recurring Expenses</div>
+                <div id="cr-rec-chevron" style="font-size:11px;color:#9ca3af;">▼</div>
+              </div>
+              <div id="cr-recurring-panel" style="display:none;margin-top:14px;">
+                <div id="cr-recurring-list"></div>
+                <div style="border-top:1px solid #f3f4f6;margin-top:12px;padding-top:12px;">
+                  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Add Recurring</div>
+                  <div class="biz-form-grid" style="margin-bottom:10px;">
+                    <div><label class="biz-form-label">Description</label><input type="text" id="cr-rec-desc" placeholder="e.g. Adobe CC"></div>
+                    <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-rec-amount" placeholder="0.00" min="0" step="0.01"></div>
+                    <div>
+                      <label class="biz-form-label">Category</label>
+                      <select id="cr-rec-cat">
+                        <option value="subscriptions">Subscriptions</option>
+                        <option value="software">Software &amp; Tools</option>
+                        <option value="marketing">Marketing &amp; Ads</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="professional">Professional Fees</option>
+                        <option value="travel">Travel &amp; Transport</option>
+                        <option value="office">Office &amp; Supplies</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="biz-form-label">Frequency</label>
+                      <select id="cr-rec-freq">
+                        <option value="monthly">Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="daily">Daily</option>
+                      </select>
+                    </div>
+                    <div><label class="biz-form-label">Start Date</label><input type="date" id="cr-rec-start"></div>
+                  </div>
+                  <button onclick="cr_addRecurring()" class="biz-btn biz-btn-primary" style="width:100%;">+ Add Recurring</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- CR TAX -->
@@ -6932,8 +6973,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // CR REVENUE — sole trader P&L, income, expenses, tax
   // ============================================================
 
-  const CR_INCOME_KEY   = 'cr_income';
-  const CR_EXPENSES_KEY = 'cr_expenses';
+  const CR_INCOME_KEY    = 'cr_income';
+  const CR_EXPENSES_KEY  = 'cr_expenses';
+  const CR_RECURRING_KEY = 'cr_recurring_expenses';
+  let cr_recurring_panel_open = false;
 
   let cr_taxYear = (function() {
     const now = new Date();
@@ -7185,6 +7228,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (dateEl && !dateEl.value) dateEl.value = `${cr_exp_year}-${String(cr_exp_mon+1).padStart(2,'0')}-01`;
   }
   function cr_renderExpenses() {
+    cr_autoGenerateRecurring();
     cr_renderExpNav();
     const key  = cr_expMonthKey();
     const rows = cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).sort((a,b) => b.date.localeCompare(a.date));
@@ -7231,6 +7275,119 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function cr_deleteExpense(id) {
     cr_saveExpenses(cr_getExpenses().filter(r => r.id !== id));
     cr_renderExpenses();
+  }
+
+  // ── Recurring Expenses ────────────────────────────────────────────────────────
+  function cr_getRecurring() { try { return JSON.parse(localStorage.getItem(CR_RECURRING_KEY) || '[]'); } catch { return []; } }
+  function cr_saveRecurring(d) { localStorage.setItem(CR_RECURRING_KEY, JSON.stringify(d)); }
+
+  function cr_toggleRecurringPanel() {
+    cr_recurring_panel_open = !cr_recurring_panel_open;
+    const panel   = document.getElementById('cr-recurring-panel');
+    const chevron = document.getElementById('cr-rec-chevron');
+    if (panel)   panel.style.display = cr_recurring_panel_open ? '' : 'none';
+    if (chevron) chevron.textContent  = cr_recurring_panel_open ? '▲' : '▼';
+    if (cr_recurring_panel_open) cr_renderRecurring();
+  }
+
+  function cr_autoGenerateRecurring() {
+    const allTemplates = cr_getRecurring();
+    const active = allTemplates.filter(t => t.active);
+    if (!active.length) return;
+
+    const expenses = cr_getExpenses();
+    const today    = new Date().toISOString().slice(0, 10);
+    let changed    = false;
+    let seq        = 0;
+
+    const advance = (dateStr, freq) => {
+      const d = new Date(dateStr + 'T12:00:00');
+      if      (freq === 'monthly') d.setMonth(d.getMonth() + 1);
+      else if (freq === 'weekly')  d.setDate(d.getDate() + 7);
+      else                         d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    };
+
+    active.forEach(t => {
+      let cursor = t.lastGenerated ? advance(t.lastGenerated, t.freq) : t.startDate;
+      while (cursor <= today) {
+        if (!expenses.some(e => e.recurringId === t.id && e.date === cursor)) {
+          expenses.push({ id: Date.now() + seq++, date: cursor, amount: t.amount, cat: t.cat, desc: t.desc, recurringId: t.id });
+          changed = true;
+        }
+        t.lastGenerated = cursor;
+        cursor = advance(cursor, t.freq);
+      }
+    });
+
+    if (changed) {
+      cr_saveExpenses(expenses);
+      cr_saveRecurring(allTemplates);
+    }
+  }
+
+  function cr_addRecurring() {
+    const desc   = document.getElementById('cr-rec-desc').value.trim();
+    const amount = parseFloat(document.getElementById('cr-rec-amount').value);
+    const cat    = document.getElementById('cr-rec-cat').value;
+    const freq   = document.getElementById('cr-rec-freq').value;
+    const start  = document.getElementById('cr-rec-start').value;
+    if (!desc || isNaN(amount) || amount <= 0 || !start) { alert('Description, amount, and start date are required.'); return; }
+
+    const templates = cr_getRecurring();
+    templates.push({ id: `rec_${Date.now()}`, desc, amount, cat, freq, startDate: start, lastGenerated: null, active: true });
+    cr_saveRecurring(templates);
+
+    document.getElementById('cr-rec-desc').value   = '';
+    document.getElementById('cr-rec-amount').value = '';
+    document.getElementById('cr-rec-start').value  = '';
+
+    cr_autoGenerateRecurring();
+    cr_renderExpenses();
+    cr_renderRecurring();
+  }
+
+  function cr_pauseRecurring(id) {
+    const templates = cr_getRecurring();
+    const t = templates.find(x => x.id === id);
+    if (t) t.active = !t.active;
+    cr_saveRecurring(templates);
+    cr_renderRecurring();
+  }
+
+  function cr_deleteRecurring(id) {
+    if (!confirm('Delete this recurring expense? Existing entries stay; no new ones will be added.')) return;
+    cr_saveRecurring(cr_getRecurring().filter(t => t.id !== id));
+    cr_renderRecurring();
+  }
+
+  function cr_renderRecurring() {
+    const el = document.getElementById('cr-recurring-list');
+    if (!el) return;
+    const templates = cr_getRecurring();
+    if (!templates.length) {
+      el.innerHTML = '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0;">No recurring expenses set up yet</div>';
+      return;
+    }
+    const freqLabel = { monthly: 'Monthly', weekly: 'Weekly', daily: 'Daily' };
+    el.innerHTML = templates.map(t => {
+      const cat = CR_EXP_CATS[t.cat] || CR_EXP_CATS.other;
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap;">
+              <span class="cr-exp-cat" style="background:${cat.color};">${cat.label}</span>
+              <span style="font-size:10px;color:#9ca3af;font-weight:600;">${freqLabel[t.freq] || t.freq}</span>
+              ${!t.active ? '<span style="font-size:10px;color:#f97316;font-weight:700;">PAUSED</span>' : ''}
+            </div>
+            <div style="font-size:13px;font-weight:600;color:#0d2345;">${t.desc}</div>
+            <div style="font-size:11px;color:#9ca3af;">From ${t.startDate}${t.lastGenerated ? ' · Last generated: ' + t.lastGenerated : ''}</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#dc2626;flex-shrink:0;">£${t.amount.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+          <button onclick="cr_pauseRecurring('${t.id}')" style="font-size:11px;font-weight:700;padding:4px 8px;border:1.5px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;color:#6b7280;white-space:nowrap;">${t.active ? 'Pause' : 'Resume'}</button>
+          <button onclick="cr_deleteRecurring('${t.id}')" style="font-size:18px;line-height:1;background:none;border:none;color:#d1d5db;cursor:pointer;flex-shrink:0;">×</button>
+        </div>`;
+    }).join('');
   }
 
   // Tax tab
