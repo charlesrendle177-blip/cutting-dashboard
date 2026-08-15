@@ -3339,6 +3339,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div class="biz-card-label accent">Tax Estimate</div>
               <div id="cr-tax-summary-body"></div>
             </div>
+            <div class="biz-card" style="margin-top:14px;">
+              <div class="biz-card-label">Monthly P&amp;L</div>
+              <div id="cr-pnl-chart-wrap"></div>
+            </div>
           </div>
 
           <!-- CR INCOME -->
@@ -3394,6 +3398,17 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div id="cr-exp-list"></div>
 
+            <!-- Budget limits panel -->
+            <div class="biz-card" style="margin-top:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="cr_toggleBudgetPanel()">
+                <div class="biz-card-label" style="margin-bottom:0;">📊 Monthly Budgets</div>
+                <div id="cr-budget-chevron" style="font-size:11px;color:#9ca3af;">▼</div>
+              </div>
+              <div id="cr-budget-panel" style="display:none;margin-top:14px;">
+                <div id="cr-budget-list"></div>
+              </div>
+            </div>
+
             <!-- Recurring expenses panel -->
             <div class="biz-card" style="margin-top:14px;">
               <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="cr_toggleRecurringPanel()">
@@ -3444,6 +3459,29 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
             <div id="cr-tax-body"></div>
             <button onclick="cr_exportTaxYear()" class="biz-btn biz-btn-primary" style="width:100%;margin-top:14px;">Export for Accountant</button>
+
+            <!-- Tax Pot Tracker -->
+            <div class="biz-card" style="margin-top:14px;background:#fefce8;border-color:#fde68a;">
+              <div class="biz-card-label" style="color:#92400e;">Tax Pot</div>
+              <div id="cr-tax-pot-body"></div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
+                <input type="number" id="cr-pot-input" placeholder="Amount saved so far (£)" min="0" step="0.01" style="flex:1;padding:9px 12px;border:1.5px solid #fde68a;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fffde7;">
+                <button onclick="cr_savePot()" style="padding:9px 18px;background:#92400e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Save</button>
+              </div>
+            </div>
+
+            <!-- HMRC Payment Log -->
+            <div class="biz-card" style="margin-top:14px;">
+              <div class="biz-card-label">HMRC Payments</div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Log payments made to HMRC for this tax year (due: 31 Jan &amp; 31 Jul).</div>
+              <div id="cr-hmrc-body"></div>
+              <div class="biz-form-grid" style="margin-top:12px;margin-bottom:10px;">
+                <div><label class="biz-form-label">Date</label><input type="date" id="cr-hmrc-date"></div>
+                <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-hmrc-amount" placeholder="0.00" min="0" step="0.01"></div>
+                <div style="grid-column:1/-1;"><label class="biz-form-label">Note</label><input type="text" id="cr-hmrc-note" placeholder="e.g. Jan 31 balance payment"></div>
+              </div>
+              <button onclick="cr_addHmrcPayment()" class="biz-btn biz-btn-primary" style="width:100%;">+ Log Payment</button>
+            </div>
           </div>
 
           <!-- CR RECEIPTS -->
@@ -7124,6 +7162,39 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-pnl-row"><span class="cr-pnl-label">Set aside monthly</span><span class="cr-pnl-val" style="color:#1e40af;">£${monthly.toLocaleString()}</span></div>`;
     }
 
+    const chartEl = document.getElementById('cr-pnl-chart-wrap');
+    if (chartEl) {
+      const months = [];
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(cr_taxYear, 3, 6);
+        d.setMonth(d.getMonth() + i);
+        const mk    = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const label = d.toLocaleDateString('en-GB', { month: 'short' });
+        const mInc  = inc.filter(r => r.date && r.date.startsWith(mk)).reduce((s,r) => s+(r.amount||0), 0);
+        const mExp  = exp.filter(r => r.date && r.date.startsWith(mk)).reduce((s,r) => s+(r.amount||0), 0);
+        months.push({ label, mInc, mExp });
+      }
+      const maxVal = Math.max(...months.map(m => Math.max(m.mInc, m.mExp)), 1);
+      chartEl.innerHTML = `
+        <div style="display:flex;gap:3px;align-items:flex-end;height:72px;margin-bottom:6px;">
+          ${months.map(m => {
+            const iH = Math.max(0, Math.round((m.mInc / maxVal) * 72));
+            const eH = Math.max(0, Math.round((m.mExp / maxVal) * 72));
+            return `<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:72px;">
+              <div title="Income £${m.mInc.toFixed(0)}" style="flex:1;height:${iH}px;background:linear-gradient(180deg,#34d399,#059669);border-radius:2px 2px 0 0;min-height:${m.mInc>0?2:0}px;"></div>
+              <div title="Expenses £${m.mExp.toFixed(0)}" style="flex:1;height:${eH}px;background:linear-gradient(180deg,#f87171,#dc2626);border-radius:2px 2px 0 0;min-height:${m.mExp>0?2:0}px;"></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;gap:3px;">
+          ${months.map(m => `<div style="flex:1;text-align:center;font-size:8px;color:#9ca3af;font-weight:600;">${m.label}</div>`).join('')}
+        </div>
+        <div style="display:flex;gap:12px;margin-top:10px;justify-content:center;">
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#6b7280;"><div style="width:8px;height:8px;border-radius:2px;background:#059669;flex-shrink:0;"></div>Income</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#6b7280;"><div style="width:8px;height:8px;border-radius:2px;background:#dc2626;flex-shrink:0;"></div>Expenses</div>
+        </div>`;
+    }
+
     const BASIC_RATE_CEILING = 50270;
     const targetEl = document.getElementById('cr-tax-target-body');
     if (targetEl) {
@@ -7229,6 +7300,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
   function cr_renderExpenses() {
     cr_autoGenerateRecurring();
+    if (cr_budget_panel_open) cr_renderBudgets();
     cr_renderExpNav();
     const key  = cr_expMonthKey();
     const rows = cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).sort((a,b) => b.date.localeCompare(a.date));
@@ -7275,6 +7347,95 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function cr_deleteExpense(id) {
     cr_saveExpenses(cr_getExpenses().filter(r => r.id !== id));
     cr_renderExpenses();
+  }
+
+  // ── Budget Limits ─────────────────────────────────────────────────────────────
+  const CR_BUDGETS_KEY = 'cr_exp_budgets';
+  let cr_budget_panel_open = false;
+  function cr_getExpBudgets() { try { return JSON.parse(localStorage.getItem(CR_BUDGETS_KEY) || '{}'); } catch { return {}; } }
+  function cr_saveExpBudgets(d) { localStorage.setItem(CR_BUDGETS_KEY, JSON.stringify(d)); }
+
+  function cr_toggleBudgetPanel() {
+    cr_budget_panel_open = !cr_budget_panel_open;
+    const panel   = document.getElementById('cr-budget-panel');
+    const chevron = document.getElementById('cr-budget-chevron');
+    if (panel)   panel.style.display = cr_budget_panel_open ? '' : 'none';
+    if (chevron) chevron.textContent  = cr_budget_panel_open ? '▲' : '▼';
+    if (cr_budget_panel_open) cr_renderBudgets();
+  }
+
+  function cr_renderBudgets() {
+    const el = document.getElementById('cr-budget-list');
+    if (!el) return;
+    const key      = cr_expMonthKey();
+    const spent    = {};
+    cr_getExpenses().filter(r => r.date && r.date.startsWith(key)).forEach(r => {
+      spent[r.cat] = (spent[r.cat] || 0) + (r.amount || 0);
+    });
+    const budgets  = cr_getExpBudgets();
+    const catKeys  = Object.keys(CR_EXP_CATS);
+    el.innerHTML = catKeys.map(k => {
+      const cat    = CR_EXP_CATS[k];
+      const used   = spent[k] || 0;
+      const limit  = budgets[k] || 0;
+      const pct    = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+      const colour = pct >= 100 ? '#dc2626' : pct >= 80 ? '#f59e0b' : '#059669';
+      return `
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:12px;font-weight:700;color:#374151;">${cat.label}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:${colour};">£${used.toFixed(0)}${limit ? ' / £' + limit : ''}</span>
+              <input type="number" value="${limit || ''}" placeholder="Set limit" min="0" step="1"
+                onchange="cr_setBudget('${k}', this.value)"
+                style="width:70px;padding:3px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:11px;text-align:right;">
+            </div>
+          </div>
+          ${limit > 0 ? `
+            <div style="background:#f3f4f6;border-radius:99px;height:6px;overflow:hidden;">
+              <div style="height:100%;width:${pct.toFixed(1)}%;background:${colour};border-radius:99px;transition:width 0.4s;"></div>
+            </div>
+            ${pct >= 100 ? `<div style="font-size:10px;color:#dc2626;font-weight:700;margin-top:2px;">Over budget by £${(used-limit).toFixed(0)}</div>` : pct >= 80 ? `<div style="font-size:10px;color:#f59e0b;font-weight:600;margin-top:2px;">£${(limit-used).toFixed(0)} remaining</div>` : ''}
+          ` : '<div style="font-size:10px;color:#d1d5db;margin-top:2px;">No limit set — enter amount above</div>'}
+        </div>`;
+    }).join('');
+  }
+
+  function cr_setBudget(cat, val) {
+    const budgets = cr_getExpBudgets();
+    const num = parseFloat(val);
+    if (num > 0) budgets[cat] = num;
+    else delete budgets[cat];
+    cr_saveExpBudgets(budgets);
+  }
+
+  // ── Tax Pot & HMRC Payments ───────────────────────────────────────────────────
+  function cr_savePot() {
+    const val = parseFloat(document.getElementById('cr-pot-input').value) || 0;
+    localStorage.setItem(`cr_tax_pot_${cr_taxYear}`, val);
+    cr_renderTax();
+  }
+
+  function cr_getHmrcPayments() { try { return JSON.parse(localStorage.getItem(`cr_hmrc_payments_${cr_taxYear}`) || '[]'); } catch { return []; } }
+  function cr_saveHmrcPayments(d) { localStorage.setItem(`cr_hmrc_payments_${cr_taxYear}`, JSON.stringify(d)); }
+
+  function cr_addHmrcPayment() {
+    const date   = document.getElementById('cr-hmrc-date').value;
+    const amount = parseFloat(document.getElementById('cr-hmrc-amount').value);
+    const note   = document.getElementById('cr-hmrc-note').value.trim();
+    if (!date || isNaN(amount) || amount <= 0) { alert('Date and amount are required.'); return; }
+    const payments = cr_getHmrcPayments();
+    payments.push({ id: Date.now(), date, amount, note });
+    cr_saveHmrcPayments(payments);
+    document.getElementById('cr-hmrc-date').value   = '';
+    document.getElementById('cr-hmrc-amount').value = '';
+    document.getElementById('cr-hmrc-note').value   = '';
+    cr_renderTax();
+  }
+
+  function cr_deleteHmrcPayment(id) {
+    cr_saveHmrcPayments(cr_getHmrcPayments().filter(p => p.id !== id));
+    cr_renderTax();
   }
 
   // ── Recurring Expenses ────────────────────────────────────────────────────────
@@ -7427,6 +7588,63 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-tax-row"><span class="cr-tax-key">Set aside monthly</span><span class="cr-tax-val" style="color:#1e40af;font-size:15px;">£${setAside.toLocaleString()}/mo</span></div>
         <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on Jan 2025 rates. Personal allowance £12,570. Does not include Class 2 NI or payment-on-account. Verify with your accountant.</div>
       </div>`;
+
+    // Tax Pot
+    const potEl = document.getElementById('cr-tax-pot-body');
+    if (potEl) {
+      const saved = parseFloat(localStorage.getItem(`cr_tax_pot_${cr_taxYear}`)) || 0;
+      const target = tax.total;
+      const gap = Math.max(0, target - saved);
+      const pct = target > 0 ? Math.min(100, (saved / target) * 100) : 0;
+      const colour = pct >= 100 ? '#059669' : pct >= 60 ? '#f59e0b' : '#dc2626';
+      const potInput = document.getElementById('cr-pot-input');
+      if (potInput && !potInput.value) potInput.value = saved || '';
+      potEl.innerHTML = `
+        <div style="font-size:11px;color:#92400e;margin-bottom:10px;">Put aside money from your income so you're ready for your January self-assessment bill.</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;color:#92400e;">Saved</span>
+          <span style="font-size:14px;font-weight:800;color:${colour};">£${saved.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:#92400e;">Target (estimated tax)</span>
+          <span style="font-size:14px;font-weight:800;color:#92400e;">£${target.toLocaleString()}</span>
+        </div>
+        <div style="background:#fde68a;border-radius:99px;height:8px;overflow:hidden;margin-bottom:5px;">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${colour};border-radius:99px;transition:width 0.4s;"></div>
+        </div>
+        <div style="font-size:11px;color:#92400e;text-align:right;">${pct >= 100 ? '✓ Fully covered' : `£${gap.toLocaleString('en-GB',{minimumFractionDigits:2})} still to save`}</div>`;
+    }
+
+    // HMRC Payment Log
+    const hmrcEl = document.getElementById('cr-hmrc-body');
+    if (hmrcEl) {
+      const payments = cr_getHmrcPayments().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+      const totalPaid = payments.reduce((s,p) => s+(p.amount||0), 0);
+      const balance = Math.max(0, tax.total - totalPaid);
+      hmrcEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="background:#f3f4f6;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">Tax Owed</div>
+            <div style="font-size:16px;font-weight:900;color:#d97706;">£${tax.total.toLocaleString()}</div>
+          </div>
+          <div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;font-weight:800;color:#166534;text-transform:uppercase;margin-bottom:2px;">Paid</div>
+            <div style="font-size:16px;font-weight:900;color:#059669;">£${totalPaid.toLocaleString('en-GB',{minimumFractionDigits:0})}</div>
+          </div>
+          <div style="background:${balance>0?'#fee2e2':'#dcfce7'};border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;font-weight:800;color:${balance>0?'#991b1b':'#166534'};text-transform:uppercase;margin-bottom:2px;">Balance</div>
+            <div style="font-size:16px;font-weight:900;color:${balance>0?'#dc2626':'#059669'};">£${balance.toLocaleString('en-GB',{minimumFractionDigits:0})}</div>
+          </div>
+        </div>
+        ${payments.length ? payments.map(p => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:#0d2345;">£${p.amount.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+              <div style="font-size:11px;color:#9ca3af;">${p.date ? new Date(p.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—'}${p.note ? ' · ' + p.note : ''}</div>
+            </div>
+            <button onclick="cr_deleteHmrcPayment(${p.id})" style="font-size:18px;line-height:1;background:none;border:none;color:#d1d5db;cursor:pointer;">×</button>
+          </div>`).join('') : '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0;">No payments logged yet</div>'}`;
+    }
   }
 
   function cr_exportTaxYear() {
@@ -7659,6 +7877,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     } catch(e) { alert('Error: ' + e.message); }
   }
 
+  function cr_getReceiptPcts() { try { return JSON.parse(localStorage.getItem('cr_receipt_pcts') || '{}'); } catch { return {}; } }
+  function cr_setReceiptPct(id, pct) {
+    const pcts = cr_getReceiptPcts();
+    const num = parseFloat(pct);
+    if (num > 0 && num <= 100) pcts[id] = num; else delete pcts[id];
+    localStorage.setItem('cr_receipt_pcts', JSON.stringify(pcts));
+  }
+
   async function cr_toggleReceiptStatus(id, currentStatus) {
     const newStatus = currentStatus === 'submitted' ? 'unsubmitted' : 'submitted';
     await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
@@ -7670,8 +7896,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const receipt = cr_receipts_cache.find(r => r.id === id);
       if (receipt && receipt.amount && receipt.date) {
         const cat = receipt.category === 'meals' ? 'other' : (receipt.category || 'other');
+        const fullAmount = parseFloat(receipt.amount);
+        const pcts = cr_getReceiptPcts();
+        const pct = pcts[id];
+        const expAmount = (pct && pct < 100) ? parseFloat((fullAmount * pct / 100).toFixed(2)) : fullAmount;
+        const pctNote   = (pct && pct < 100) ? ` (${pct}% business use)` : '';
         const expenses = cr_getExpenses();
-        expenses.push({ id: Date.now(), date: receipt.date, amount: parseFloat(receipt.amount), cat, desc: receipt.description || receipt.original_name || '' });
+        expenses.push({ id: Date.now(), date: receipt.date, amount: expAmount, cat, desc: (receipt.description || receipt.original_name || '') + pctNote });
         cr_saveExpenses(expenses);
       }
     }
@@ -7690,6 +7921,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   const CR_CAT_LABELS = { software:'Software & Tools', marketing:'Marketing & Ads', equipment:'Equipment', professional:'Professional Fees', travel:'Travel & Transport', office:'Office & Supplies', subscriptions:'Subscriptions', other:'Other' };
   const CR_CAT_OPTIONS = Object.entries(CR_CAT_LABELS).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+
+  function cr_travelPctWidget(r) {
+    const pcts = cr_getReceiptPcts();
+    let pct = pcts[r.id];
+    if (!pct) {
+      const bm = cr_getMileage().reduce((s,t) => s + (parseFloat(t.miles)||0), 0);
+      const tm = parseFloat(localStorage.getItem(`cr_total_miles_${cr_taxYear}`)) || 0;
+      pct = tm > 0 ? Math.round(bm / tm * 100) : 80;
+    }
+    const claimed = r.amount ? (parseFloat(r.amount) * pct / 100).toFixed(2) : '?';
+    return `<div style="margin-top:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:700;color:#1e40af;white-space:nowrap;">🚗 Business use %</span>
+      <input type="number" min="1" max="100" value="${pct}" onchange="cr_setReceiptPct(${r.id},this.value);cr_renderReceipts()"
+        style="width:54px;padding:3px 6px;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;text-align:center;">
+      <span style="font-size:10px;color:#3b82f6;">→ £${claimed} will be logged as expense</span>
+    </div>`;
+  }
 
   function cr_receiptCard(r) {
     if (cr_editing_receipt_id === r.id) return cr_receiptEditForm(r);
@@ -7724,6 +7972,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <button class="cr-btn-sm ${r.status === 'submitted' ? 'unsubmit' : 'submit'}" onclick="cr_toggleReceiptStatus(${r.id},'${r.status}')">${r.status === 'submitted' ? 'Unsubmit' : 'Submit'}</button>
               <button class="cr-btn-sm del" onclick="cr_deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
             </div>
+            ${r.category === 'travel' && r.status !== 'submitted' ? cr_travelPctWidget(r) : ''}
           </div>
         </div>
         ${isPreviewing ? `
@@ -7964,17 +8213,47 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return inv.status === 'issued' && inv.due_date && inv.due_date < new Date().toISOString().slice(0,10);
   }
 
+  function cr_copyChaseEmail(client, number, amount, dueDate) {
+    const due = dueDate ? new Date(dueDate+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : 'the agreed date';
+    const text = `Hi ${client},\n\nI hope you're well. I wanted to follow up on${number ? ' invoice '+number : ' my invoice'} for £${parseFloat(amount).toLocaleString('en-GB',{minimumFractionDigits:2})}, which was due on ${due}.\n\nCould you let me know when this will be settled? If payment has already been sent, please disregard this message.\n\nThanks,\nCharles`;
+    navigator.clipboard.writeText(text).then(() => alert('Chase email copied to clipboard.')).catch(() => alert('Copy failed — please copy manually:\n\n' + text));
+  }
+
   function cr_renderInvoices() {
     const all         = cr_getInvoices();
     const outstanding = all.filter(i => i.status === 'issued' || i.status === 'draft').reduce((s,i) => s + (parseFloat(i.amount)||0), 0);
     const paid        = all.filter(i => i.status === 'paid').reduce((s,i) => s + (parseFloat(i.amount)||0), 0);
     const overdueList = all.filter(cr_isOverdue);
+    const today       = new Date().toISOString().slice(0,10);
+    const soonList    = all.filter(i => i.status === 'issued' && i.due_date && i.due_date > today && i.due_date <= new Date(Date.now()+7*86400000).toISOString().slice(0,10));
     const filtered    = cr_inv_filter === 'all'    ? all
                       : cr_inv_filter === 'overdue' ? overdueList
                       : all.filter(i => i.status === cr_inv_filter);
     const el = document.getElementById('cr-invoices-body');
     if (!el) return;
-    el.innerHTML = `
+
+    const chaserHtml = [
+      ...overdueList.map(inv => `
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:16px;">🚨</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#991b1b;">${inv.client} — OVERDUE</div>
+            <div style="font-size:11px;color:#dc2626;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+inv.number:''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
+          </div>
+          <button onclick="cr_copyChaseEmail('${inv.client.replace(/'/g,"\\'")}','${(inv.number||'').replace(/'/g,"\\'")}','${inv.amount}','${inv.due_date||''}')" style="font-size:11px;font-weight:700;padding:5px 10px;background:#dc2626;color:#fff;border:none;border-radius:7px;cursor:pointer;white-space:nowrap;">Copy Chase Email</button>
+        </div>`),
+      ...soonList.map(inv => `
+        <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:16px;">⚠️</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#92400e;">${inv.client} — Due soon</div>
+            <div style="font-size:11px;color:#d97706;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+inv.number:''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
+          </div>
+          <button onclick="cr_copyChaseEmail('${inv.client.replace(/'/g,"\\'")}','${(inv.number||'').replace(/'/g,"\\'")}','${inv.amount}','${inv.due_date||''}')" style="font-size:11px;font-weight:700;padding:5px 10px;background:#d97706;color:#fff;border:none;border-radius:7px;cursor:pointer;white-space:nowrap;">Copy Reminder</button>
+        </div>`),
+    ].join('');
+
+    el.innerHTML = chaserHtml + `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
         <div class="biz-card" style="padding:12px 8px;text-align:center;">
           <div style="font-size:9px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:3px;">Outstanding</div>
