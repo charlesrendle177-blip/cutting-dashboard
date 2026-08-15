@@ -3288,7 +3288,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-income',this);cr_renderIncome()">Income</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-expenses',this);cr_renderExpenses()">Expenses</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-receipts',this);cr_loadReceipts()">Receipts</button>
-          <button class="biz-tab cr-tab" onclick="cr_showTab('cr-mileage',this);cr_renderMileage()">Mileage</button>
           <button class="biz-tab cr-tab" onclick="cr_showTab('cr-invoices',this);cr_renderInvoices()">Invoice Vault</button>
         </div>
         <div class="biz-main">
@@ -3524,25 +3523,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- CR MILEAGE -->
-          <div id="cr-mileage" class="cr-section">
-            <div class="biz-section-header">
-              <h2>Mileage</h2>
-              <p>Actual expenses method — log business trips to calculate your business use %</p>
-            </div>
-            <div id="cr-mileage-body"></div>
-            <div class="biz-card" style="margin-top:14px;">
-              <div class="biz-card-label">Log Trip</div>
-              <div class="biz-form-grid" style="margin-bottom:12px;">
-                <div><label class="biz-form-label">Date</label><input type="date" id="cr-mile-date"></div>
-                <div><label class="biz-form-label">Miles</label><input type="number" id="cr-mile-miles" placeholder="e.g. 45" min="0.1" step="0.1"></div>
-                <div><label class="biz-form-label">From</label><input type="text" id="cr-mile-from" placeholder="e.g. Bristol"></div>
-                <div><label class="biz-form-label">To</label><input type="text" id="cr-mile-to" placeholder="e.g. London"></div>
-                <div style="grid-column:1/-1;"><label class="biz-form-label">Purpose</label><input type="text" id="cr-mile-purpose" placeholder="e.g. Client meeting"></div>
-              </div>
-              <button onclick="cr_addMileageTrip()" class="biz-btn biz-btn-primary">+ Log Trip</button>
-            </div>
-          </div>
-
           <!-- CR INVOICE VAULT -->
           <div id="cr-invoices" class="cr-section">
             <div class="biz-section-header">
@@ -6228,7 +6208,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_mileage', 'cr_invoices']);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_invoices']);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       const remote = row.value || [];
@@ -6299,10 +6279,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             }
             if (key === 'cr_expenses') {
               localStorage.setItem('cr_expenses', JSON.stringify(value));
-            }
-            if (key === 'cr_mileage') {
-              localStorage.setItem('cr_mileage', JSON.stringify(value));
-              if (document.getElementById('cr-mileage') && document.getElementById('cr-mileage').classList.contains('active')) cr_renderMileage();
             }
             if (key === 'cr_invoices') {
               localStorage.setItem('cr_invoices', JSON.stringify(value));
@@ -7540,16 +7516,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const ty        = cr_taxYearRange(cr_taxYear);
     const inc       = cr_getIncome().filter(r => r.date >= ty.start && r.date <= ty.end);
     const exp       = cr_getExpenses().filter(r => r.date >= ty.start && r.date <= ty.end);
-    const miles     = cr_getMileage().filter(t => t.date >= ty.start && t.date <= ty.end);
     const receipts  = cr_receipts_cache.filter(r => r.date >= ty.start && r.date <= ty.end);
 
     const totalInc  = inc.reduce((s, r) => s + (r.amount || 0), 0);
     const totalExp  = exp.reduce((s, r) => s + (r.amount || 0), 0);
     const profit    = totalInc - totalExp;
     const tax       = cr_taxCalc(profit);
-    const bizMiles  = miles.reduce((s, t) => s + (parseFloat(t.miles) || 0), 0);
-    const totalMiles = parseFloat(localStorage.getItem(`cr_total_miles_${cr_taxYear}`)) || 0;
-    const bizPct    = totalMiles > 0 ? (bizMiles / totalMiles * 100).toFixed(1) : 'N/A';
 
     const fmt = n => '£' + parseFloat(n || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
@@ -7568,9 +7540,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     const recRows = [...receipts].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(r =>
       `<tr><td>${fmtDate(r.date)}</td><td style="text-transform:capitalize">${r.category||'—'}</td><td>${r.description||r.original_name||'—'}</td><td style="text-align:right">${r.amount ? fmt(r.amount) : '—'}</td><td>${r.status==='submitted'?'✓ Submitted':'Unsubmitted'}</td></tr>`).join('');
-
-    const mileRows = [...miles].sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t =>
-      `<tr><td>${fmtDate(t.date)}</td><td>${t.from||'?'} → ${t.to||'?'}</td><td>${t.purpose||'—'}</td><td style="text-align:right">${parseFloat(t.miles).toFixed(0)} mi</td></tr>`).join('');
 
     const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
@@ -7623,16 +7592,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   <h2>Expense Detail (${exp.length} entries)</h2>
   <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
   <tbody>${expRows || '<tr><td colspan="4" style="color:#9ca3af">No expenses</td></tr>'}</tbody>
-  </table>
-
-  <h2>Mileage &amp; Business Use (${miles.length} trips)</h2>
-  <table><thead><tr><th>Date</th><th>Route</th><th>Purpose</th><th style="text-align:right">Miles</th></tr></thead>
-  <tbody>${mileRows || '<tr><td colspan="4" style="color:#9ca3af">No trips logged</td></tr>'}</tbody>
-  <tfoot>
-    <tr><td colspan="3" style="font-weight:700;padding-top:10px;">Business Miles</td><td style="font-weight:700;text-align:right;padding-top:10px;">${bizMiles.toFixed(0)} mi</td></tr>
-    <tr><td colspan="3" style="color:#6b7280">Total Annual Miles</td><td style="text-align:right;color:#6b7280">${totalMiles > 0 ? totalMiles.toLocaleString('en-GB') + ' mi' : '—'}</td></tr>
-    <tr><td colspan="3" style="font-weight:700;color:#0d2345">Business Use %</td><td style="font-weight:700;text-align:right;color:#0d2345">${bizPct}${bizPct !== 'N/A' ? '%' : ''}</td></tr>
-  </tfoot>
   </table>
 
   <h2>Receipt Log (${receipts.length} receipts)</h2>
@@ -7815,9 +7774,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const pcts = cr_getReceiptPcts();
     let pct = pcts[r.id];
     if (!pct) {
-      const bm = cr_getMileage().reduce((s,t) => s + (parseFloat(t.miles)||0), 0);
-      const tm = parseFloat(localStorage.getItem(`cr_total_miles_${cr_taxYear}`)) || 0;
-      pct = tm > 0 ? Math.round(bm / tm * 100) : 80;
+      pct = 80;
     }
     const claimed = r.amount ? (parseFloat(r.amount) * pct / 100).toFixed(2) : '?';
     return `<div style="margin-top:6px;padding:6px 10px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -7976,110 +7933,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       cr_receipts_loaded = false;
       await cr_loadReceipts();
     } catch { btn.textContent = 'Repeat'; btn.disabled = false; }
-  }
-
-  // ── MILEAGE TRACKER ────────────────────────────────────────────────────────
-
-  const CR_MILEAGE_KEY = 'cr_mileage';
-
-  function cr_getMileage() { try { return JSON.parse(localStorage.getItem(CR_MILEAGE_KEY) || '[]'); } catch { return []; } }
-
-  function cr_saveMileage(d) {
-    localStorage.setItem(CR_MILEAGE_KEY, JSON.stringify(d));
-    if (sb) sb.from('hub_data').upsert({ key: CR_MILEAGE_KEY, value: d, updated_at: new Date().toISOString() }, { onConflict: 'key' }).then(() => {});
-    fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: CR_MILEAGE_KEY, value: d }),
-    }).catch(() => {});
-  }
-
-  function cr_mileageClaim(miles) {
-    return Math.min(miles, 10000) * 0.45 + Math.max(0, miles - 10000) * 0.25;
-  }
-
-  function cr_updateTotalMiles() {
-    const val = parseFloat(document.getElementById('cr-total-miles-input').value) || 0;
-    localStorage.setItem(`cr_total_miles_${cr_taxYear}`, val);
-    cr_renderMileage();
-  }
-
-  function cr_renderMileage() {
-    const { start, end } = cr_taxYearRange(cr_taxYear);
-    const all          = cr_getMileage().filter(t => t.date >= start && t.date <= end);
-    const businessMiles = all.reduce((s, t) => s + (parseFloat(t.miles) || 0), 0);
-    const totalMiles    = parseFloat(localStorage.getItem(`cr_total_miles_${cr_taxYear}`)) || 0;
-    const bizPct        = totalMiles > 0 ? Math.min(100, (businessMiles / totalMiles) * 100) : 0;
-    const el = document.getElementById('cr-mileage-body');
-    if (!el) return;
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:18px;padding:22px 20px 18px;margin-bottom:16px;text-align:center;">
-        <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">Business Use Percentage</div>
-        <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:6px;">
-          <span style="font-size:56px;font-weight:900;color:#fff;line-height:1;letter-spacing:-2px;">${totalMiles > 0 ? bizPct.toFixed(1) : '—'}</span>
-          ${totalMiles > 0 ? '<span style="font-size:22px;font-weight:700;color:rgba(255,255,255,0.5);">%</span>' : ''}
-        </div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:${totalMiles > 0 ? '14px' : '0'};">Give this % to your accountant — they apply it to fuel, servicing, insurance, and depreciation</div>
-        ${totalMiles > 0 ? `
-          <div style="background:rgba(255,255,255,0.12);border-radius:6px;height:6px;margin:0 4px 6px;overflow:hidden;">
-            <div style="height:100%;border-radius:6px;background:#93c5fd;width:${bizPct.toFixed(1)}%;transition:width 0.5s;"></div>
-          </div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.35);">${businessMiles.toFixed(0)} business miles of ${totalMiles.toLocaleString('en-GB')} total</div>` : ''}
-      </div>
-      <div class="biz-card" style="margin-bottom:16px;">
-        <div class="biz-card-label">Total Annual Mileage</div>
-        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Enter ALL miles you drive this tax year — business and personal — so we can calculate your business use %.</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="number" id="cr-total-miles-input" value="${totalMiles || ''}" placeholder="e.g. 12000" min="0" step="1" style="flex:1;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;">
-          <button onclick="cr_updateTotalMiles()" class="biz-btn biz-btn-primary" style="padding:9px 18px;white-space:nowrap;">Save</button>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-        <div class="biz-card" style="text-align:center;padding:16px 10px;">
-          <div style="font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Business Miles</div>
-          <div style="font-size:28px;font-weight:900;color:#0d2345;">${businessMiles.toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Logged trips this year</div>
-        </div>
-        <div class="biz-card" style="text-align:center;padding:16px 10px;">
-          <div style="font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Total Miles</div>
-          <div style="font-size:28px;font-weight:900;color:#374151;">${totalMiles > 0 ? totalMiles.toLocaleString('en-GB') : '—'}</div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">All driving</div>
-        </div>
-      </div>
-      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Business Trip Log</div>
-      ${all.length === 0
-        ? '<div class="cr-empty">No trips logged this tax year</div>'
-        : [...all].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t => `
-          <div class="cr-mile-card">
-            <div class="cr-mile-icon">🚗</div>
-            <div class="cr-mile-meta">
-              <div class="cr-mile-route">${t.from||'?'} → ${t.to||'?'}</div>
-              <div class="cr-mile-sub">${t.date ? new Date(t.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''} · ${t.purpose||''}</div>
-            </div>
-            <div class="cr-mile-right">
-              <div class="cr-mile-miles">${parseFloat(t.miles).toFixed(0)} mi</div>
-              <button onclick="cr_deleteMileageTrip('${t.id}')" style="font-size:10px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;margin-top:4px;">Delete</button>
-            </div>
-          </div>`).join('')}`;
-  }
-
-  function cr_addMileageTrip() {
-    const date    = document.getElementById('cr-mile-date').value;
-    const from    = document.getElementById('cr-mile-from').value.trim();
-    const to      = document.getElementById('cr-mile-to').value.trim();
-    const miles   = parseFloat(document.getElementById('cr-mile-miles').value);
-    const purpose = document.getElementById('cr-mile-purpose').value.trim();
-    if (!date || !from || !to || !miles || miles <= 0) { alert('Date, from, to, and miles are required.'); return; }
-    const trips = cr_getMileage();
-    trips.push({ id: `m${Date.now()}`, date, from, to, miles, purpose, tax_year: cr_taxYear });
-    cr_saveMileage(trips);
-    ['cr-mile-date','cr-mile-from','cr-mile-to','cr-mile-miles','cr-mile-purpose'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    cr_renderMileage();
-  }
-
-  function cr_deleteMileageTrip(id) {
-    if (!confirm('Delete this trip?')) return;
-    cr_saveMileage(cr_getMileage().filter(t => t.id !== id));
-    cr_renderMileage();
   }
 
   // ── INVOICE VAULT ──────────────────────────────────────────────────────────
