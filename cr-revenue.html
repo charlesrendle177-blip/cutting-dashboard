@@ -84,43 +84,52 @@
 
   /* Receipt vault */
   .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-  .rf-pill { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e5e7eb; background: #fff; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; color: #374151; transition: all 0.15s; }
-  .rf-pill.active { background: #0d2345; color: #fff; border-color: #0d2345; }
-  .rf-pill:hover:not(.active) { background: rgba(0,0,0,0.04); }
-  .sort-select { margin-left: auto; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 13px; font-family: inherit; background: #fff; color: #374151; cursor: pointer; }
-  .vault-section { margin-bottom: 20px; }
-  .vault-header { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-  .vault-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; }
-  .vault-count.sub { background: #d1fae5; color: #065f46; }
-  .receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; background: #fff; border: 1.5px solid #e5e7eb; margin-bottom: 8px; flex-direction: column; gap: 0; }
+  .rf-pill { flex-shrink: 0; padding: 6px 16px; border-radius: 99px; border: 1.5px solid #e5e7eb; background: #fff; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; color: #6b7280; transition: all 0.15s; }
+  .rf-pill.active { background: #0d2345; color: #fff; border-color: #0d2345; box-shadow: 0 2px 8px rgba(13,35,69,0.25); }
+  .rf-pill:hover:not(.active) { background: #f3f4f6; color: #374151; }
+  .sort-select { margin-left: auto; padding: 7px 12px; border-radius: 10px; border: 1.5px solid #e5e7eb; font-size: 13px; font-family: inherit; background: #fff; color: #374151; cursor: pointer; }
+  .vault-section { margin-bottom: 24px; }
+  .vault-header { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1.5px solid #f0f0f0; }
+  .vault-count { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #fef9c3; color: #854d0e; }
+  .vault-count.sub { background: #dcfce7; color: #166534; }
+  .receipt-card { padding: 14px; border-radius: 16px; background: #fff; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.02); flex-direction: column; gap: 0; transition: box-shadow 0.15s; }
+  .receipt-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04); }
   .receipt-row  { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
-  .receipt-preview { margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; background: #f3f4f6; width: 100%; }
+  .receipt-preview { margin-top: 12px; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; background: #f9fafb; width: 100%; }
   .receipt-preview embed { display: block; width: 100%; height: 240px; border: none; }
-  .receipt-icon { width: 40px; height: 40px; border-radius: 8px; background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .receipt-meta { flex: 1; min-width: 0; }
+  .receipt-icon { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg,#ef4444 0%,#f97316 100%); color: #fff; font-size: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0.08em; box-shadow: 0 2px 8px rgba(239,68,68,0.3); cursor: pointer; border: none; transition: transform 0.15s; }
+  .receipt-icon:hover { transform: scale(1.06); }
+  .receipt-meta { flex: 1; min-width: 0; padding-top: 2px; }
   .receipt-name { font-size: 13px; font-weight: 700; color: #0d2345; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .receipt-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .receipt-sub  { font-size: 11px; color: #9ca3af; margin-top: 3px; }
   .receipt-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-  .receipt-amount { font-size: 14px; font-weight: 800; color: #0d2345; }
-  .receipt-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
-  .view-btn { font-size: 12px; padding: 4px 12px; border-radius: 6px; border: 1.5px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; font-family: inherit; }
-  .view-btn:hover { background: #f3f4f6; }
+  .receipt-amount { font-size: 16px; font-weight: 900; color: #0d2345; letter-spacing: -0.4px; }
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 99px; display: inline-block; white-space: nowrap; }
+  .badge-unsub    { background: #fef9c3; color: #854d0e; }
+  .badge-sub      { background: #dcfce7; color: #166534; }
+  .badge-overdue  { background: #fee2e2; color: #991b1b; }
+  .badge-draft    { background: #f3f4f6; color: #6b7280; }
+  .badge-issued   { background: #dbeafe; color: #1e40af; }
+  .badge-paid     { background: #dcfce7; color: #166534; }
+  .view-btn { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 7px; border: 1.5px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: all 0.12s; white-space: nowrap; }
+  .view-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
   /* Invoice Vault */
-  .inv-card { display:flex;align-items:flex-start;gap:12px;padding:14px 12px;border-radius:12px;background:#f9fafb;border:1.5px solid #e5e7eb;margin-bottom:8px; }
+  .inv-card { display:flex;align-items:flex-start;gap:12px;padding:16px 14px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,0.06);margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.05),0 0 0 1px rgba(0,0,0,0.02);transition:box-shadow 0.15s; }
+  .inv-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.09),0 0 0 1px rgba(0,0,0,0.04); }
   .inv-meta { flex:1;min-width:0; }
   .inv-client { font-size:14px;font-weight:700;color:#0d2345;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .inv-sub { font-size:11px;color:#6b7280;margin-top:2px; }
-  .inv-actions { display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0; }
-  .inv-amount { font-size:15px;font-weight:800;color:#0d2345; }
-  .inv-status { font-size:10px;font-weight:700;text-transform:uppercase; }
-  .inv-filter-pill { padding:4px 12px;border-radius:999px;border:1.5px solid #e5e7eb;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;font-family:inherit; }
-  .inv-filter-pill.active { border-color:#0d2345;background:#0d2345;color:#fff; }
+  .inv-sub { font-size:11px;color:#9ca3af;margin-top:3px; }
+  .inv-actions { display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0; }
+  .inv-amount { font-size:16px;font-weight:900;color:#0d2345;letter-spacing:-0.4px; }
+  .inv-filter-pill { padding:6px 16px;border-radius:99px;border:1.5px solid #e5e7eb;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#6b7280;font-family:inherit;transition:all 0.15s;white-space:nowrap; }
+  .inv-filter-pill.active { border-color:#0d2345;background:#0d2345;color:#fff;box-shadow:0 2px 8px rgba(13,35,69,0.25); }
   /* Mileage */
-  .mile-card { display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:#f9fafb;border:1.5px solid #e5e7eb;margin-bottom:8px; }
-  .mile-icon { width:36px;height:36px;border-radius:8px;background:#fef3c7;color:#d97706;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .mile-card { display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,0.06);margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.05),0 0 0 1px rgba(0,0,0,0.02);transition:box-shadow 0.15s; }
+  .mile-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.09),0 0 0 1px rgba(0,0,0,0.04); }
+  .mile-icon { width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b 0%,#f97316 100%);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,0.3); }
   .mile-meta { flex:1;min-width:0; }
   .mile-route { font-size:13px;font-weight:700;color:#0d2345; }
-  .mile-sub { font-size:11px;color:#6b7280;margin-top:2px; }
+  .mile-sub { font-size:11px;color:#9ca3af;margin-top:3px; }
   .mile-right { display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0; }
   .mile-miles { font-size:14px;font-weight:800;color:#0d2345; }
 </style>
@@ -779,6 +788,18 @@ async function toggleReceiptStatus(id, currentStatus) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'update', id, status: newStatus }),
   });
+  if (newStatus === 'submitted') {
+    const receipt = receiptData.find(r => r.id === id);
+    if (receipt && receipt.amount && receipt.date) {
+      const cat = receipt.category === 'meals' ? 'other' : (receipt.category || 'other');
+      const entry = { id: Date.now(), date: receipt.date, amount: parseFloat(receipt.amount), cat, desc: receipt.description || receipt.original_name || '' };
+      expenseData = [...expenseData, entry];
+      fetch('https://cutting-dashboard.vercel.app/api/cr-share-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'cr_expenses', value: expenseData }),
+      }).catch(() => {});
+    }
+  }
   const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'list' }),
@@ -830,12 +851,12 @@ function receiptCard(r) {
         </div>
         <div class="receipt-right">
           ${amountStr ? `<div class="receipt-amount">${amountStr}</div>` : ''}
-          <div class="receipt-status" style="color:${statusColour};">${r.status}</div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="badge ${isSub ? 'badge-sub' : 'badge-unsub'}">${r.status}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;margin-top:2px;">
             <button class="view-btn" onclick="viewReceipt('${r.storage_path}')">View</button>
-            <button class="view-btn" style="border-color:#0891b2;color:#0891b2;" onclick="duplicateReceipt(${r.id},this)" title="Duplicate to next month">Repeat</button>
+            <button class="view-btn" style="border-color:#0891b2;color:#0891b2;" onclick="duplicateReceipt(${r.id},this)">Repeat</button>
             <button class="view-btn" style="border-color:#6366f1;color:#6366f1;" onclick="editingReceiptId=${r.id};renderReceipts()">Edit</button>
-            <button class="view-btn" style="border-color:${statusColour};color:${statusColour};" onclick="toggleReceiptStatus(${r.id},'${r.status}')">${isSub ? 'Unsubmit' : 'Submit'}</button>
+            <button class="view-btn" style="border-color:${isSub?'#059669':'#d97706'};color:${isSub?'#059669':'#d97706'};" onclick="toggleReceiptStatus(${r.id},'${r.status}')">${isSub ? 'Unsubmit' : 'Submit'}</button>
             <button class="view-btn" style="border-color:#fca5a5;color:#dc2626;" onclick="deleteReceipt(${r.id},'${r.storage_path}')">Del</button>
           </div>
         </div>
@@ -1082,8 +1103,8 @@ function renderInvoices() {
               </div>
               <div class="inv-actions">
                 <div class="inv-amount">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
-                <div class="inv-status" style="color:${statusColor};">${statusLabel}</div>
-                <div style="display:flex;gap:4px;margin-top:4px;">
+                <div class="badge badge-${overdue?'overdue':inv.status}">${statusLabel}</div>
+                <div style="display:flex;gap:4px;margin-top:2px;">
                   ${inv.status!=='paid'?`<button class="view-btn" style="border-color:#059669;color:#059669;" onclick="markInvoicePaid('${inv.id}')">Paid</button>`:''}
                   <button class="view-btn" style="border-color:#dc2626;color:#dc2626;" onclick="deleteInvoice('${inv.id}')">Del</button>
                 </div>
