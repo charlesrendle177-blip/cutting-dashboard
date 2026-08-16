@@ -41,8 +41,46 @@ module.exports = async (req, res) => {
     });
     if (!r.ok) return res.status(500).json({ error: 'Signed URL failed' });
     const data = await r.json();
-    const url = data.signedURL ? `${SB_URL}${data.signedURL}` : null;
+    const raw = data.signedURL || data.signedUrl || null;
+    const url = raw ? (raw.startsWith('http') ? raw : `${SB_URL}${raw}`) : null;
     return res.status(200).json({ url });
+  }
+
+  // ── replace-file (swap the PDF, keep the row) ────────────────────────────
+  if (action === 'replace-file') {
+    const { id, old_path, name, base64 } = body;
+    if (!id || !name || !base64) return res.status(400).json({ error: 'id, name, and base64 required' });
+
+    const pdfBytes = Buffer.from(base64, 'base64');
+    if (pdfBytes.slice(0, 4).toString('ascii') !== '%PDF') {
+      return res.status(400).json({ error: 'File does not appear to be a PDF' });
+    }
+
+    const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const newPath  = `${Date.now()}_${safeName}`;
+
+    const uploadRes = await fetch(`${SB_URL}/storage/v1/object/cr-receipts/${newPath}`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/pdf', 'x-upsert': 'false' },
+      body: pdfBytes,
+    });
+    if (!uploadRes.ok) return res.status(500).json({ error: 'Storage upload failed' });
+
+    const updateRes = await fetch(`${SB_URL}/rest/v1/cr_receipts?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storage_path: newPath, original_name: name }),
+    });
+    if (!updateRes.ok) {
+      await fetch(`${SB_URL}/storage/v1/object/cr-receipts/${newPath}`, { method: 'DELETE', headers }).catch(() => {});
+      return res.status(500).json({ error: 'Row update failed' });
+    }
+
+    if (old_path) {
+      await fetch(`${SB_URL}/storage/v1/object/cr-receipts/${old_path}`, { method: 'DELETE', headers }).catch(() => {});
+    }
+
+    return res.status(200).json({ ok: true, path: newPath });
   }
 
   // ── update (status toggle OR metadata edit) ───────────────────────────────

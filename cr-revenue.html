@@ -880,6 +880,7 @@ function receiptEditForm(r) {
     `<option value="${v}" ${r.category === v ? 'selected' : ''}>${l}</option>`).join('');
   const inp = 'width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;font-family:inherit;';
   const lbl = 'font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;';
+  const safePath = (r.storage_path || '').replace(/'/g, "\\'");
   return `
     <div class="receipt-card" style="flex-direction:column;gap:12px;background:#f0f4ff;border-color:#c7d2fe;">
       <div style="font-size:13px;font-weight:700;color:#1e40af;">Editing: ${r.original_name}</div>
@@ -889,18 +890,26 @@ function receiptEditForm(r) {
         <div><label style="${lbl}">Category</label><select id="re-cat" style="${inp}">${catOpts}</select></div>
         <div><label style="${lbl}">Description</label><input type="text" id="re-desc" value="${r.description || ''}" placeholder="Optional" style="${inp}"></div>
       </div>
+      <div style="border-top:1px solid #c7d2fe;padding-top:10px;">
+        <label style="${lbl}">Replace PDF (optional)</label>
+        <input type="file" id="re-file" accept=".pdf" style="width:100%;font-size:13px;padding:4px 0;">
+        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Select a new PDF to swap out the current file. Leave blank to keep existing.</div>
+      </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="saveReceiptEdit(${r.id})" class="login-btn" style="flex:1;margin-top:0;padding:10px;">Save changes</button>
+        <button onclick="saveReceiptEdit(${r.id},'${safePath}')" class="login-btn" style="flex:1;margin-top:0;padding:10px;">Save changes</button>
         <button onclick="editingReceiptId=null;renderReceipts()" class="login-btn" style="flex:1;margin-top:0;padding:10px;background:#f3f4f6;color:#374151;">Cancel</button>
       </div>
     </div>`;
 }
 
-async function saveReceiptEdit(id) {
+async function saveReceiptEdit(id, storagePath) {
   const amount      = document.getElementById('re-amount').value;
   const date        = document.getElementById('re-date').value;
   const category    = document.getElementById('re-cat').value;
   const description = document.getElementById('re-desc').value;
+  const fileInput   = document.getElementById('re-file');
+  const newFile     = fileInput && fileInput.files[0];
+
   await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -908,8 +917,24 @@ async function saveReceiptEdit(id) {
       amount: amount ? parseFloat(amount) : null,
       date: date || null, category, description: description || null }),
   });
+
+  if (newFile) {
+    if (newFile.size > 10 * 1024 * 1024) { alert('PDF is too large (max 10 MB).'); return; }
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(newFile);
+    });
+    const rr = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'replace-file', id, old_path: storagePath, name: newFile.name, base64 }),
+    });
+    const dd = await rr.json();
+    if (!dd.ok) { alert('File replacement failed: ' + (dd.error || 'Unknown error')); }
+  }
+
   editingReceiptId = null;
-  // Reload list
   const r = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'list' }),

@@ -7901,6 +7901,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       `<option value="${v}" ${r.category === v ? 'selected' : ''}>${l}</option>`).join('');
     const inp = 'width:100%;padding:6px 8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;';
     const lbl = 'font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;';
+    const safePath = (r.storage_path || '').replace(/'/g, "\\'");
     return `
       <div class="cr-receipt-card" style="flex-direction:column;gap:10px;background:#f0f4ff;border-color:#c7d2fe;">
         <div style="font-size:12px;font-weight:700;color:#1e40af;">Editing: ${r.original_name}</div>
@@ -7910,18 +7911,26 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div><label style="${lbl}">Category</label><select id="cr-re-cat" style="${inp}">${catOpts}</select></div>
           <div><label style="${lbl}">Description</label><input type="text" id="cr-re-desc" value="${r.description || ''}" placeholder="Optional" style="${inp}"></div>
         </div>
+        <div style="border-top:1px solid #c7d2fe;padding-top:8px;">
+          <label style="${lbl}">Replace PDF (optional)</label>
+          <input type="file" id="cr-re-file" accept=".pdf" style="width:100%;font-size:12px;padding:3px 0;">
+          <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Select a new PDF to swap out the current file. Leave blank to keep existing.</div>
+        </div>
         <div style="display:flex;gap:8px;">
-          <button onclick="cr_saveReceiptEdit(${r.id})" class="cr-btn-sm" style="border-color:#059669;color:#059669;padding:5px 14px;">Save</button>
+          <button onclick="cr_saveReceiptEdit(${r.id},'${safePath}')" class="cr-btn-sm" style="border-color:#059669;color:#059669;padding:5px 14px;">Save</button>
           <button onclick="cr_editing_receipt_id=null;cr_renderReceipts()" class="cr-btn-sm" style="padding:5px 14px;">Cancel</button>
         </div>
       </div>`;
   }
 
-  async function cr_saveReceiptEdit(id) {
+  async function cr_saveReceiptEdit(id, storagePath) {
     const amount      = document.getElementById('cr-re-amount').value;
     const date        = document.getElementById('cr-re-date').value;
     const category    = document.getElementById('cr-re-cat').value;
     const description = document.getElementById('cr-re-desc').value;
+    const fileInput   = document.getElementById('cr-re-file');
+    const newFile     = fileInput && fileInput.files[0];
+
     await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -7929,6 +7938,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         amount: amount ? parseFloat(amount) : null,
         date: date || null, category, description: description || null }),
     });
+
+    if (newFile) {
+      if (newFile.size > 10 * 1024 * 1024) { alert('PDF is too large (max 10 MB).'); return; }
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(newFile);
+      });
+      const rr = await fetch('https://cutting-dashboard.vercel.app/api/receipt-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'replace-file', id, old_path: storagePath, name: newFile.name, base64 }),
+      });
+      const dd = await rr.json();
+      if (!dd.ok) { alert('File replacement failed: ' + (dd.error || 'Unknown error')); }
+    }
+
     cr_editing_receipt_id = null;
     await cr_loadReceipts();
   }
