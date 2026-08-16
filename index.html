@@ -3463,19 +3463,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             </div>
 
             <div id="cr-tax-body"></div>
-
-            <!-- HMRC Payment Log -->
-            <div class="biz-card" style="margin-top:14px;">
-              <div class="biz-card-label">HMRC Payments</div>
-              <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Log payments made to HMRC for this tax year (due: 31 Jan &amp; 31 Jul).</div>
-              <div id="cr-hmrc-body"></div>
-              <div class="biz-form-grid" style="margin-top:12px;margin-bottom:10px;">
-                <div><label class="biz-form-label">Date</label><input type="date" id="cr-hmrc-date"></div>
-                <div><label class="biz-form-label">Amount (£)</label><input type="number" id="cr-hmrc-amount" placeholder="0.00" min="0" step="0.01"></div>
-                <div style="grid-column:1/-1;"><label class="biz-form-label">Note</label><input type="text" id="cr-hmrc-note" placeholder="e.g. Jan 31 balance payment"></div>
-              </div>
-              <button onclick="cr_addHmrcPayment()" class="biz-btn biz-btn-primary" style="width:100%;">+ Log Payment</button>
-            </div>
           </div>
 
           <!-- CR RECEIPTS -->
