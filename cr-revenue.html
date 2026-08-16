@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CR Revenue</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: #f0f2f7; min-height: 100vh; color: #111; }
@@ -280,6 +281,24 @@
   <div id="tab-tax" class="tab-content">
     <div class="section-title">Tax Breakdown</div>
     <div class="section-sub">UK sole trader — income tax &amp; Class 4 NI</div>
+
+    <!-- Date Range Excel Export -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-label">Export to Excel</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Download all income and expenses for a custom date range.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">From</label>
+          <input type="date" id="cr-export-from" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">To</label>
+          <input type="date" id="cr-export-to" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+        </div>
+      </div>
+      <button onclick="exportDateRange()" class="login-btn" style="margin-top:0;width:100%;">Download Excel</button>
+    </div>
+
     <div id="tax-body"></div>
   </div>
 
@@ -941,6 +960,46 @@ async function saveReceiptEdit(id, storagePath) {
   });
   receiptData = (await r.json()).receipts || [];
   renderReceipts();
+}
+
+// ── Date Range Excel Export ──────────────────────────────────────────────────
+function exportDateRange() {
+  const from = document.getElementById('cr-export-from').value;
+  const to   = document.getElementById('cr-export-to').value;
+  if (!from || !to) { alert('Please select both a from and to date.'); return; }
+  if (from > to)    { alert('"From" date must be before "To" date.'); return; }
+
+  if (typeof XLSX === 'undefined') { alert('Excel library not loaded yet — please try again in a moment.'); return; }
+
+  const fmtD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB') : '';
+
+  const incRows = incomeData
+    .filter(r => r.date && r.date >= from && r.date <= to)
+    .map(r => ({ date: r.date, amount: parseFloat(r.amount || 0), payee: r.source || '', desc: r.notes || '' }));
+
+  const expRows = expenseData
+    .filter(r => r.date && r.date >= from && r.date <= to)
+    .map(r => ({ date: r.date, amount: -parseFloat(r.amount || 0), payee: EXP_CATS[r.cat]?.label || r.cat || '', desc: r.desc || '' }));
+
+  const allRows = [...incRows, ...expRows].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  if (!allRows.length) { alert('No transactions found in that date range.'); return; }
+
+  const wsData = [
+    ['Date', 'Transaction Amount', 'Payee', 'Description'],
+    ...allRows.map(r => [fmtD(r.date), r.amount, r.payee, r.desc])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{ wch: 14 }, { wch: 20 }, { wch: 28 }, { wch: 45 }];
+  for (let i = 1; i < wsData.length; i++) {
+    const cellRef = XLSX.utils.encode_cell({ r: i, c: 1 });
+    if (ws[cellRef]) ws[cellRef].z = '£#,##0.00;[Red]-£#,##0.00';
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+  XLSX.writeFile(wb, `transactions_${from}_to_${to}.xlsx`);
 }
 
 // ── Tax Year Countdown ───────────────────────────────────────────────────────

@@ -6,6 +6,7 @@
   <title>Charles' Hub</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3448,7 +3449,19 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <h2>Tax Breakdown</h2>
               <p>UK sole trader — income tax &amp; Class 4 NI</p>
             </div>
-            <button onclick="cr_exportTaxYear()" class="biz-btn biz-btn-primary" style="width:100%;margin-bottom:14px;">Export for Accountant</button>
+            <button onclick="cr_exportTaxYear()" class="biz-btn biz-btn-primary" style="width:100%;margin-bottom:10px;">Export for Accountant</button>
+
+            <!-- Date Range Excel Export -->
+            <div class="biz-card" style="margin-bottom:14px;">
+              <div class="biz-card-label">Export to Excel</div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">Download all income and expenses for a custom date range.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div><label class="biz-form-label">From</label><input type="date" id="cr-export-from" style="width:100%;"></div>
+                <div><label class="biz-form-label">To</label><input type="date" id="cr-export-to" style="width:100%;"></div>
+              </div>
+              <button onclick="cr_exportDateRange()" class="biz-btn biz-btn-primary" style="width:100%;">Download Excel</button>
+            </div>
+
             <div id="cr-tax-body"></div>
 
             <!-- HMRC Payment Log -->
@@ -7672,6 +7685,49 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const w = window.open('', '_blank');
     w.document.write(html);
     w.document.close();
+  }
+
+  function cr_exportDateRange() {
+    const from = document.getElementById('cr-export-from').value;
+    const to   = document.getElementById('cr-export-to').value;
+    if (!from || !to)  { alert('Please select both a from and to date.'); return; }
+    if (from > to)     { alert('"From" date must be before "To" date.'); return; }
+
+    if (typeof XLSX === 'undefined') { alert('Excel library not loaded yet — please try again in a moment.'); return; }
+
+    const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB') : '';
+
+    const incRows = cr_getIncome()
+      .filter(r => r.date && r.date >= from && r.date <= to)
+      .map(r => ({ date: r.date, amount: parseFloat(r.amount || 0), payee: r.source || '', desc: r.notes || '' }));
+
+    const expRows = cr_getExpenses()
+      .filter(r => r.date && r.date >= from && r.date <= to)
+      .map(r => ({ date: r.date, amount: -parseFloat(r.amount || 0), payee: CR_EXP_CATS[r.cat]?.label || r.cat || '', desc: r.desc || '' }));
+
+    const allRows = [...incRows, ...expRows].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    if (!allRows.length) { alert('No transactions found in that date range.'); return; }
+
+    const wsData = [
+      ['Date', 'Transaction Amount', 'Payee', 'Description'],
+      ...allRows.map(r => [fmtDate(r.date), r.amount, r.payee, r.desc])
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols'] = [{ wch: 14 }, { wch: 20 }, { wch: 28 }, { wch: 45 }];
+
+    // Format amount cells as £ currency
+    for (let i = 1; i < wsData.length; i++) {
+      const cellRef = XLSX.utils.encode_cell({ r: i, c: 1 });
+      if (ws[cellRef]) ws[cellRef].z = '£#,##0.00;[Red]-£#,##0.00';
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+    XLSX.writeFile(wb, `transactions_${from}_to_${to}.xlsx`);
   }
 
   // ── Tax Year Countdown ───────────────────────────────────────────────────────
