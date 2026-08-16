@@ -42,7 +42,12 @@ module.exports = async (req, res) => {
     if (!r.ok) return res.status(500).json({ error: 'Signed URL failed' });
     const data = await r.json();
     const raw = data.signedURL || data.signedUrl || null;
-    const url = raw ? (raw.startsWith('http') ? raw : `${SB_URL}${raw}`) : null;
+    let url = null;
+    if (raw) {
+      if (raw.startsWith('http')) url = raw;
+      else if (raw.startsWith('/storage/')) url = `${SB_URL}${raw}`;
+      else url = `${SB_URL}/storage/v1${raw}`;
+    }
     return res.status(200).json({ url });
   }
 
