@@ -2495,22 +2495,40 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- Payment plan tracker — hidden when no active plans -->
-          <div id="tmmb-plans-card" class="card" style="margin-bottom:14px;display:none;border-color:#bfdbfe;">
-            <div class="card-label" style="color:#1e40af;">💳 Payment Plans</div>
-            <div id="tmmb-plans-body"></div>
+          <div id="tmmb-plans-card" class="card" style="margin-bottom:8px;display:none;border-color:#bfdbfe;">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;" onclick="tmmb_toggleSection('plans')">
+              <div class="card-label" style="color:#1e40af;margin-bottom:0;">💳 Payment Plans</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span id="tmmb-plans-summary" style="font-size:11px;color:#1e40af;font-weight:600;opacity:0.8;"></span>
+                <span id="tmmb-plans-chevron" style="font-size:11px;color:#1e40af;transition:transform 0.2s;line-height:1;">▼</span>
+              </div>
+            </div>
+            <div id="tmmb-plans-body" style="display:none;margin-top:12px;"></div>
           </div>
 
           <!-- Clawback window alert — hidden when nothing at risk -->
-          <div id="tmmb-clawback-card" class="card" style="margin-bottom:14px;display:none;border-color:#fde68a;">
-            <div class="card-label" style="color:#d97706;">⏱ Clawback Window Open</div>
-            <div id="tmmb-clawback-body"></div>
-            <div style="font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected.</div>
+          <div id="tmmb-clawback-card" class="card" style="margin-bottom:8px;display:none;border-color:#fde68a;">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;" onclick="tmmb_toggleSection('clawback')">
+              <div class="card-label" style="color:#d97706;margin-bottom:0;">⏱ Clawback Window Open</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span id="tmmb-clawback-summary" style="font-size:11px;color:#d97706;font-weight:600;opacity:0.8;"></span>
+                <span id="tmmb-clawback-chevron" style="font-size:11px;color:#d97706;transition:transform 0.2s;line-height:1;">▼</span>
+              </div>
+            </div>
+            <div id="tmmb-clawback-body" style="display:none;margin-top:12px;"></div>
+            <div id="tmmb-clawback-footer" style="display:none;font-size:11px;color:var(--label);margin-top:8px;">Commission locks 30 days after payment collected.</div>
           </div>
 
           <!-- Locked commissions — hidden when none secured yet -->
-          <div id="tmmb-locked-card" class="card" style="margin-bottom:14px;display:none;border-color:#a7f3d0;">
-            <div class="card-label" style="color:#059669;">🔒 Commission Locked</div>
-            <div id="tmmb-locked-body"></div>
+          <div id="tmmb-locked-card" class="card" style="margin-bottom:8px;display:none;border-color:#a7f3d0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;" onclick="tmmb_toggleSection('locked')">
+              <div class="card-label" style="color:#059669;margin-bottom:0;">🔒 Commission Locked</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span id="tmmb-locked-summary" style="font-size:11px;color:#059669;font-weight:700;"></span>
+                <span id="tmmb-locked-chevron" style="font-size:11px;color:#059669;transition:transform 0.2s;line-height:1;">▼</span>
+              </div>
+            </div>
+            <div id="tmmb-locked-body" style="display:none;margin-top:12px;"></div>
           </div>
 
           <div class="tmmb-ov-2col">
@@ -5440,6 +5458,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
         </div>`;
       }).join('');
+      const clawSummaryEl = document.getElementById('tmmb-clawback-summary');
+      if (clawSummaryEl) {
+        const totalAtRisk = atRisk.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * 0.1), 0);
+        const soonest = atRisk[0].daysLeft;
+        clawSummaryEl.textContent = `${atRisk.length} clients · £${totalAtRisk.toLocaleString()} · soonest ${soonest}d`;
+      }
     }
 
     // Locked commissions section
@@ -5466,7 +5490,33 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <span style="font-size:12px;font-weight:700;color:#059669;">Total locked</span>
         <span style="font-size:15px;font-weight:800;color:#059669;">£${total.toLocaleString()}</span>
       </div>`;
+      const lockedSummaryEl = document.getElementById('tmmb-locked-summary');
+      if (lockedSummaryEl) lockedSummaryEl.textContent = `£${total.toLocaleString()} secured`;
     }
+
+    tmmb_applySectionState();
+  }
+
+  function tmmb_getSectionState() {
+    try { return JSON.parse(localStorage.getItem('tmmb_section_state') || '{}'); } catch { return {}; }
+  }
+  function tmmb_toggleSection(section) {
+    const state = tmmb_getSectionState();
+    state[section] = !state[section];
+    localStorage.setItem('tmmb_section_state', JSON.stringify(state));
+    tmmb_applySectionState();
+  }
+  function tmmb_applySectionState() {
+    const state = tmmb_getSectionState();
+    ['plans', 'clawback', 'locked'].forEach(s => {
+      const isOpen  = !!state[s];
+      const body    = document.getElementById(`tmmb-${s}-body`);
+      const chevron = document.getElementById(`tmmb-${s}-chevron`);
+      if (body)    body.style.display = isOpen ? 'block' : 'none';
+      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+    });
+    const footer = document.getElementById('tmmb-clawback-footer');
+    if (footer) footer.style.display = !!state.clawback ? 'block' : 'none';
   }
 
   function tmmb_getPlanPayments() {
@@ -5516,6 +5566,32 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     card.style.display = 'block';
 
     const paid = tmmb_getPlanPayments();
+
+    // Compute summary for collapsed header
+    let summaryCollected = 0, summaryTotal = 0, nextDueEntry = null;
+    planCalls.forEach(c => {
+      const n   = tmmb_paytypeMonths(c.paytype);
+      const per = Math.round((c.dealValue || 4000) / n);
+      summaryTotal += n * per;
+      for (let i = 1; i <= n; i++) {
+        if (i === 1 || tmmb_isPaymentPaid(paid, c.id, i)) summaryCollected += per;
+      }
+      for (let i = 2; i <= n; i++) {
+        if (!tmmb_isPaymentPaid(paid, c.id, i)) {
+          const due = new Date(c.date + 'T12:00:00');
+          due.setMonth(due.getMonth() + (i - 1));
+          if (!nextDueEntry || due < nextDueEntry.due) nextDueEntry = { due, name: c.name, num: i };
+          break;
+        }
+      }
+    });
+    const summaryEl = document.getElementById('tmmb-plans-summary');
+    if (summaryEl) {
+      const nextTxt = nextDueEntry
+        ? ` · next ${(nextDueEntry.name || '').split(' ')[0]} ${nextDueEntry.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}`
+        : ' · all paid ✓';
+      summaryEl.textContent = `${planCalls.length} active · £${summaryCollected.toLocaleString()} / £${summaryTotal.toLocaleString()}${nextTxt}`;
+    }
 
     body.innerHTML = planCalls
       .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -5607,6 +5683,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           ${rowsHtml}
         </div>`;
       }).join('');
+
+    tmmb_applySectionState();
   }
 
   function tmmb_scoreBar(label, score) {
