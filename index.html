@@ -5478,10 +5478,24 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       .upsert({ key: 'tmmb_plan_payments', value: p, updated_at: new Date().toISOString() }, { onConflict: 'key' })
       .then(({ error }) => { if (error) console.error('[hub_sync] plan_payments save failed:', error); });
   }
+  function tmmb_isPaymentPaid(p, callId, payNum) {
+    const v = p[`${callId}_${payNum}`];
+    return v === true || (v && v.paid === true);
+  }
+  function tmmb_getPaymentDate(p, callId, payNum) {
+    const v = p[`${callId}_${payNum}`];
+    if (!v || typeof v !== 'object') return null;
+    return v.date || null;
+  }
   function tmmb_togglePayment(callId, payNum) {
     const p = tmmb_getPlanPayments();
     const k = `${callId}_${payNum}`;
-    p[k] = !p[k];
+    const isCurrentlyPaid = tmmb_isPaymentPaid(p, callId, payNum);
+    if (isCurrentlyPaid) {
+      delete p[k];
+    } else {
+      p[k] = { paid: true, date: new Date().toISOString().split('T')[0] };
+    }
     tmmb_savePlanPayments(p);
     tmmb_renderPaymentPlans();
   }
@@ -5491,9 +5505,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const body = document.getElementById('tmmb-plans-body');
     if (!card || !body) return;
 
-    const now      = Date.now();
+    const now       = Date.now();
     const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
-    const planLabel = { deposit:'Dep', plan2:'2m', plan3:'3m', plan4:'4m', plan6:'6m', plan12:'12m' };
+    const planLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
     const planCalls = tmmb_getCalls().filter(c =>
       c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)
     );
@@ -5515,61 +5529,82 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           due.setMonth(due.getMonth() + i);
           const daysFromNow = Math.floor((due.getTime() - now) / 86400000);
           const payNum      = i + 1;
-          // Payment 1 auto-paid at close; rest checked against stored state
-          const isPaid      = payNum === 1 || !!paid[`${c.id}_${payNum}`];
-          return { due, daysFromNow, num: payNum, isPaid };
+          const isPaid      = payNum === 1 || tmmb_isPaymentPaid(paid, c.id, payNum);
+          const paidDate    = payNum === 1 ? c.date : tmmb_getPaymentDate(paid, c.id, payNum);
+          return { due, daysFromNow, num: payNum, isPaid, paidDate };
         });
 
-        const allPaid = slots.every(s => s.isPaid);
-        const nextUnpaid = slots.find(s => !s.isPaid);
+        const allPaid    = slots.every(s => s.isPaid);
+        const paidCount  = slots.filter(s => s.isPaid).length;
+        const paidTotal  = paidCount * perPayment;
+        const grandTotal = n * perPayment;
 
-        const slotsHtml = slots.map(s => {
-          let bg, col, label;
+        const rowsHtml = slots.map(s => {
+          const dueFmt = s.due.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
           if (s.isPaid) {
-            bg = '#d1fae5'; col = '#059669'; label = '✓';
-          } else if (s.daysFromNow < 0) {
-            bg = '#fee2e2'; col = '#dc2626'; label = `${Math.abs(s.daysFromNow)}d overdue`;
-          } else if (s.daysFromNow === 0) {
-            bg = '#fee2e2'; col = '#dc2626'; label = 'Today';
-          } else if (s.daysFromNow <= 7) {
-            bg = '#fee2e2'; col = '#ef4444'; label = `${s.daysFromNow}d`;
-          } else if (s.daysFromNow <= 30) {
-            bg = '#fef3c7'; col = '#d97706'; label = `${s.daysFromNow}d`;
-          } else {
-            bg = '#f3f4f6'; col = '#9ca3af';
-            label = s.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+            const dateFmt = s.paidDate
+              ? new Date(s.paidDate + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+              : dueFmt;
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f0fdf4;border-radius:8px;margin-bottom:6px;">
+              <div>
+                <span style="font-size:13px;font-weight:600;color:#059669;">Payment ${s.num}</span>
+                <span style="font-size:11px;color:#059669;margin-left:8px;">£${perPayment.toLocaleString()}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;color:#059669;">Paid ${dateFmt}</span>
+                <span style="font-size:16px;">✅</span>
+                ${s.num > 1 ? `<button onclick="tmmb_togglePayment(${c.id},${s.num})" style="background:none;border:1px solid #d1fae5;border-radius:6px;padding:2px 8px;font-size:10px;color:#6ee7b7;cursor:pointer;">Undo</button>` : ''}
+              </div>
+            </div>`;
           }
-          const clickable = s.num > 1;
-          const tip = s.isPaid ? `Payment ${s.num} paid — click to unmark` : `Payment ${s.num} — ${s.due.toLocaleDateString('en-GB')} — click to mark paid`;
-          return `<span
-            ${clickable ? `onclick="tmmb_togglePayment(${c.id},${s.num})" title="${tip}"` : `title="Collected at close"`}
-            style="background:${bg};color:${col};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;${clickable ? 'cursor:pointer;' : ''}"
-          >${label}</span>`;
+          if (s.daysFromNow < 0) {
+            const overdueDays = Math.abs(s.daysFromNow);
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#fff5f5;border:2px solid #fc8181;border-radius:8px;margin-bottom:6px;">
+              <div>
+                <span style="font-size:13px;font-weight:700;color:#dc2626;">Payment ${s.num}</span>
+                <span style="font-size:11px;color:#dc2626;margin-left:8px;">£${perPayment.toLocaleString()}</span>
+                <span style="font-size:11px;color:#dc2626;margin-left:8px;font-weight:700;">⚠ ${overdueDays}d OVERDUE (due ${dueFmt})</span>
+              </div>
+              <button onclick="tmmb_togglePayment(${c.id},${s.num})" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Mark Paid ✓</button>
+            </div>`;
+          }
+          if (s.daysFromNow <= 7) {
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;margin-bottom:6px;">
+              <div>
+                <span style="font-size:13px;font-weight:600;color:#d97706;">Payment ${s.num}</span>
+                <span style="font-size:11px;color:#d97706;margin-left:8px;">£${perPayment.toLocaleString()}</span>
+                <span style="font-size:11px;color:#d97706;margin-left:8px;">Due ${s.daysFromNow === 0 ? 'TODAY' : `in ${s.daysFromNow}d`} · ${dueFmt}</span>
+              </div>
+              <button onclick="tmmb_togglePayment(${c.id},${s.num})" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Mark Paid ✓</button>
+            </div>`;
+          }
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+            <div>
+              <span style="font-size:13px;font-weight:600;color:var(--text);">Payment ${s.num}</span>
+              <span style="font-size:11px;color:var(--label);margin-left:8px;">£${perPayment.toLocaleString()}</span>
+              <span style="font-size:11px;color:var(--label);margin-left:8px;">Due ${dueFmt}</span>
+            </div>
+            <button onclick="tmmb_togglePayment(${c.id},${s.num})" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Mark Paid ✓</button>
+          </div>`;
         }).join('');
 
-        const paidCount   = slots.filter(s => s.isPaid).length;
-        const paidTotal   = paidCount * perPayment;
-        const grandTotal  = n * perPayment;
+        const progressPct = Math.round((paidCount / n) * 100);
 
-        const statusLabel = allPaid
-          ? `<span style="font-size:11px;font-weight:700;color:#059669;">All paid ✓</span>`
-          : nextUnpaid
-            ? `<span style="font-size:11px;color:var(--label);">Next: <strong>${nextUnpaid.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</strong></span>`
-            : '';
-
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        return `<div style="padding:14px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div>
-              <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
-              <span style="font-size:11px;color:var(--label);margin-left:7px;">Plan · ${planLabel[c.paytype]}</span>
+              <span style="font-size:14px;font-weight:700;">${c.name || 'Unknown'}</span>
+              <span style="font-size:11px;color:var(--label);margin-left:8px;">${planLabel[c.paytype]}</span>
             </div>
-            ${statusLabel}
+            <div style="text-align:right;">
+              <div style="font-size:13px;font-weight:700;color:#059669;">£${paidTotal.toLocaleString()} / £${grandTotal.toLocaleString()}</div>
+              <div style="font-size:10px;color:var(--label);">${paidCount} of ${n} paid</div>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
-            <span style="font-size:12px;color:#059669;font-weight:600;">£${paidTotal.toLocaleString()} paid of £${grandTotal.toLocaleString()}</span>
-            ${!allPaid && nextUnpaid ? `<span style="font-size:11px;color:var(--label);">£${perPayment.toLocaleString()} due ${nextUnpaid.due.toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</span>` : ''}
+          <div style="height:4px;background:var(--border);border-radius:4px;margin-bottom:12px;">
+            <div style="height:4px;background:#059669;border-radius:4px;width:${progressPct}%;"></div>
           </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;">${slotsHtml}</div>
+          ${rowsHtml}
         </div>`;
       }).join('');
   }
@@ -5671,15 +5706,34 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const month = tmmb_viewMonth;
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const paytypeLabel = { pif:'Paid in Full', deposit:'Deposit + Balance', plan2:'Plan (2m)', plan3:'Plan (3m)', plan4:'Plan (4m)', plan6:'Plan (6m)', plan12:'Plan (12m)' };
+    const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
 
+    // Deals closed this month
     const closes = tmmb_getCalls().filter(c => {
       if (c.outcome !== 'closed' || !c.date) return false;
       const d = new Date(c.date);
       return d.getFullYear() === year && d.getMonth() === month;
     }).sort((a, b) => (a.date < b.date ? -1 : 1));
 
-    if (!closes.length) {
-      alert('No closed deals in ' + MONTHS[month] + ' ' + year + '. Nothing to export.');
+    // Instalment payments confirmed (marked paid) in this month
+    const paidMap = tmmb_getPlanPayments();
+    const instalmentRows = [];
+    tmmb_getCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)).forEach(c => {
+      const n = tmmb_paytypeMonths(c.paytype);
+      const perPayment = Math.round((c.dealValue || 4000) / n);
+      for (let payNum = 2; payNum <= n; payNum++) {
+        const paidDate = tmmb_getPaymentDate(paidMap, c.id, payNum);
+        if (!paidDate) continue;
+        const d = new Date(paidDate);
+        if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+        const comm = Math.round(perPayment * 0.1);
+        instalmentRows.push({ date: paidDate, name: c.name || 'Unknown', deal: c.deal || 'TMMB Academy', type: `Instalment ${payNum}/${n} · ${paytypeLabel[c.paytype] || c.paytype}`, cash: perPayment, comm });
+      }
+    });
+    instalmentRows.sort((a, b) => (a.date < b.date ? -1 : 1));
+
+    if (!closes.length && !instalmentRows.length) {
+      alert('No closed deals or instalment payments in ' + MONTHS[month] + ' ' + year + '. Nothing to export.');
       return;
     }
 
@@ -5692,6 +5746,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       totalCash += (c.cash || 0);
       totalComm += comm;
       rows.push([c.date, c.name || 'Unknown', c.deal || 'TMMB Academy', paytypeLabel[c.paytype] || c.paytype || 'PIF', (c.dealValue || 4000), (c.cash || 0), comm]);
+    });
+    instalmentRows.forEach(r => {
+      totalCash += r.cash;
+      totalComm += r.comm;
+      rows.push([r.date, r.name, r.deal, r.type, '', r.cash, r.comm]);
     });
     rows.push(['', '', '', 'TOTAL', '', totalCash, totalComm]);
 
@@ -6250,7 +6309,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   // Pull latest data from Supabase — called on load and on visibility change
   async function hub_fetchRemote() {
     if (!sb) return;
-    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_invoices', `cr_emp_income_${cr_taxYear}`, `cr_hmrc_payments_${cr_taxYear}`]);
+    const { data: rows, error } = await sb.from('hub_data').select('key, value').in('key', ['hub_todos', 'tmmb_calls', 'tmmb_plan_payments', 'dev_pipeline', 'tmmb_invoices', 'tmmb_pipeline', 'biz_clients', 'biz_revenue', 'biz_goals', 'cr_income', 'cr_expenses', 'cr_invoices', `cr_emp_income_${cr_taxYear}`, `cr_hmrc_payments_${cr_taxYear}`]);
     if (error || !rows) { hub_setSyncDot(false); return; }
     for (const row of rows) {
       if (row.key.startsWith('cr_emp_income_')) {
@@ -6259,6 +6318,12 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       }
       if (row.key.startsWith('cr_hmrc_payments_')) {
         if (Array.isArray(row.value) && row.value.length > 0) localStorage.setItem(row.key, JSON.stringify(row.value));
+        continue;
+      }
+      if (row.key === 'tmmb_plan_payments') {
+        if (row.value && typeof row.value === 'object' && !Array.isArray(row.value) && Object.keys(row.value).length > 0) {
+          localStorage.setItem('tmmb_plan_payments', JSON.stringify(row.value));
+        }
         continue;
       }
       const remote = row.value || [];
