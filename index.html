@@ -5599,6 +5599,77 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_renderPaymentPlans();
   }
 
+  function tmmb_exportToCalendar() {
+    const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
+    const paytypeLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
+    const paid = tmmb_getPlanPayments();
+    const planCalls = tmmb_getCalls().filter(c =>
+      c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)
+    );
+    if (!planCalls.length) { alert('No active payment plans.'); return; }
+
+    const now    = new Date();
+    const events = [];
+
+    planCalls.forEach(c => {
+      const n          = tmmb_paytypeMonths(c.paytype);
+      const perPayment = Math.round((c.dealValue || 4000) / n);
+      const closeDate  = new Date(c.date + 'T12:00:00');
+
+      for (let i = 2; i <= n; i++) {
+        if (tmmb_isPaymentPaid(paid, c.id, i)) continue;
+
+        const due = new Date(closeDate);
+        due.setMonth(due.getMonth() + (i - 1));
+        if (due < now) continue;
+
+        const yy  = due.getFullYear();
+        const mm  = String(due.getMonth() + 1).padStart(2, '0');
+        const dd  = String(due.getDate()).padStart(2, '0');
+        const ds  = `${yy}${mm}${dd}`;
+        const uid = `tmmb-${c.id}-p${i}-${ds}@hub`;
+
+        const summary = `\u{1F4B3} ${c.name || 'Client'} – Payment ${i}/${n} Due`;
+        const desc    = `Payment ${i} of ${n} due from ${c.name || 'Client'}.\\n` +
+                        `Amount: \xA3${perPayment.toLocaleString()}\\n` +
+                        `Plan: ${paytypeLabel[c.paytype] || c.paytype}\\n` +
+                        `Total deal: \xA3${(c.dealValue || 4000).toLocaleString()}\\n\\n` +
+                        `Open your TMMB tracker and mark as paid once confirmed.`;
+
+        events.push(
+          'BEGIN:VEVENT\r\n' +
+          `DTSTART:${ds}T083000\r\n` +
+          `DTEND:${ds}T093000\r\n` +
+          `SUMMARY:${summary}\r\n` +
+          `DESCRIPTION:${desc}\r\n` +
+          `UID:${uid}\r\n` +
+          'STATUS:CONFIRMED\r\n' +
+          'BEGIN:VALARM\r\n' +
+          'TRIGGER:-PT0M\r\n' +
+          'ACTION:DISPLAY\r\n' +
+          `DESCRIPTION:${summary}\r\n` +
+          'END:VALARM\r\n' +
+          'END:VEVENT'
+        );
+      }
+    });
+
+    if (!events.length) { alert('No upcoming unpaid instalments to add — all paid or overdue.'); return; }
+
+    const ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TMMB Tracker//Payment Plans//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n' +
+                events.join('\r\n') + '\r\nEND:VCALENDAR';
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'TMMB-Payment-Reminders.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   function tmmb_renderPaymentPlans() {
     const card = document.getElementById('tmmb-plans-card');
     const body = document.getElementById('tmmb-plans-body');
@@ -5642,7 +5713,28 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       summaryEl.textContent = `${planCalls.length} active · £${summaryCollected.toLocaleString()} / £${summaryTotal.toLocaleString()}${nextTxt}`;
     }
 
-    body.innerHTML = planCalls
+    // Count upcoming unpaid instalments for the button label
+    const nowMs = Date.now();
+    let upcomingCount = 0;
+    planCalls.forEach(c => {
+      const n = tmmb_paytypeMonths(c.paytype);
+      const cd = new Date(c.date + 'T12:00:00');
+      for (let i = 2; i <= n; i++) {
+        if (tmmb_isPaymentPaid(paid, c.id, i)) continue;
+        const d = new Date(cd); d.setMonth(d.getMonth() + (i - 1));
+        if (d.getTime() > nowMs) upcomingCount++;
+      }
+    });
+
+    const calBtn = upcomingCount > 0
+      ? `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+           <button onclick="tmmb_exportToCalendar()" style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #2563eb;color:#2563eb;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+             📅 Add ${upcomingCount} reminder${upcomingCount !== 1 ? 's' : ''} to Google Calendar
+           </button>
+         </div>`
+      : '';
+
+    body.innerHTML = calBtn + planCalls
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map(c => {
         const n          = tmmb_paytypeMonths(c.paytype);
