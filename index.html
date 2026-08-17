@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -5599,88 +5600,103 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_renderPaymentPlans();
   }
 
-  function tmmb_exportToCalendar() {
-    const planTypes   = ['deposit','plan2','plan3','plan4','plan6','plan12'];
+  const GCAL_CLIENT_ID = '1066527538775-4heptaeilm8em7hkvv3f3gshtuh851em.apps.googleusercontent.com';
+  const GCAL_SCOPE     = 'https://www.googleapis.com/auth/calendar.events';
+  let _gcalClient = null;
+  let _gcalPending = [];
+
+  function tmmb_gcalBuildEvents() {
+    const planTypes    = ['deposit','plan2','plan3','plan4','plan6','plan12'];
     const paytypeLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
     const paid      = tmmb_getPlanPayments();
-    const planCalls = tmmb_getCalls().filter(c =>
-      c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)
-    );
-    if (!planCalls.length) { alert('No active payment plans.'); return; }
-
-    const now    = Date.now();
-    const events = [];
+    const planCalls = tmmb_getCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype));
+    const now       = Date.now();
+    const events    = [];
 
     planCalls.forEach(c => {
       const n          = tmmb_paytypeMonths(c.paytype);
       const perPayment = Math.round((c.dealValue || 4000) / n);
       const closeDate  = new Date(c.date + 'T12:00:00');
-
       for (let i = 2; i <= n; i++) {
         if (tmmb_isPaymentPaid(paid, c.id, i)) continue;
         const due = new Date(closeDate);
         due.setMonth(due.getMonth() + (i - 1));
         if (due.getTime() <= now) continue;
-
         const yy = due.getFullYear();
         const mm = String(due.getMonth() + 1).padStart(2, '0');
         const dd = String(due.getDate()).padStart(2, '0');
-        const ds = `${yy}${mm}${dd}`;
-
-        const title = encodeURIComponent(`Payment Due: ${c.name || 'Client'} – Instalment ${i}/${n} (£${perPayment.toLocaleString()})`);
-        const desc  = encodeURIComponent(
-          `Payment ${i} of ${n} due from ${c.name || 'Client'}.\n` +
-          `Amount: £${perPayment.toLocaleString()}\n` +
-          `Plan: ${paytypeLabel[c.paytype] || c.paytype} · Deal total: £${(c.dealValue || 4000).toLocaleString()}\n\n` +
-          `Open your TMMB tracker and mark as paid once confirmed.`
-        );
-        const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${ds}T083000%2F${ds}T093000&details=${desc}`;
-
-        events.push({ name: c.name || 'Client', payNum: i, total: n, amount: perPayment, due, gcalUrl });
+        events.push({
+          summary:     `Payment Due: ${c.name || 'Client'} – Instalment ${i}/${n} (£${perPayment.toLocaleString()})`,
+          description: `Payment ${i} of ${n} due from ${c.name || 'Client'}.\nAmount: £${perPayment.toLocaleString()}\nPlan: ${paytypeLabel[c.paytype] || c.paytype} · Deal total: £${(c.dealValue || 4000).toLocaleString()}\n\nOpen your TMMB tracker and mark as paid once confirmed.`,
+          date:        `${yy}-${mm}-${dd}`,
+        });
       }
     });
+    return events;
+  }
 
+  function tmmb_gcalSetBtn(text, disabled) {
+    const btn = document.getElementById('tmmb-gcal-btn');
+    if (btn) { btn.textContent = text; btn.disabled = !!disabled; btn.style.opacity = disabled ? '0.7' : '1'; }
+  }
+
+  async function tmmb_gcalCreateEvents(token) {
+    const events = _gcalPending;
+    let created = 0, failed = 0;
+    tmmb_gcalSetBtn(`Adding events…`, true);
+
+    for (const ev of events) {
+      try {
+        const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            summary:     ev.summary,
+            description: ev.description,
+            start: { dateTime: `${ev.date}T08:30:00`, timeZone: 'Europe/London' },
+            end:   { dateTime: `${ev.date}T09:30:00`, timeZone: 'Europe/London' },
+            reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
+          }),
+        });
+        if (r.ok) created++; else { failed++; console.warn('GCal event failed:', await r.text()); }
+      } catch (e) { failed++; console.warn('GCal event error:', e); }
+    }
+
+    if (created > 0 && failed === 0) {
+      tmmb_gcalSetBtn(`✅ ${created} event${created !== 1 ? 's' : ''} added!`, false);
+    } else if (created > 0) {
+      tmmb_gcalSetBtn(`✅ ${created} added · ${failed} failed`, false);
+    } else {
+      tmmb_gcalSetBtn(`❌ Failed — try again`, false);
+    }
+  }
+
+  function tmmb_exportToCalendar() {
+    const events = tmmb_gcalBuildEvents();
     if (!events.length) { alert('No upcoming unpaid instalments — all paid or overdue.'); return; }
+    _gcalPending = events;
 
-    // Show modal with one Google Calendar link per event
-    const existing = document.getElementById('tmmb-gcal-modal');
-    if (existing) existing.remove();
+    if (!window.google?.accounts?.oauth2) {
+      alert('Google sign-in library not ready — please wait a moment and try again.');
+      return;
+    }
 
-    const overlay = document.createElement('div');
-    overlay.id = 'tmmb-gcal-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    if (!_gcalClient) {
+      _gcalClient = google.accounts.oauth2.initTokenClient({
+        client_id: GCAL_CLIENT_ID,
+        scope:     GCAL_SCOPE,
+        callback:  async (resp) => {
+          if (resp.error) {
+            tmmb_gcalSetBtn('❌ Sign-in cancelled', false);
+            return;
+          }
+          await tmmb_gcalCreateEvents(resp.access_token);
+        },
+      });
+    }
 
-    const rows = events.map(ev => {
-      const dueFmt = ev.due.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f4f8;gap:12px;">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#111;">${ev.name} &nbsp;<span style="font-weight:500;color:#6b7280;">Payment ${ev.payNum}/${ev.total}</span></div>
-          <div style="font-size:12px;color:#6b7280;margin-top:2px;">${dueFmt} &nbsp;·&nbsp; 8:30–9:30 AM &nbsp;·&nbsp; £${ev.amount.toLocaleString()}</div>
-        </div>
-        <a href="${ev.gcalUrl}" target="_blank" rel="noopener noreferrer"
-           style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:#4285f4;color:#fff;border-radius:8px;padding:7px 13px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">
-          <svg width="12" height="12" viewBox="0 0 18 18" fill="none"><rect width="18" height="18" rx="2" fill="white" fill-opacity="0.2"/><path d="M9 4v5l3 3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-          Add to Google Calendar
-        </a>
-      </div>`;
-    }).join('');
-
-    overlay.innerHTML = `
-      <div style="background:#fff;border-radius:18px;padding:28px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.25);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-          <div>
-            <div style="font-size:18px;font-weight:800;color:#111;">📅 Add to Google Calendar</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:4px;">${events.length} upcoming payment${events.length !== 1 ? 's' : ''} — click each to add</div>
-          </div>
-          <button id="tmmb-gcal-close" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:12px;">×</button>
-        </div>
-        <div style="margin-top:12px;">${rows}</div>
-        <p style="font-size:11px;color:#9ca3af;margin-top:16px;margin-bottom:0;text-align:center;">Each link opens Google Calendar in a new tab, pre-filled and ready to save.</p>
-      </div>`;
-
-    document.body.appendChild(overlay);
-    document.getElementById('tmmb-gcal-close').onclick = () => overlay.remove();
+    tmmb_gcalSetBtn('Connecting to Google…', true);
+    _gcalClient.requestAccessToken({ prompt: '' });
   }
 
   function tmmb_renderPaymentPlans() {
@@ -5741,7 +5757,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     const calBtn = upcomingCount > 0
       ? `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-           <button onclick="tmmb_exportToCalendar()" style="display:flex;align-items:center;gap:6px;background:#4285f4;border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+           <button id="tmmb-gcal-btn" onclick="tmmb_exportToCalendar()" style="display:flex;align-items:center;gap:6px;background:#4285f4;border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.2s;">
              📅 Add ${upcomingCount} payment${upcomingCount !== 1 ? 's' : ''} to Google Calendar
            </button>
          </div>`
