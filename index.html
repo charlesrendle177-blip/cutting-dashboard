@@ -95,23 +95,21 @@
       overflow: hidden;
       padding: 80px 80px 72px;
       background:
-        radial-gradient(ellipse 80% 60% at 70% -10%, rgba(65,145,255,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 50% at -10% 80%, rgba(65,145,255,0.08) 0%, transparent 60%),
-        linear-gradient(160deg, #0f2347 0%, #0d1f3c 50%, #091629 100%);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+        radial-gradient(ellipse 100% 80% at 50% -20%, rgba(59,130,246,0.5) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 100% 50%, rgba(29,78,216,0.2) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 60% at 0% 80%, rgba(37,99,235,0.15) 0%, transparent 50%),
+        linear-gradient(170deg, #0e2150 0%, #091a3e 45%, #060e20 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
-    /* Decorative grid lines */
+    /* Subtle bottom vignette — no grid */
     .home-hero::after {
       content: '';
       position: absolute;
       inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 60px 60px;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 110%, rgba(5,10,25,0.7) 0%, transparent 65%);
       pointer-events: none;
-      mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
     }
 
     .hero-inner {
@@ -154,13 +152,14 @@
       line-height: 1.0;
       margin-bottom: 10px;
     }
-    .greeting-text .name { color: #6eb3ff; }
+    .greeting-text .name { color: #7ec8ff; text-shadow: 0 0 40px rgba(110,179,255,0.4); }
 
     .greeting-date {
       font-size: 14px;
-      color: rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.5);
       margin-bottom: 48px;
       font-weight: 400;
+      letter-spacing: 0.02em;
     }
 
     /* Quote */
@@ -168,18 +167,21 @@
       position: relative;
       max-width: 720px;
       padding: 22px 26px 20px 28px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(110,179,255,0.18);
       border-left: 3px solid #6eb3ff;
-      border-radius: 14px;
+      border-radius: 16px;
       cursor: pointer;
-      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+      transition: background 0.25s, transform 0.25s, border-color 0.25s, box-shadow 0.25s;
       user-select: none;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.07);
+      backdrop-filter: blur(6px);
     }
     .quote-block:hover {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(110,179,255,0.35);
       transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
     }
     .quote-text {
       font-size: 15px;
