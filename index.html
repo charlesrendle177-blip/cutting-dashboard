@@ -2028,6 +2028,16 @@
     </div>
   </div>
 
+  <!-- Today's Calls Widget -->
+  <div id="home-gcal-widget" style="margin:0 24px 0;padding:14px 18px;background:rgba(239,246,255,0.7);backdrop-filter:blur(8px);border:1.5px solid rgba(191,219,254,0.6);border-radius:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <span style="font-size:16px;">📅</span>
+      <span style="font-size:13px;font-weight:800;color:#1e3a8a;">Today's Calls</span>
+    </div>
+    <div id="home-gcal-events" style="flex:1;font-size:13px;color:#6b7280;min-width:0;">Connect Google Calendar to see today's schedule</div>
+    <button id="home-gcal-btn" onclick="home_connectGCal()" style="flex-shrink:0;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Connect GCal</button>
+  </div>
+
   <div class="sections-wrapper">
     <div class="sections-label fu fu4">Your dashboard</div>
     <div class="sections-grid">
@@ -2097,8 +2107,12 @@
             <span class="stat-value blue" id="s-close">—</span>
           </div>
           <div class="stat-row">
-            <span class="stat-label">Deals closed this month</span>
+            <span class="stat-label">Deals closed</span>
             <span class="stat-value" id="s-deals">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Commission this month</span>
+            <span class="stat-value green" id="s-commission-month">—</span>
           </div>
         </div>
         <div class="card-arrow">→</div>
@@ -2416,6 +2430,53 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       </div>
       <!-- ============================================================ -->
 
+      <!-- PB TRACKER -->
+      <div style="margin-top:32px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:18px;font-weight:800;color:var(--white);letter-spacing:-0.4px;">Personal Best Tracker</div>
+            <div style="font-size:13px;color:var(--white-40);margin-top:2px;">Log your PRs · track when they fall</div>
+          </div>
+        </div>
+
+        <div class="log-card" style="margin-bottom:22px;">
+          <div class="log-card-title">Log a PB</div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label>Exercise</label>
+              <input type="text" id="pb-exercise" placeholder="e.g. Squat, Bench Press, Deadlift">
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="pb-category">
+                <option value="strength">Strength (1RM / weight)</option>
+                <option value="endurance">Endurance (time / distance)</option>
+                <option value="reps">Reps (bodyweight)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Value</label>
+              <input type="number" id="pb-value" placeholder="e.g. 120" step="0.5">
+            </div>
+            <div class="form-group">
+              <label>Unit</label>
+              <input type="text" id="pb-unit" placeholder="kg / reps / min / km">
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="pb-date">
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <input type="text" id="pb-notes" placeholder="e.g. Belt + knee wraps, fresh off deload">
+            </div>
+          </div>
+          <button class="btn-save" onclick="pb_log()">Log PB</button>
+        </div>
+
+        <div id="pb-list"></div>
+      </div>
+
       </div><!-- end ftab-content-workouts -->
 
     </div>
@@ -2491,6 +2552,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this);dev_render()">My Development</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-invoices',this);inv_render()">Invoices</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-pipeline',this);pipe_render()">Follow Up Deals</button>
+      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-playbook',this)">Objection Playbook</button>
     </div>
 
     <div class="tmmb-wrap">
@@ -2611,6 +2673,26 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Log calls to see objection patterns</div>
               </div>
             </div>
+          </div>
+
+          <!-- Performance Insights -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="card">
+              <div class="card-label">Speed to Close</div>
+              <div id="tmmb-speed-val" style="font-size:26px;font-weight:800;color:#7c3aed;margin-bottom:2px;">—</div>
+              <div style="font-size:11px;color:var(--muted);">avg days · call 1 → closed deal</div>
+              <div id="tmmb-speed-detail" style="margin-top:10px;"></div>
+            </div>
+            <div class="card">
+              <div class="card-label">Personal Bests 🏆</div>
+              <div id="tmmb-pb-content"><div style="color:var(--muted);font-size:13px;padding:12px 0;text-align:center;">Log deals to see your bests</div></div>
+            </div>
+          </div>
+
+          <!-- Commission History Chart -->
+          <div class="card" style="margin-bottom:14px;">
+            <div class="card-label">Commission History · Last 12 Months</div>
+            <div style="height:185px;position:relative;margin-top:10px;"><canvas id="tmmb-commission-chart"></canvas></div>
           </div>
 
           <div class="card gold">
@@ -3040,6 +3122,87 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
           <!-- Pipeline list -->
           <div id="pipe-list"></div>
+        </div>
+
+        <!-- OBJECTION PLAYBOOK -->
+        <div id="tmmb-playbook" class="tmmb-section">
+          <div class="tmmb-section-header">
+            <h2>Objection Playbook</h2>
+            <p>Quick-reference responses — study these, breathe them, own them</p>
+          </div>
+
+          <div style="display:grid;gap:12px;">
+
+            <!-- 1 -->
+            <div style="background:#faf5ff;border:1.5px solid #e9d5ff;border-left:5px solid #7c3aed;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#5b21b6;margin-bottom:6px;">💭 "I need to think about it / speak to my partner"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Call it out:</strong> "What specifically do you need to think about? Is it the investment, or is it whether this is the right fit?" — isolate the real concern.<br>
+              <strong>Partner angle:</strong> "Would your partner want you to fix this problem? You're the one who got on this call today — what do you think is stopping you from making this decision yourself?"<br>
+              <strong>Close:</strong> Silence. Let them speak. The one who talks next loses. Wait them out.</div>
+            </div>
+
+            <!-- 2 -->
+            <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-left:5px solid #f97316;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#9a3412;margin-bottom:6px;">💸 "It's too expensive / I don't have the money"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Reframe the cost:</strong> "If you don't fix this now, what does the next 12 months look like? What's that costing you?"<br>
+              <strong>Money objection killer:</strong> "The reason you need this is exactly because of the money situation — this is how you fix it. We can structure the payment to make it work."<br>
+              <strong>Plan option:</strong> Offer the payment plan — break it into something monthly that feels manageable. The deposit gets them in the game.</div>
+            </div>
+
+            <!-- 3 -->
+            <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-left:5px solid #059669;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#064e3b;margin-bottom:6px;">⏰ "The timing isn't right / I'm not ready yet"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>When will it be right?</strong> "What needs to change for the timing to work? Because in 3 months, you'll have the same problem — just 3 months bigger."<br>
+              <strong>The real question:</strong> "Is it timing, or is it confidence that this will actually work for you? Because those are two very different things."<br>
+              <strong>Hormozi close:</strong> "If I could guarantee the result, would timing still be the issue?"</div>
+            </div>
+
+            <!-- 4 -->
+            <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-left:5px solid #2563eb;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#1e3a8a;margin-bottom:6px;">📉 "I've tried programs / courses like this before"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Acknowledge and differentiate:</strong> "I get that — most people who come to us have already spent money on something that didn't deliver. What didn't work about it?"<br>
+              <strong>Then pivot:</strong> "What you're describing is why we built it differently. You're not paying for content — you're paying for outcomes. The accountability structure is what changes the result."<br>
+              <strong>Don't oversell:</strong> Ask what they genuinely need, then show how this is built to solve exactly that.</div>
+            </div>
+
+            <!-- 5 -->
+            <div style="background:#fefce8;border:1.5px solid #fef08a;border-left:5px solid #eab308;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#713f12;margin-bottom:6px;">🔍 "Can I see more results / proof first?"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>You have results — use them:</strong> Present 2-3 specific outcome stories. Not testimonials. Actual numbers from real clients.<br>
+              <strong>Flip it:</strong> "How many results would you need to see before you'd be comfortable? Because at some point this becomes about trust in yourself, not the program."<br>
+              <strong>Commitment question:</strong> "If you had all the proof in the world that this works, what would stop you from starting today?"</div>
+            </div>
+
+            <!-- 6 -->
+            <div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-left:5px solid #a855f7;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#581c87;margin-bottom:6px;">😨 "What if it doesn't work for me?"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>De-risk it:</strong> "What would 'not working' look like to you? Let's define it — because then we can talk about whether that's actually a realistic outcome."<br>
+              <strong>Turn it round:</strong> "What's the cost of not trying? The fear of it not working is smaller than the certainty of staying where you are."<br>
+              <strong>Universal reframe:</strong> "That fear is actually the reason you need this more than anyone. People who have it figured out don't need to ask that question."</div>
+            </div>
+
+            <!-- 7 -->
+            <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-left:5px solid #0ea5e9;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#0c4a6e;margin-bottom:6px;">🤔 "I need to do more research first"</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Reframe research:</strong> "What information would actually change your decision? Because everything you need to know, you just heard in this call."<br>
+              <strong>The real blocker:</strong> Research is usually a stall. "Is there something specific you'd need to find out, or is this more about feeling confident in the decision?"<br>
+              <strong>Create urgency:</strong> "The cohort fills up — research is great, but not if the spot's gone when you come back."</div>
+            </div>
+
+            <!-- 8 -->
+            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-left:5px solid #ef4444;border-radius:12px;padding:16px 18px;">
+              <div style="font-size:13px;font-weight:800;color:#7f1d1d;margin-bottom:6px;">🚫 Straight "No" / Silent / Disengaged</div>
+              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Never panic close:</strong> Dropping your tone or getting desperate kills it. Stay grounded.<br>
+              <strong>Ask the real question:</strong> "Can I ask you something honestly? What would need to be true for this to be a yes?" Then shut up.<br>
+              <strong>Hormozi's rule:</strong> The person who asks the most times without pissing them off wins. Ask again. Different frame. Same question.</div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:20px;padding:14px 18px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb;">
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Golden Rule</div>
+            <div style="font-size:13px;color:#374151;line-height:1.6;">"The person who speaks most in the sale loses. Sales is in your ears, not your mouth. Isolate the real objection, then ask again. The salespeople who close the most are the ones who ask the most times." — Hormozi</div>
+          </div>
         </div>
 
       </div><!-- /tmmb-main -->
@@ -4119,7 +4282,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   /* ---------- DEFAULT DATES ---------- */
   function setDates() {
     const today = new Date().toISOString().split('T')[0];
-    ['f-date','cl-date','w-date'].forEach(id => {
+    ['f-date','cl-date','w-date','pb-date'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = today;
     });
@@ -4326,6 +4489,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('ftab-overview').style.cssText += tab === 'overview' ? activeStyle : inactiveStyle;
     document.getElementById('ftab-workouts').style.cssText += tab === 'workouts' ? activeStyle : inactiveStyle;
     if (tab === 'workouts' && !workoutData.length) loadWorkouts();
+    if (tab === 'workouts') pb_render();
   }
 
   /* ===================== SPAIN PREP PLAN ===================== */
@@ -5454,6 +5618,84 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const s  = document.getElementById('s-show');  if (s)  s.textContent  = total ? Math.round(shown/total*100)  + '%' : '—';
     const sc = document.getElementById('s-close'); if (sc) sc.textContent = shown ? Math.round(closed/shown*100) + '%' : '—';
     const sd = document.getElementById('s-deals'); if (sd) sd.textContent = closed + ' deals';
+    // Commission this month
+    const now = new Date();
+    const thisMonthComm = calls.filter(c => c.outcome === 'closed')
+      .reduce((s, c) => s + tmmb_commissionForMonth(c, now.getFullYear(), now.getMonth()), 0);
+    const scm = document.getElementById('s-commission-month');
+    if (scm) scm.textContent = thisMonthComm ? '£' + thisMonthComm.toLocaleString() : '£0';
+
+    // Speed to close
+    const call2Closes = calls.filter(c => c.outcome === 'closed' && c.type === 'call2' && c.parentCallId);
+    const speedDays = call2Closes.map(c => {
+      const parent = calls.find(p => p.id === c.parentCallId);
+      if (!parent) return null;
+      const days = Math.round((new Date(c.date + 'T12:00:00') - new Date(parent.date + 'T12:00:00')) / 86400000);
+      return days >= 0 ? days : null;
+    }).filter(d => d !== null);
+    const avgSpeed = speedDays.length ? Math.round(speedDays.reduce((a,b) => a+b,0) / speedDays.length) : null;
+    const minSpeed = speedDays.length ? Math.min(...speedDays) : null;
+    const speedEl = document.getElementById('tmmb-speed-val');
+    if (speedEl) speedEl.textContent = avgSpeed !== null ? avgSpeed + ' days' : '—';
+    const detailEl = document.getElementById('tmmb-speed-detail');
+    if (detailEl) {
+      const occ = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
+      if (speedDays.length) {
+        detailEl.innerHTML = `
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="color:var(--label);">One-call closes</span><span style="font-weight:700;color:#059669;">${occ}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="color:var(--label);">Multi-call closes</span><span style="font-weight:700;color:#7c3aed;">${call2Closes.length}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:var(--label);">Fastest close</span><span style="font-weight:700;">${minSpeed} days</span></div>`;
+      } else {
+        detailEl.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);"><span style="color:var(--label);">One-call closes</span><span style="font-weight:700;color:#059669;">${occ}</span></div><div style="font-size:11px;color:var(--muted);margin-top:6px;">Log follow-up closes to see speed data</div>`;
+      }
+    }
+
+    // Personal bests
+    const closedCalls = calls.filter(c => c.outcome === 'closed');
+    const pbEl = document.getElementById('tmmb-pb-content');
+    if (pbEl) {
+      if (closedCalls.length) {
+        const biggestDeal = Math.max(...closedCalls.map(c => c.dealValue || 4000));
+        const monthCommMap = {};
+        closedCalls.forEach(c => {
+          const d = new Date(c.date + 'T12:00:00');
+          const key = d.getFullYear() + '-' + d.getMonth();
+          if (!monthCommMap[key]) monthCommMap[key] = { comm: 0, label: d.toLocaleDateString('en-GB', {month:'short', year:'numeric'}) };
+          monthCommMap[key].comm += Math.round((c.dealValue || 4000) * 0.1);
+        });
+        const bestMonth = Object.values(monthCommMap).sort((a,b) => b.comm - a.comm)[0];
+        const bestCloseRate = (() => {
+          const monthRates = {};
+          calls.forEach(c => {
+            if (c.outcome === 'noshow') return;
+            const d = new Date(c.date + 'T12:00:00');
+            const key = d.getFullYear() + '-' + d.getMonth();
+            if (!monthRates[key]) monthRates[key] = { shown: 0, closed: 0, label: d.toLocaleDateString('en-GB', {month:'short', year:'numeric'}) };
+            monthRates[key].shown++;
+            if (c.outcome === 'closed') monthRates[key].closed++;
+          });
+          return Object.values(monthRates).filter(m => m.shown >= 3).sort((a,b) => (b.closed/b.shown) - (a.closed/a.shown))[0];
+        })();
+        pbEl.innerHTML = `
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="color:var(--label);">Biggest close</span>
+            <span style="font-weight:800;color:#059669;">£${biggestDeal.toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span style="color:var(--label);">Best commission month</span>
+            <span style="font-weight:800;color:#7c3aed;">£${bestMonth.comm.toLocaleString()}</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:-2px;padding-bottom:4px;">${bestMonth.label}</div>
+          ${bestCloseRate ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--label);">Best close rate month</span><span style="font-weight:800;color:#d97706;">${Math.round(bestCloseRate.closed/bestCloseRate.shown*100)}% in ${bestCloseRate.label}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+            <span style="color:var(--label);">Total closes</span>
+            <span style="font-weight:700;">${closedCalls.length}</span>
+          </div>`;
+      }
+    }
+
+    // Commission history chart
+    tmmb_renderCommissionChart(calls);
 
     // Top objections
     const objCounts = {};
@@ -5699,6 +5941,154 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     tmmb_gcalSetBtn('Connecting to Google…', true);
     _gcalClient.requestAccessToken({ prompt: '' });
+  }
+
+  // ── Commission History Chart ──────────────────────────────────
+  let _tmmb_commChart = null;
+  function tmmb_renderCommissionChart(calls) {
+    const ctx = document.getElementById('tmmb-commission-chart');
+    if (!ctx) return;
+    const closedCalls = (calls || tmmb_getCalls()).filter(c => c.outcome === 'closed');
+    const now = new Date();
+    const labels = [], values = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(d.toLocaleDateString('en-GB', {month:'short', year:'2-digit'}));
+      values.push(closedCalls.reduce((s, c) => s + tmmb_commissionForMonth(c, d.getFullYear(), d.getMonth()), 0));
+    }
+    if (_tmmb_commChart) { _tmmb_commChart.destroy(); _tmmb_commChart = null; }
+    _tmmb_commChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: values.map((v,i) => i === 11 ? 'rgba(5,150,105,0.85)' : 'rgba(5,150,105,0.45)'), borderRadius: 5, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '£' + ctx.raw.toLocaleString() } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => '£' + v.toLocaleString(), font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // ── Home Screen — Today's GCal Calls ─────────────────────────
+  let _homeGcalClient = null;
+  async function home_connectGCal() {
+    const btn = document.getElementById('home-gcal-btn');
+    if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
+    if (!_homeGcalClient) {
+      _homeGcalClient = google.accounts.oauth2.initTokenClient({
+        client_id: GCAL_CLIENT_ID,
+        scope: GCAL_SCOPE,
+        callback: async (resp) => {
+          if (resp.error) {
+            if (btn) { btn.textContent = 'Connect GCal'; btn.disabled = false; }
+            return;
+          }
+          await home_fetchTodayEvents(resp.access_token);
+        },
+      });
+    }
+    _homeGcalClient.requestAccessToken({ prompt: '' });
+  }
+
+  async function home_fetchTodayEvents(token) {
+    const btn = document.getElementById('home-gcal-btn');
+    const evEl = document.getElementById('home-gcal-events');
+    try {
+      const today = new Date();
+      const y = today.getFullYear(), mo = String(today.getMonth()+1).padStart(2,'0'), d = String(today.getDate()).padStart(2,'0');
+      const timeMin = encodeURIComponent(`${y}-${mo}-${d}T00:00:00Z`);
+      const timeMax = encodeURIComponent(`${y}-${mo}-${d}T23:59:59Z`);
+      const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=8`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await r.json();
+      const items = (data.items || []);
+      if (btn) { btn.textContent = 'Refresh'; btn.disabled = false; btn.onclick = () => home_connectGCal(); }
+      if (!items.length) {
+        if (evEl) evEl.innerHTML = '<span style="color:#6b7280;">Nothing booked today — free day 🎯</span>';
+        return;
+      }
+      if (evEl) evEl.innerHTML = items.map(ev => {
+        const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : 'All day';
+        return `<span style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:3px 9px;margin-right:6px;margin-bottom:4px;font-size:12px;"><strong style="color:#1e40af;">${start}</strong> ${ev.summary || 'Event'}</span>`;
+      }).join('');
+    } catch(e) {
+      if (evEl) evEl.textContent = 'Could not load calendar. Try reconnecting.';
+      if (btn) { btn.textContent = 'Connect GCal'; btn.disabled = false; }
+    }
+  }
+
+  // ── Fitness PB Tracker ────────────────────────────────────────
+  const PB_KEY = 'fitness_pbs';
+  function pb_get() { try { return JSON.parse(localStorage.getItem(PB_KEY) || '[]'); } catch { return []; } }
+  function pb_save(data) { localStorage.setItem(PB_KEY, JSON.stringify(data)); }
+
+  function pb_log() {
+    const exercise = (document.getElementById('pb-exercise')?.value || '').trim();
+    const category = document.getElementById('pb-category')?.value || 'strength';
+    const value    = parseFloat(document.getElementById('pb-value')?.value || '0');
+    const unit     = (document.getElementById('pb-unit')?.value || '').trim() || 'kg';
+    const date     = document.getElementById('pb-date')?.value || new Date().toISOString().split('T')[0];
+    const notes    = (document.getElementById('pb-notes')?.value || '').trim();
+    if (!exercise || !value) return;
+    const pbs = pb_get();
+    pbs.unshift({ id: Date.now(), exercise, category, value, unit, date, notes });
+    pb_save(pbs);
+    ['pb-exercise','pb-value','pb-unit','pb-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    pb_render();
+  }
+
+  function pb_delete(id) {
+    pb_save(pb_get().filter(p => p.id !== id));
+    pb_render();
+  }
+
+  function pb_render() {
+    const el = document.getElementById('pb-list');
+    if (!el) return;
+    const pbs = pb_get();
+    if (!pbs.length) {
+      el.innerHTML = '<div class="log-card" style="text-align:center;color:var(--white-40);padding:40px 0;font-size:14px;">No PBs logged yet — get after it.</div>';
+      return;
+    }
+    // Group by exercise — show current PB (highest value) + history
+    const exMap = {};
+    pbs.forEach(p => {
+      if (!exMap[p.exercise]) exMap[p.exercise] = [];
+      exMap[p.exercise].push(p);
+    });
+    el.innerHTML = Object.entries(exMap).map(([ex, entries]) => {
+      const best = entries.reduce((b, e) => e.value > b.value ? e : b, entries[0]);
+      const catColor = { strength:'#7c3aed', endurance:'#2563eb', reps:'#059669' };
+      const catLabel = { strength:'Strength', endurance:'Endurance', reps:'Reps' };
+      return `<div class="log-card" style="margin-bottom:14px;padding:20px 22px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--white);letter-spacing:-0.3px;">${ex}</div>
+            <span style="font-size:11px;font-weight:700;background:${catColor[best.category]||'#7c3aed'}20;color:${catColor[best.category]||'#7c3aed'};border-radius:8px;padding:2px 8px;margin-top:4px;display:inline-block;">${catLabel[best.category]||best.category}</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:26px;font-weight:800;color:${catColor[best.category]||'#7c3aed'};letter-spacing:-0.5px;">${best.value}<span style="font-size:13px;font-weight:500;color:var(--white-40);"> ${best.unit}</span></div>
+            <div style="font-size:11px;color:var(--white-40);margin-top:1px;">Current PB · ${best.date}</div>
+          </div>
+        </div>
+        ${entries.length > 1 ? `<div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:6px;">
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">History</div>
+          ${entries.slice(0, 5).map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span style="color:var(--white-40);">${e.date}${e.notes ? ' · ' + e.notes : ''}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:700;color:${e.id === best.id ? catColor[best.category]||'#7c3aed' : 'var(--white)'};">${e.value} ${e.unit}${e.id === best.id ? ' 🏆' : ''}</span>
+              <button onclick="pb_delete(${e.id})" style="background:none;border:none;color:var(--white-40);cursor:pointer;font-size:13px;padding:0 4px;opacity:0.5;" title="Delete">✕</button>
+            </div>
+          </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('');
   }
 
   function tmmb_renderPaymentPlans() {
@@ -7199,14 +7589,27 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const badge = { active: 'biz-badge-active', paused: 'biz-badge-paused', churned: 'biz-badge-churned' };
     const badgeLabel = { active: 'Active', paused: 'Paused', churned: 'Churned' };
     const industryLabel = { recruitment_agency: 'Recruitment Agency', amazon_agency: 'Amazon Agency', marketing_agency: 'Marketing Agency', other: 'Other' };
-    el.innerHTML = clients.map(c => `
+    el.innerHTML = clients.map(c => {
+      const daysActive = c.start ? Math.round((Date.now() - new Date(c.start + 'T12:00:00').getTime()) / 86400000) : 0;
+      const monthsActive = Math.floor(daysActive / 30);
+      let healthColor, healthLabel;
+      if (c.status === 'churned') { healthColor = '#ef4444'; healthLabel = 'Churned'; }
+      else if (c.status === 'paused') { healthColor = '#f59e0b'; healthLabel = 'Paused'; }
+      else if (monthsActive < 1) { healthColor = '#2563eb'; healthLabel = 'New Client'; }
+      else if (monthsActive < 3) { healthColor = '#059669'; healthLabel = `${monthsActive}mo`; }
+      else if (monthsActive < 12) { healthColor = '#059669'; healthLabel = `${monthsActive}mo active`; }
+      else { healthColor = '#7c3aed'; healthLabel = `${Math.floor(monthsActive/12)}yr ${monthsActive%12}mo`; }
+      const barPct = Math.min(100, Math.round((daysActive / 365) * 100));
+      return `
       <div class="biz-client-card">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
             <div class="biz-client-name">${c.name}</div>
             <span class="biz-badge ${badge[c.status]||''}">${badgeLabel[c.status]||c.status}</span>
+            <span style="font-size:11px;font-weight:700;color:${healthColor};background:${healthColor}18;border:1px solid ${healthColor}40;border-radius:10px;padding:1px 7px;">${healthLabel}</span>
           </div>
           <div class="biz-client-meta">${[industryLabel[c.industry]||c.industry, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
+          ${c.start && c.status === 'active' ? `<div style="margin-top:8px;"><div style="height:4px;background:#f3f4f6;border-radius:2px;overflow:hidden;"><div style="height:100%;width:${barPct}%;background:${healthColor};border-radius:2px;transition:width 0.4s;"></div></div><div style="font-size:10px;color:#9ca3af;margin-top:2px;">${daysActive} days as a client · ${barPct}% of first year</div></div>` : ''}
           ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:12px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px;">Open dashboard →</a>` : ''}
           ${c.notes ? `<div style="font-size:12px;color:#9ca3af;margin-top:4px;">${c.notes}</div>` : ''}
         </div>
@@ -7219,7 +7622,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <button onclick="biz_deleteClient(${c.id})" class="biz-status-btn" style="border-color:#fca5a5;background:#fee2e2;color:#ef4444;">✕</button>
           </div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // ── Revenue ───────────────────────────────────────────────────
