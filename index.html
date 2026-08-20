@@ -1520,17 +1520,22 @@
     }
 
     @media (max-width: 640px) {
-      .tmmb-tabs { padding: 0 16px; }
-      .tmmb-main { padding: 20px 16px 60px; }
+      .tmmb-tabs { padding: 0 8px; }
+      .tmmb-tab { padding: 12px 14px; font-size: 12px; }
+      .tmmb-main { padding: 18px 14px 60px; }
       .tmmb-stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
-      .tmmb-stat-box { padding: 14px 8px; }
-      .tmmb-stat-num { font-size: 20px; }
+      .tmmb-stat-box { padding: 12px 6px; }
+      .tmmb-stat-num { font-size: 18px; }
+      .tmmb-stat-label { font-size: 9px; }
       .tmmb-form-grid, .tmmb-form-grid-3 { grid-template-columns: 1fr; }
       .tmmb-2col { grid-template-columns: 1fr; }
       .tmmb-ov-2col { grid-template-columns: 1fr; }
       .tmmb-obj-grid { grid-template-columns: 1fr; }
       .tmmb-charts-row { grid-template-columns: 1fr; }
       .tmmb-vault-grid { grid-template-columns: 1fr; }
+      /* Performance insights — stack on mobile */
+      #tmmb-commission-chart { height: 140px !important; }
+      .tmmb-collapse-pill { padding: 4px 10px; font-size: 11px; }
     }
 
     /* ============================================================
@@ -2824,7 +2829,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <!-- Performance Insights -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div class="tmmb-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
             <div class="card">
               <div class="card-label">Speed to Close</div>
               <div id="tmmb-speed-val" style="font-size:26px;font-weight:800;color:#7c3aed;margin-bottom:2px;">—</div>
