@@ -1998,17 +1998,165 @@
 <body>
 
 <!-- ============================================================
+     PIN GATE
+============================================================ -->
+<div id="pin-gate" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#060e20 0%,#0d2345 60%,#091a3e 100%);align-items:center;justify-content:center;flex-direction:column;">
+  <div style="text-align:center;padding:0 24px;max-width:340px;width:100%;">
+    <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Charles' Hub</div>
+    <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;">Enter PIN</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:36px;">Your personal command centre</div>
+
+    <!-- PIN dots -->
+    <div style="display:flex;gap:16px;justify-content:center;margin-bottom:36px;" id="pin-dots">
+      <div id="pin-d0" style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:transparent;transition:all 0.15s;"></div>
+      <div id="pin-d1" style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:transparent;transition:all 0.15s;"></div>
+      <div id="pin-d2" style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:transparent;transition:all 0.15s;"></div>
+      <div id="pin-d3" style="width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);background:transparent;transition:all 0.15s;"></div>
+    </div>
+
+    <!-- Keypad -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;">
+      <button onclick="pin_press('1')" class="pin-key">1</button>
+      <button onclick="pin_press('2')" class="pin-key">2</button>
+      <button onclick="pin_press('3')" class="pin-key">3</button>
+      <button onclick="pin_press('4')" class="pin-key">4</button>
+      <button onclick="pin_press('5')" class="pin-key">5</button>
+      <button onclick="pin_press('6')" class="pin-key">6</button>
+      <button onclick="pin_press('7')" class="pin-key">7</button>
+      <button onclick="pin_press('8')" class="pin-key">8</button>
+      <button onclick="pin_press('9')" class="pin-key">9</button>
+      <div></div>
+      <button onclick="pin_press('0')" class="pin-key">0</button>
+      <button onclick="pin_del()" class="pin-key" style="font-size:20px;">⌫</button>
+    </div>
+
+    <div id="pin-error" style="height:20px;font-size:13px;color:#f87171;font-weight:600;text-align:center;margin-top:4px;"></div>
+  </div>
+</div>
+
+<style>
+  .pin-key {
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    padding: 18px 0;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pin-key:active { background: rgba(255,255,255,0.18); transform: scale(0.94); }
+</style>
+
+<script>
+  (function() {
+    const PIN = '2004';
+    const AUTH_KEY = 'hub_pin_auth';
+    let entered = '';
+
+    function pin_show() {
+      const gate = document.getElementById('pin-gate');
+      if (gate) gate.style.display = 'flex';
+    }
+    function pin_hide() {
+      const gate = document.getElementById('pin-gate');
+      if (gate) gate.style.display = 'none';
+    }
+
+    window.pin_press = function(d) {
+      if (entered.length >= 4) return;
+      entered += d;
+      pin_updateDots();
+      if (entered.length === 4) setTimeout(pin_check, 120);
+    };
+
+    window.pin_del = function() {
+      entered = entered.slice(0, -1);
+      pin_updateDots();
+      const err = document.getElementById('pin-error');
+      if (err) err.textContent = '';
+    };
+
+    function pin_updateDots() {
+      for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('pin-d' + i);
+        if (!d) continue;
+        if (i < entered.length) {
+          d.style.background = '#4190ff';
+          d.style.borderColor = '#4190ff';
+        } else {
+          d.style.background = 'transparent';
+          d.style.borderColor = 'rgba(255,255,255,0.25)';
+        }
+      }
+    }
+
+    function pin_check() {
+      if (entered === PIN) {
+        localStorage.setItem(AUTH_KEY, 'ok');
+        pin_hide();
+      } else {
+        const err = document.getElementById('pin-error');
+        if (err) err.textContent = 'Wrong PIN — try again';
+        // Shake dots
+        const dots = document.getElementById('pin-dots');
+        if (dots) {
+          dots.style.animation = 'none';
+          dots.offsetHeight;
+          dots.style.animation = 'pin-shake 0.4s ease';
+        }
+        for (let i = 0; i < 4; i++) {
+          const d = document.getElementById('pin-d' + i);
+          if (d) { d.style.background = '#f87171'; d.style.borderColor = '#f87171'; }
+        }
+        setTimeout(() => { entered = ''; pin_updateDots(); }, 600);
+      }
+    }
+
+    window.hub_lock = function() {
+      localStorage.removeItem(AUTH_KEY);
+      entered = '';
+      pin_updateDots();
+      const err = document.getElementById('pin-error');
+      if (err) err.textContent = '';
+      pin_show();
+    };
+
+    // On load: show gate if not authenticated
+    if (localStorage.getItem(AUTH_KEY) !== 'ok') {
+      document.addEventListener('DOMContentLoaded', pin_show);
+    }
+  })();
+</script>
+
+<style>
+  @keyframes pin-shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-8px); }
+    40%      { transform: translateX(8px); }
+    60%      { transform: translateX(-6px); }
+    80%      { transform: translateX(6px); }
+  }
+</style>
+
+<!-- ============================================================
      LANDING / HOME
 ============================================================ -->
 <div id="view-home" class="view">
 
   <div class="home-hero">
     <div class="hero-inner">
-      <div class="jarvis-label fu fu1">
-        <span class="dot"></span>
-        Charles' Hub — Personal Command Centre
-        <span style="opacity:0.45;font-size:10px;margin-left:8px;font-weight:400">v2.0</span>
-        <span id="hub-sync-dot" title="Checking sync…" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-left:8px;vertical-align:middle;transition:background 0.4s;"></span>
+      <div class="jarvis-label fu fu1" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="dot"></span>
+          Charles' Hub — Personal Command Centre
+          <span style="opacity:0.45;font-size:10px;margin-left:4px;font-weight:400">v2.0</span>
+          <span id="hub-sync-dot" title="Checking sync…" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-left:8px;vertical-align:middle;transition:background 0.4s;"></span>
+        </div>
+        <button onclick="hub_lock()" title="Lock dashboard" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:14px;padding:4px 10px;cursor:pointer;font-family:'Inter',sans-serif;line-height:1;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">🔒</button>
       </div>
       <div class="greeting-text fu fu2" id="greeting">
         Good morning, <span class="name">Charles</span>
