@@ -3791,6 +3791,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               </select>
             </div>
 
+            <!-- Grand total banner -->
+            <div id="cr-receipts-total-bar" style="display:none;background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:12px;padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.08em;">Total Receipts Value</div>
+              <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+                <div id="cr-receipts-grand-total" style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">£0.00</div>
+                <div id="cr-receipts-count-label" style="font-size:12px;color:rgba(255,255,255,0.5);">0 receipts</div>
+              </div>
+            </div>
+
             <!-- List -->
             <div id="cr-receipts-list"><div class="cr-empty" style="text-align:center;padding:30px 0;color:#9ca3af;font-size:13px;">Loading receipts…</div></div>
           </div>
@@ -8984,6 +8993,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const source = cr_receipt_filter === 'all'
       ? cr_receipts_cache
       : cr_receipts_cache.filter(r => r.status === cr_receipt_filter);
+
+    // Grand total banner — always uses full cache regardless of filter
+    const grandTotal = cr_receipts_cache.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+    const totalBar = document.getElementById('cr-receipts-total-bar');
+    const totalEl  = document.getElementById('cr-receipts-grand-total');
+    const countEl  = document.getElementById('cr-receipts-count-label');
+    if (totalBar) totalBar.style.display = cr_receipts_cache.length ? 'flex' : 'none';
+    if (totalEl)  totalEl.textContent  = '£' + grandTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (countEl)  countEl.textContent  = cr_receipts_cache.length + ' receipt' + (cr_receipts_cache.length !== 1 ? 's' : '') + ' total';
 
     if (!source.length) {
       el.innerHTML = '<div class="cr-empty">No receipts found</div>';

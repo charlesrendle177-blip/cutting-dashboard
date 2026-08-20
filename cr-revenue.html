@@ -359,6 +359,14 @@
         <option value="amount_asc">Amount (lowest)</option>
       </select>
     </div>
+    <!-- Grand total banner -->
+    <div id="cr-receipts-total-bar" style="display:none;background:linear-gradient(135deg,#0d2345 0%,#1e3a5f 100%);border-radius:12px;padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.08em;">Total Receipts Value</div>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+        <div id="cr-receipts-grand-total" style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">£0.00</div>
+        <div id="cr-receipts-count-label" style="font-size:12px;color:rgba(255,255,255,0.5);">0 receipts</div>
+      </div>
+    </div>
     <div id="receipt-list"><div class="empty">Loading receipts…</div></div>
   </div>
 
@@ -1175,6 +1183,15 @@ function renderReceipts() {
   const source = receiptFilter === 'all'
     ? receiptData
     : receiptData.filter(r => r.status === receiptFilter);
+
+  // Grand total banner — always full dataset
+  const grandTotal = receiptData.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const totalBar = document.getElementById('cr-receipts-total-bar');
+  const totalEl  = document.getElementById('cr-receipts-grand-total');
+  const countEl  = document.getElementById('cr-receipts-count-label');
+  if (totalBar) totalBar.style.display = receiptData.length ? 'flex' : 'none';
+  if (totalEl)  totalEl.textContent  = '£' + grandTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (countEl)  countEl.textContent  = receiptData.length + ' receipt' + (receiptData.length !== 1 ? 's' : '') + ' total';
 
   if (!source.length) {
     el.innerHTML = '<div class="empty">No receipts found</div>';
