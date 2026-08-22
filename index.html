@@ -3212,6 +3212,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">Log Invoice for <span id="inv-form-month"></span></div>
             <div style="display:grid;gap:10px;">
               <div>
+                <label class="tmmb-form-label">Offer</label>
+                <input type="hidden" id="inv-offer" value="tmmb">
+                <div style="display:flex;gap:8px;">
+                  <button type="button" id="inv-offer-btn-tmmb"  class="tmmb-offer-sel active" onclick="inv_selectOffer('tmmb')">🎯 TMMB</button>
+                  <button type="button" id="inv-offer-btn-gains" class="tmmb-offer-sel"        onclick="inv_selectOffer('gains')">💪 Project Gains</button>
+                </div>
+              </div>
+              <div>
                 <label class="tmmb-form-label">Label</label>
                 <input type="text" id="inv-label" placeholder="July 2026" style="width:100%;">
               </div>
@@ -5300,6 +5308,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_renderCallHistory();
     tmmb_updateOverview();
     if (document.getElementById('tmmb-monthly')?.classList.contains('active')) tmmb_renderMonthly();
+    if (document.getElementById('tmmb-vault')?.classList.contains('active')) tmmb_renderVault();
+    if (document.getElementById('tmmb-invoices')?.classList.contains('active')) inv_render();
   }
 
   function tmmb_getFilteredCalls() {
@@ -5362,7 +5372,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const picker = document.getElementById('cl-followup-picker');
     if (!picker) return;
     if (checked) {
-      const followups = tmmb_getCalls().filter(c => c.outcome === 'followup').slice(0, 40);
+      const currentOffer = document.getElementById('cl-offer')?.value || 'tmmb';
+      const followups = tmmb_getCalls().filter(c => c.outcome === 'followup' && (c.offer || 'tmmb') === currentOffer).slice(0, 40);
       const sel = document.getElementById('cl-parent-id');
       sel.innerHTML = '<option value="">— select prospect —</option>' +
         followups.map(c => `<option value="${c.id}">${c.name} · ${c.date}</option>`).join('');
@@ -5713,7 +5724,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_renderVault() {
-    const all = tmmb_getCalls();
+    const all = tmmb_getFilteredCalls();
 
     // Stats always from full set
     const closed = all.filter(c => c.outcome === 'closed');
@@ -5957,7 +5968,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!card || !body) return;
 
     const now = Date.now();
-    const closed = tmmb_getCalls()
+    const closed = tmmb_getFilteredCalls()
       .filter(c => c.outcome === 'closed' && c.date)
       .map(c => ({ c, daysLeft: 30 - Math.floor((now - new Date(c.date).getTime()) / 86400000) }));
 
@@ -6087,7 +6098,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const planTypes    = ['deposit','plan2','plan3','plan4','plan6','plan12'];
     const paytypeLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
     const paid      = tmmb_getPlanPayments();
-    const planCalls = tmmb_getCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype));
+    const planCalls = tmmb_getFilteredCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype));
     const now       = Date.now();
     const events    = [];
 
@@ -6182,7 +6193,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_renderCommissionChart(calls) {
     const ctx = document.getElementById('tmmb-commission-chart');
     if (!ctx) return;
-    const closedCalls = (calls || tmmb_getCalls()).filter(c => c.outcome === 'closed');
+    const closedCalls = (calls || tmmb_getFilteredCalls()).filter(c => c.outcome === 'closed');
     const now = new Date();
     const labels = [], values = [];
     for (let i = 11; i >= 0; i--) {
@@ -6333,7 +6344,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const now       = Date.now();
     const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
     const planLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
-    const planCalls = tmmb_getCalls().filter(c =>
+    const planCalls = tmmb_getFilteredCalls().filter(c =>
       c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)
     );
 
@@ -6583,7 +6594,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
 
     // Deals closed this month
-    const closes = tmmb_getCalls().filter(c => {
+    const closes = tmmb_getFilteredCalls().filter(c => {
       if (c.outcome !== 'closed' || !c.date) return false;
       const d = new Date(c.date);
       return d.getFullYear() === year && d.getMonth() === month;
@@ -6592,7 +6603,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     // Instalment payments confirmed (marked paid) in this month
     const paidMap = tmmb_getPlanPayments();
     const instalmentRows = [];
-    tmmb_getCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)).forEach(c => {
+    tmmb_getFilteredCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)).forEach(c => {
       const n = tmmb_paytypeMonths(c.paytype);
       const perPayment = Math.round((c.dealValue || 4000) / n);
       for (let payNum = 2; payNum <= n; payNum++) {
@@ -6964,13 +6975,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return '';
   }
 
+  function inv_selectOffer(v) {
+    const el = document.getElementById('inv-offer');
+    if (el) el.value = v;
+    ['tmmb','gains'].forEach(id => {
+      const btn = document.getElementById('inv-offer-btn-' + id);
+      if (btn) btn.classList.toggle('active', id === v);
+    });
+  }
+
   function inv_add() {
     const label  = (document.getElementById('inv-label')?.value || '').trim();
     const amount = parseFloat(document.getElementById('inv-amount')?.value || '0') || 0;
     const link   = (document.getElementById('inv-link')?.value || '').trim();
+    const offer  = document.getElementById('inv-offer')?.value || 'tmmb';
     if (!label) { alert('Please enter an invoice label.'); return; }
     const invoices = inv_get();
-    invoices.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), label, amount, link, month: inv_monthKey(), status: 'submitted', submittedAt: new Date().toISOString() });
+    invoices.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), label, amount, link, offer, month: inv_monthKey(), status: 'submitted', submittedAt: new Date().toISOString() });
     inv_save(invoices);
     const amtEl  = document.getElementById('inv-amount');
     const linkEl = document.getElementById('inv-link');
@@ -6993,6 +7014,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function inv_render() {
     const name = inv_monthName();
 
+    // Sync offer selector to global filter
+    if (_tmmb_offerFilter !== 'all') inv_selectOffer(_tmmb_offerFilter);
+
     // Update navigator label
     const mlEl = document.getElementById('inv-month-label');
     if (mlEl) mlEl.textContent = name;
@@ -7009,7 +7033,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!list) return;
 
     const key      = inv_monthKey();
-    const invoices = inv_get().filter(inv => inv_monthOf(inv) === key);
+    const invoices = inv_get().filter(inv =>
+      inv_monthOf(inv) === key &&
+      (_tmmb_offerFilter === 'all' || (inv.offer || 'tmmb') === _tmmb_offerFilter)
+    );
 
     if (!invoices.length) {
       list.innerHTML = `<div style="text-align:center;padding:36px 20px;color:var(--label);font-size:14px;">No invoices for ${name}</div>`;
