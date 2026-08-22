@@ -1231,6 +1231,15 @@
     .tmmb-btn-primary:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
     .tmmb-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid rgba(0,0,0,0.08); }
     .tmmb-btn-secondary:hover { background: #e5e7eb; }
+    /* Offer filter pills */
+    .tmmb-offer-pill { padding: 6px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: transparent; color: var(--label); font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .tmmb-offer-pill.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    /* Offer select buttons in log form */
+    .tmmb-offer-sel { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid var(--border); background: transparent; color: var(--label); font-weight: 700; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .tmmb-offer-sel.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    /* Offer badge in call history */
+    .offer-badge-tmmb  { display:inline-block; font-size: 10px; font-weight: 700; color: #6d28d9; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 4px; padding: 1px 5px; margin-left: 5px; }
+    .offer-badge-gains { display:inline-block; font-size: 10px; font-weight: 700; color: #065f46; background: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 4px; padding: 1px 5px; margin-left: 5px; }
 
     /* form grids */
     .tmmb-form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -2711,6 +2720,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     <div class="tmmb-wrap">
       <div class="tmmb-main">
 
+        <!-- Offer filter bar -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Offer:</span>
+          <button id="tof-all"   class="tmmb-offer-pill active" onclick="tmmb_setOfferFilter('all',this)">All</button>
+          <button id="tof-tmmb"  class="tmmb-offer-pill"        onclick="tmmb_setOfferFilter('tmmb',this)">🎯 TMMB</button>
+          <button id="tof-gains" class="tmmb-offer-pill"        onclick="tmmb_setOfferFilter('gains',this)">💪 Project Gains</button>
+        </div>
+
         <!-- ===== OVERVIEW ===== -->
         <div id="tmmb-overview" class="tmmb-section active">
           <div class="tmmb-section-header">
@@ -2873,6 +2890,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
           <div class="card" style="margin-bottom:20px;">
             <div class="card-label">Log a Call</div>
+
+            <!-- Offer selector -->
+            <div class="tmmb-form-group" style="margin-bottom:16px;">
+              <label class="tmmb-form-label">Offer</label>
+              <input type="hidden" id="cl-offer" value="tmmb">
+              <div style="display:flex;gap:8px;">
+                <button type="button" id="cl-offer-btn-tmmb"  class="tmmb-offer-sel active" onclick="tmmb_selectOffer('tmmb')">🎯 TMMB</button>
+                <button type="button" id="cl-offer-btn-gains" class="tmmb-offer-sel"        onclick="tmmb_selectOffer('gains')">💪 Project Gains</button>
+              </div>
+            </div>
 
             <!-- Row 1: Date + Outcome -->
             <div class="tmmb-form-grid" style="margin-bottom:14px;">
@@ -5260,6 +5287,36 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
   const TMMB_CASH_OFFSET = 15000; // cash collected before this system was used
 
+  // ---- Offer filter state ----
+  let _tmmb_offerFilter = 'all';
+
+  function tmmb_setOfferFilter(v) {
+    _tmmb_offerFilter = v;
+    ['all','tmmb','gains'].forEach(id => {
+      const btn = document.getElementById('tof-' + id);
+      if (!btn) return;
+      btn.classList.toggle('active', id === v);
+    });
+    tmmb_renderCallHistory();
+    tmmb_updateOverview();
+    if (document.getElementById('tmmb-monthly')?.classList.contains('active')) tmmb_renderMonthly();
+  }
+
+  function tmmb_getFilteredCalls() {
+    const all = tmmb_getCalls();
+    if (_tmmb_offerFilter === 'all') return all;
+    return all.filter(c => (c.offer || 'tmmb') === _tmmb_offerFilter);
+  }
+
+  function tmmb_selectOffer(v) {
+    const el = document.getElementById('cl-offer');
+    if (el) el.value = v;
+    ['tmmb','gains'].forEach(id => {
+      const btn = document.getElementById('cl-offer-btn-' + id);
+      if (btn) btn.classList.toggle('active', id === v);
+    });
+  }
+
   function tmmb_getCalls() {
     try { return JSON.parse(localStorage.getItem('tmmb_calls') || '[]'); } catch { return []; }
   }
@@ -5346,9 +5403,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const prosvideo  = (document.getElementById('cl-prosvideo').value || '').trim();
     const parentCallId = parseInt(document.getElementById('cl-parent-id')?.value || '0', 10) || null;
     const callType   = parentCallId ? 'call2' : 'call1';
+    const offer      = document.getElementById('cl-offer')?.value || 'tmmb';
 
     const calls = tmmb_getCalls();
-    calls.unshift({ id: Date.now(), date, name, email, source, outcome, type: callType, parentCallId, deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections });
+    calls.unshift({ id: Date.now(), date, name, email, source, outcome, type: callType, parentCallId, deal, paytype, cash, dealValue, fathom, prosvideo, notes, objections, offer });
     tmmb_saveCalls(calls);
 
     ['cl-name','cl-email','cl-notes','cl-deal','cl-fathom','cl-prosvideo'].forEach(id => {
@@ -5363,6 +5421,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const fuCheck = document.getElementById('cl-is-followup');
     if (fuCheck) { fuCheck.checked = false; tmmb_toggleFollowupLink(false); }
     tmmb_onOutcomeChange('closed');
+    tmmb_selectOffer('tmmb');
 
     tmmb_renderCallHistory();
     tmmb_updateOverview();
@@ -5428,9 +5487,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               </select>
             </div>
             <div class="tmmb-form-group">
-              <label class="tmmb-form-label">Programme / Offer</label>
-              <input type="text" id="em-deal" placeholder="e.g. TMMB Accelerator">
+              <label class="tmmb-form-label">Offer</label>
+              <select id="em-offer">
+                <option value="tmmb">🎯 TMMB</option>
+                <option value="gains">💪 Project Gains</option>
+              </select>
             </div>
+          </div>
+          <div class="tmmb-form-group" style="margin-bottom:14px;">
+            <label class="tmmb-form-label">Programme / Deal Name</label>
+            <input type="text" id="em-deal" placeholder="e.g. TMMB Accelerator">
           </div>
           <div class="tmmb-form-grid" style="margin-bottom:14px;">
             <div class="tmmb-form-group">
@@ -5483,6 +5549,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('em-name').value = c.name || '';
     document.getElementById('em-email').value = c.email || '';
     document.getElementById('em-source').value = c.source || '';
+    const emOffer = document.getElementById('em-offer'); if (emOffer) emOffer.value = c.offer || 'tmmb';
     document.getElementById('em-deal').value = c.deal || '';
     document.getElementById('em-paytype').value = c.paytype || 'pif';
     document.getElementById('em-cash').value = c.cash || '';
@@ -5522,6 +5589,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       name: document.getElementById('em-name').value.trim(),
       email: document.getElementById('em-email').value.trim(),
       source: document.getElementById('em-source').value,
+      offer: document.getElementById('em-offer')?.value || calls[idx].offer || 'tmmb',
       deal: document.getElementById('em-deal').value.trim(),
       paytype: document.getElementById('em-paytype').value,
       cash: parseInt(document.getElementById('em-cash').value, 10) || 0,
@@ -5548,7 +5616,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   function tmmb_renderCallHistory() {
     const el = document.getElementById('tmmb-call-history');
     if (!el) return;
-    const calls = tmmb_getCalls();
+    const calls = tmmb_getFilteredCalls();
+    const offerLabel = { tmmb: 'TMMB', gains: 'Gains' };
     if (!calls.length) {
       el.innerHTML = '<div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>';
       return;
@@ -5574,7 +5643,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </td>
           <td style="white-space:nowrap;">${tmmb_fmtDate(c.date)}</td>
           <td>
-            <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}</div>
+            <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}<span class="${(c.offer||'tmmb')==='gains'?'offer-badge-gains':'offer-badge-tmmb'}">${offerLabel[c.offer||'tmmb']||c.offer||'TMMB'}</span></div>
             ${contactLine ? `<div class="tmmb-call-contact">${contactLine}</div>` : ''}
           </td>
           <td>${dealBit}${paytypeBit}</td>
@@ -5751,7 +5820,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_updateOverview() {
-    const calls  = tmmb_getCalls();
+    const calls  = tmmb_getFilteredCalls();   // filtered by selected offer for section stats
+    const allCalls = tmmb_getCalls();          // all offers for home card summary
     const total  = calls.length;
     const shown  = calls.filter(c => c.outcome !== 'noshow').length;
     const closed = calls.filter(c => c.outcome === 'closed').length;
@@ -5776,13 +5846,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('tmmb-ov-fup',      fup);
     set('tmmb-ov-furate',   fuTotal ? `${fuConv}/${fuTotal} (${Math.round(fuConv/fuTotal*100)}%)` : '—');
 
-    // Home screen stat cards
-    const s  = document.getElementById('s-show');  if (s)  s.textContent  = total ? Math.round(shown/total*100)  + '%' : '—';
-    const sc = document.getElementById('s-close'); if (sc) sc.textContent = shown ? Math.round(closed/shown*100) + '%' : '—';
-    const sd = document.getElementById('s-deals'); if (sd) sd.textContent = closed + ' deals';
-    // Commission this month
+    // Home screen stat cards — always use allCalls so home shows combined across all offers
+    const allShown  = allCalls.filter(c => c.outcome !== 'noshow').length;
+    const allClosed = allCalls.filter(c => c.outcome === 'closed').length;
+    const s  = document.getElementById('s-show');  if (s)  s.textContent  = allCalls.length ? Math.round(allShown/allCalls.length*100)  + '%' : '—';
+    const sc = document.getElementById('s-close'); if (sc) sc.textContent = allShown ? Math.round(allClosed/allShown*100) + '%' : '—';
+    const sd = document.getElementById('s-deals'); if (sd) sd.textContent = allClosed + ' deals';
+    // Commission this month — combined across all offers on home screen
     const now = new Date();
-    const thisMonthComm = calls.filter(c => c.outcome === 'closed')
+    const thisMonthComm = allCalls.filter(c => c.outcome === 'closed')
       .reduce((s, c) => s + tmmb_commissionForMonth(c, now.getFullYear(), now.getMonth()), 0);
     const scm = document.getElementById('s-commission-month');
     if (scm) scm.textContent = thisMonthComm ? '£' + thisMonthComm.toLocaleString() : '£0';
@@ -6578,7 +6650,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (!labelEl) return;
     labelEl.textContent = MONTHS_LONG[month] + ' ' + year;
 
-    const calls = tmmb_getCalls().filter(c => {
+    const calls = tmmb_getFilteredCalls().filter(c => {
       if (!c.date) return false;
       const d = new Date(c.date);
       return d.getFullYear() === year && d.getMonth() === month;
@@ -6591,7 +6663,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const fup        = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
     const closeRate  = shows > 0 ? Math.round((closes / shows) * 100) : 0;
     // Commission: spread payment plan deals across their months
-    const allCalls   = tmmb_getCalls();
+    const allCalls   = tmmb_getFilteredCalls();
     const commission = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, year, month), 0);
     const cashIn     = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
 
