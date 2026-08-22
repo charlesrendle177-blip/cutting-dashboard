@@ -4142,6 +4142,15 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   const CHAT_API = 'https://cutting-dashboard.vercel.app/api/chat';
   const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 
+  /* ---------- SECURITY HELPERS ---------- */
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function safeUrl(s) {
+    if (!s) return '';
+    try { const u = new URL(s); return ['http:','https:'].includes(u.protocol) ? s : ''; } catch { return ''; }
+  }
+
   /* ---------- QUOTES ---------- */
   const QUOTES = [
     "Pick a goal that's big enough it's worth suffering for.",
@@ -5654,8 +5663,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </td>
           <td style="white-space:nowrap;">${tmmb_fmtDate(c.date)}</td>
           <td>
-            <div style="font-weight:600;color:#111827;">${c.name || '—'}${sourceBit}<span class="${(c.offer||'tmmb')==='gains'?'offer-badge-gains':'offer-badge-tmmb'}">${offerLabel[c.offer||'tmmb']||c.offer||'TMMB'}</span></div>
-            ${contactLine ? `<div class="tmmb-call-contact">${contactLine}</div>` : ''}
+            <div style="font-weight:600;color:#111827;">${escHtml(c.name || '—')}${sourceBit}<span class="${(c.offer||'tmmb')==='gains'?'offer-badge-gains':'offer-badge-tmmb'}">${offerLabel[c.offer||'tmmb']||c.offer||'TMMB'}</span></div>
+            ${contactLine ? `<div class="tmmb-call-contact">${escHtml(contactLine)}</div>` : ''}
           </td>
           <td>${dealBit}${paytypeBit}</td>
           <td>${c.outcome === 'closed' ? `<div class="tmmb-call-cash">£${(c.cash||0).toLocaleString()}</div><div class="tmmb-call-comm">comm £${comm.toLocaleString()}</div>` : '<span style="color:#9ca3af;">—</span>'}</td>
@@ -5670,9 +5679,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         </tr>
         <tr id="call-exp-${c.id}" class="tmmb-call-expand-row">
           <td colspan="6">
-            ${c.fathom ? `<a href="${c.fathom}" target="_blank" rel="noopener" style="color:#059669;font-weight:600;font-size:12px;text-decoration:none;" onclick="event.stopPropagation()">▶ Open Fathom Recording</a><br>` : ''}
-            ${objStr ? `<strong>Objections:</strong> ${objStr}<br>` : ''}
-            ${c.notes ? `<strong>Notes:</strong> ${c.notes}` : (!objStr && !c.fathom ? '<em>No details recorded.</em>' : '')}
+            ${safeUrl(c.fathom) ? `<a href="${safeUrl(c.fathom)}" target="_blank" rel="noopener" style="color:#059669;font-weight:600;font-size:12px;text-decoration:none;" onclick="event.stopPropagation()">▶ Open Fathom Recording</a><br>` : ''}
+            ${objStr ? `<strong>Objections:</strong> ${escHtml(objStr)}<br>` : ''}
+            ${c.notes ? `<strong>Notes:</strong> ${escHtml(c.notes)}` : (!objStr && !c.fathom ? '<em>No details recorded.</em>' : '')}
           </td>
         </tr>`;
       }).join('') +
@@ -5772,7 +5781,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
           <span class="tmmb-vault-amount">£${(c.cash||0).toLocaleString()}</span>
           ${c.paytype ? `<span class="tmmb-vault-paytype">${paytypeLabel[c.paytype]||c.paytype}</span>` : ''}
-          ${c.deal ? `<span style="font-size:12px;color:#6b7280;">${c.deal}</span>` : ''}
+          ${c.deal ? `<span style="font-size:12px;color:#6b7280;">${escHtml(c.deal)}</span>` : ''}
         </div>
         <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">
           Commission <strong style="color:#059669;">£${comm.toLocaleString()}</strong>
@@ -5787,27 +5796,27 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           const bdr = daysLeft <= 7 ? '#fca5a5' : '#fde68a';
           return `<div style="margin-bottom:12px;display:inline-flex;align-items:center;gap:4px;background:${bg};border:1px solid ${bdr};border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;color:${col};">⏱ ${daysLeft}d to lock</div>`;
         })()}` :
-        (c.deal ? `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;">${c.deal}</div>` : '');
+        (c.deal ? `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;">${escHtml(c.deal)}</div>` : '');
 
-      const links = (c.fathom || c.prosvideo) ? `
+      const links = (safeUrl(c.fathom) || safeUrl(c.prosvideo)) ? `
         <div class="tmmb-vault-links">
-          ${c.fathom    ? `<a href="${c.fathom}"    target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-fathom">▶ Fathom Recording</a>` : ''}
-          ${c.prosvideo ? `<a href="${c.prosvideo}" target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-video">🎥 Prospect Video</a>` : ''}
+          ${safeUrl(c.fathom)    ? `<a href="${safeUrl(c.fathom)}"    target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-fathom">▶ Fathom Recording</a>` : ''}
+          ${safeUrl(c.prosvideo) ? `<a href="${safeUrl(c.prosvideo)}" target="_blank" rel="noopener" class="tmmb-vault-link-btn tmmb-vault-link-video">🎥 Prospect Video</a>` : ''}
         </div>` : '';
 
       const objs = (c.objections||[]).length ? `
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
-          ${(c.objections||[]).map(o=>`<span class="tmmb-vault-obj-pill">${o.replace(/-/g,' ')}</span>`).join('')}
+          ${(c.objections||[]).map(o=>`<span class="tmmb-vault-obj-pill">${escHtml(o.replace(/-/g,' '))}</span>`).join('')}
         </div>` : '';
 
-      const notes = c.notes ? `<div class="tmmb-vault-notes">${c.notes}</div>` : '';
+      const notes = c.notes ? `<div class="tmmb-vault-notes">${escHtml(c.notes)}</div>` : '';
 
       return `
       <div class="tmmb-vault-card">
         <div class="tmmb-vault-card-accent" style="background:${accent};"></div>
         <div class="tmmb-vault-card-body">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:2px;">
-            <div class="tmmb-vault-card-name">${c.name||'Unknown'}</div>
+            <div class="tmmb-vault-card-name">${escHtml(c.name||'Unknown')}</div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:2px;">
               <button onclick="event.stopPropagation();tmmb_toggleStar(${c.id})" title="${c.starred?'Remove star':'Star this call'}" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;opacity:${c.starred?1:0.25};transition:opacity 0.15s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='${c.starred?1:0.25}'">${c.starred?'⭐':'⭐'}</button>
               <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}">${outcomeLabel[c.outcome]||c.outcome}</span>
@@ -5819,7 +5828,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           ${objs}
           ${notes}
           <div class="tmmb-vault-footer">
-            <span style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${contact||'&nbsp;'}</span>
+            <span style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(contact)||'&nbsp;'}</span>
             <button onclick="tmmb_analyseFromCall(${c.id})"
               style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);color:#059669;cursor:pointer;font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;white-space:nowrap;">
               Analyse →
@@ -5986,7 +5995,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         const bg   = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
           <div>
-            <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+            <span style="font-size:13px;font-weight:600;">${escHtml(c.name || 'Unknown')}</span>
             <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -6016,7 +6025,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:16px;line-height:1;">✅</span>
             <div>
-              <span style="font-size:13px;font-weight:600;">${c.name || 'Unknown'}</span>
+              <span style="font-size:13px;font-weight:600;">${escHtml(c.name || 'Unknown')}</span>
               <span style="font-size:11px;color:var(--label);margin-left:8px;">${tmmb_fmtDate(c.date)}</span>
             </div>
           </div>
@@ -7065,8 +7074,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">Submitted</span>';
       const submitted = inv.submittedAt ? new Date(inv.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
       const paidDate  = inv.paidAt ? ` · Paid ${new Date(inv.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : '';
-      const pdfBtn = inv.link
-        ? `<a href="${inv.link.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" style="background:#ede9fe;color:#7c3aed;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">PDF ↗</a>`
+      const pdfBtn = safeUrl(inv.link)
+        ? `<a href="${safeUrl(inv.link)}" target="_blank" rel="noopener" style="background:#ede9fe;color:#7c3aed;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">PDF ↗</a>`
         : '';
       const markPaidBtn = !isPaid
         ? `<button onclick="inv_markPaid('${inv.id}')" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Mark Paid</button>`
@@ -7074,7 +7083,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const delBtn = `<button onclick="inv_delete('${inv.id}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">✕</button>`;
       return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
         <div style="flex:1;min-width:120px;">
-          <div style="font-size:14px;font-weight:700;color:var(--text);">${inv.label}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);">${escHtml(inv.label)}</div>
           <div style="font-size:11px;color:var(--label);margin-top:2px;">${submitted}${paidDate}</div>
         </div>
         <div style="font-size:16px;font-weight:700;color:#374151;white-space:nowrap;">£${(inv.amount || 0).toLocaleString()}</div>
@@ -7179,7 +7188,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <div style="font-size:14px;font-weight:700;color:var(--text);">${p.name}</div>
               ${p.phone ? `<div style="font-size:12px;color:var(--label);margin-top:2px;">${p.phone}</div>` : ''}
               ${p.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-style:italic;">${p.reason}</div>` : ''}
-              ${p.notes ? `<div style="font-size:11px;color:var(--label);margin-top:4px;">${p.notes}</div>` : ''}
+              ${p.notes ? `<div style="font-size:11px;color:var(--label);margin-top:4px;">${escHtml(p.notes)}</div>` : ''}
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
               ${depBadge}
@@ -7872,7 +7881,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div class="biz-client-meta">${[industryLabel[c.industry]||c.industry, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
           ${c.start && c.status === 'active' ? `<div style="margin-top:8px;"><div style="height:4px;background:#f3f4f6;border-radius:2px;overflow:hidden;"><div style="height:100%;width:${barPct}%;background:${healthColor};border-radius:2px;transition:width 0.4s;"></div></div><div style="font-size:10px;color:#9ca3af;margin-top:2px;">${daysActive} days as a client · ${barPct}% of first year</div></div>` : ''}
           ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:12px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px;">Open dashboard →</a>` : ''}
-          ${c.notes ? `<div style="font-size:12px;color:#9ca3af;margin-top:4px;">${c.notes}</div>` : ''}
+          ${c.notes ? `<div style="font-size:12px;color:#9ca3af;margin-top:4px;">${escHtml(c.notes)}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div class="biz-client-fee">£${(c.fee||0).toLocaleString()}<span style="font-size:12px;color:#9ca3af;font-weight:400;">/mo</span></div>
