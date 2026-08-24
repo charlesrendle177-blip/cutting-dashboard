@@ -5651,9 +5651,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       calls.map(c => {
         const comm = Math.round((c.dealValue || 4000) * 0.1);
         const contactLine = c.email || '';
-        const sourceBit   = c.source ? ` <span style="color:#9ca3af;font-size:10px;">${sourceLabel[c.source]||c.source}</span>` : '';
-        const dealBit     = c.deal ? c.deal : '—';
-        const paytypeBit  = c.paytype && c.paytype !== 'pif' ? ` <span style="font-size:10px;color:#9ca3af;">${paytypeLabel[c.paytype]||c.paytype}</span>` : '';
+        const sourceBit   = c.source ? ` <span style="color:#9ca3af;font-size:10px;">${sourceLabel[c.source]||escHtml(c.source)}</span>` : '';
+        const dealBit     = c.deal ? escHtml(c.deal) : '—';
+        const paytypeBit  = c.paytype && c.paytype !== 'pif' ? ` <span style="font-size:10px;color:#9ca3af;">${paytypeLabel[c.paytype]||escHtml(c.paytype)}</span>` : '';
         const objStr      = (c.objections||[]).length ? c.objections.map(o=>o.replace(/-/g,' ')).join(', ') : '';
         const fuBadge     = c.parentCallId ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:1px 5px;">↩ FU</span>` : '';
         const convBadge   = (c.outcome === 'followup' && convertedIds.has(c.id)) ? `<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;color:#059669;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:4px;padding:1px 5px;">✓ Closed</span>` : '';
@@ -5822,7 +5822,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <span class="tmmb-pill ${outcomeClass[c.outcome]||'noclose'}">${outcomeLabel[c.outcome]||c.outcome}</span>
             </div>
           </div>
-          <div class="tmmb-vault-card-date">${tmmb_fmtDate(c.date)}${src ? ' · '+src : ''}</div>
+          <div class="tmmb-vault-card-date">${tmmb_fmtDate(c.date)}${src ? ' · '+escHtml(src) : ''}</div>
           ${dealBlock}
           ${links}
           ${objs}
@@ -6485,7 +6485,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         return `<div style="padding:14px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div>
-              <span style="font-size:14px;font-weight:700;">${c.name || 'Unknown'}</span>
+              <span style="font-size:14px;font-weight:700;">${escHtml(c.name || 'Unknown')}</span>
               <span style="font-size:11px;color:var(--label);margin-left:8px;">${planLabel[c.paytype]}</span>
             </div>
             <div style="text-align:right;">
@@ -7185,9 +7185,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         return `<div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
           <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
             <div style="flex:1;min-width:140px;">
-              <div style="font-size:14px;font-weight:700;color:var(--text);">${p.name}</div>
-              ${p.phone ? `<div style="font-size:12px;color:var(--label);margin-top:2px;">${p.phone}</div>` : ''}
-              ${p.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-style:italic;">${p.reason}</div>` : ''}
+              <div style="font-size:14px;font-weight:700;color:var(--text);">${escHtml(p.name)}</div>
+              ${p.phone ? `<div style="font-size:12px;color:var(--label);margin-top:2px;">${escHtml(p.phone)}</div>` : ''}
+              ${p.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-style:italic;">${escHtml(p.reason)}</div>` : ''}
               ${p.notes ? `<div style="font-size:11px;color:var(--label);margin-top:4px;">${escHtml(p.notes)}</div>` : ''}
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
@@ -7244,7 +7244,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       if (remote.length === 0 && local.length > 0) {
         await sb.from('hub_data').upsert({ key: row.key, value: local, updated_at: new Date().toISOString() });
       } else if (remote.length > 0) {
-        localStorage.setItem(row.key, JSON.stringify(remote));
+        // Merge: keep local items not yet in remote (written since last sync)
+        const remoteIds = new Set(remote.map(x => x.id).filter(Boolean));
+        const localOnly = local.filter(x => x.id !== undefined && !remoteIds.has(x.id));
+        localStorage.setItem(row.key, JSON.stringify(localOnly.length ? [...remote, ...localOnly] : remote));
       }
     }
     hub_setSyncDot(true);
@@ -7277,6 +7280,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               localStorage.setItem('tmmb_calls', JSON.stringify(value));
               tmmb_updateOverview();
               tmmb_renderVault();
+              tmmb_renderCallHistory();
             }
             if (key === 'dev_pipeline') {
               localStorage.setItem(DEV_PIPELINE_KEY, JSON.stringify(value));
@@ -7877,13 +7881,13 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <div class="biz-client-card">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
-            <div class="biz-client-name">${c.name}</div>
+            <div class="biz-client-name">${escHtml(c.name)}</div>
             <span class="biz-badge ${badge[c.status]||''}">${badgeLabel[c.status]||c.status}</span>
             <span style="font-size:11px;font-weight:700;color:${healthColor};background:${healthColor}18;border:1px solid ${healthColor}40;border-radius:10px;padding:1px 7px;">${healthLabel}</span>
           </div>
-          <div class="biz-client-meta">${[industryLabel[c.industry]||c.industry, c.start ? 'Since ' + biz_fmtDate(c.start) : '', c.email].filter(Boolean).join(' · ')}</div>
+          <div class="biz-client-meta">${[industryLabel[c.industry]||escHtml(c.industry), c.start ? 'Since ' + biz_fmtDate(c.start) : '', escHtml(c.email||'')].filter(Boolean).join(' · ')}</div>
           ${c.start && c.status === 'active' ? `<div style="margin-top:8px;"><div style="height:4px;background:#f3f4f6;border-radius:2px;overflow:hidden;"><div style="height:100%;width:${barPct}%;background:${healthColor};border-radius:2px;transition:width 0.4s;"></div></div><div style="font-size:10px;color:#9ca3af;margin-top:2px;">${daysActive} days as a client · ${barPct}% of first year</div></div>` : ''}
-          ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:12px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px;">Open dashboard →</a>` : ''}
+          ${safeUrl(c.url) ? `<a href="${safeUrl(c.url)}" target="_blank" rel="noopener" style="font-size:12px;color:#1e40af;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px;">Open dashboard →</a>` : ''}
           ${c.notes ? `<div style="font-size:12px;color:#9ca3af;margin-top:4px;">${escHtml(c.notes)}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
@@ -7944,7 +7948,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div class="biz-rev-entry">
               <div>
                 <div class="biz-rev-amount">£${(e.amount||0).toLocaleString()}</div>
-                ${e.note ? `<div class="biz-rev-note">${e.note}</div>` : ''}
+                ${e.note ? `<div class="biz-rev-note">${escHtml(e.note)}</div>` : ''}
               </div>
               <button onclick="biz_deleteRevenue(${e.id})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:22px;line-height:1;padding:0 4px;">×</button>
             </div>`).join('')}
@@ -7999,7 +8003,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="biz-card" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
             <div>
-              <div style="font-size:15px;font-weight:700;color:#111827;">${g.label}</div>
+              <div style="font-size:15px;font-weight:700;color:#111827;">${escHtml(g.label)}</div>
               <div style="font-size:11px;color:#9ca3af;margin-top:3px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">${periodLabel[g.period]||g.period}</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
@@ -8290,8 +8294,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     rows.map(r => `
       <div class="cr-exp-row">
         <div>
-          <div style="font-size:13px;font-weight:600;color:#0d2345;">${r.source || '—'}</div>
-          <div style="font-size:11px;color:#9ca3af;">${biz_fmtDate(r.date)}${r.notes ? ' · ' + r.notes : ''}</div>
+          <div style="font-size:13px;font-weight:600;color:#0d2345;">${escHtml(r.source || '—')}</div>
+          <div style="font-size:11px;color:#9ca3af;">${biz_fmtDate(r.date)}${r.notes ? ' · ' + escHtml(r.notes) : ''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:14px;font-weight:700;color:#059669;">£${(r.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
@@ -8357,7 +8361,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
               <span class="cr-exp-cat" style="background:${cat.color};">${cat.label}</span>
             </div>
-            <div style="font-size:13px;font-weight:600;color:#0d2345;">${r.desc || '—'}</div>
+            <div style="font-size:13px;font-weight:600;color:#0d2345;">${escHtml(r.desc || '—')}</div>
             <div style="font-size:11px;color:#9ca3af;">${biz_fmtDate(r.date)}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -9145,8 +9149,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
           <div style="font-size:16px;">🚨</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#991b1b;">${inv.client} — OVERDUE</div>
-            <div style="font-size:11px;color:#dc2626;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+inv.number:''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
+            <div style="font-size:13px;font-weight:700;color:#991b1b;">${escHtml(inv.client)} — OVERDUE</div>
+            <div style="font-size:11px;color:#dc2626;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+escHtml(inv.number):''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
           </div>
           <button onclick="cr_copyChaseEmail('${inv.client.replace(/'/g,"\\'")}','${(inv.number||'').replace(/'/g,"\\'")}','${inv.amount}','${inv.due_date||''}')" style="font-size:11px;font-weight:700;padding:5px 10px;background:#dc2626;color:#fff;border:none;border-radius:7px;cursor:pointer;white-space:nowrap;">Copy Chase Email</button>
         </div>`),
@@ -9154,8 +9158,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
           <div style="font-size:16px;">⚠️</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#92400e;">${inv.client} — Due soon</div>
-            <div style="font-size:11px;color:#d97706;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+inv.number:''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
+            <div style="font-size:13px;font-weight:700;color:#92400e;">${escHtml(inv.client)} — Due soon</div>
+            <div style="font-size:11px;color:#d97706;">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{minimumFractionDigits:0})}${inv.number?' · '+escHtml(inv.number):''} · Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
           </div>
           <button onclick="cr_copyChaseEmail('${inv.client.replace(/'/g,"\\'")}','${(inv.number||'').replace(/'/g,"\\'")}','${inv.amount}','${inv.due_date||''}')" style="font-size:11px;font-weight:700;padding:5px 10px;background:#d97706;color:#fff;border:none;border-radius:7px;cursor:pointer;white-space:nowrap;">Copy Reminder</button>
         </div>`),
@@ -9191,9 +9195,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               const statusLabel = overdue ? 'OVERDUE' : inv.status.toUpperCase();
               return `<div class="cr-inv-card">
                 <div class="cr-inv-meta">
-                  <div class="cr-inv-client">${inv.client||'Unknown'}</div>
-                  <div class="cr-inv-sub">${inv.number?inv.number+' · ':''}Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
-                  ${inv.notes?`<div class="cr-inv-sub">${inv.notes}</div>`:''}
+                  <div class="cr-inv-client">${escHtml(inv.client||'Unknown')}</div>
+                  <div class="cr-inv-sub">${inv.number?escHtml(inv.number)+' · ':''}Due ${inv.due_date?new Date(inv.due_date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+                  ${inv.notes?`<div class="cr-inv-sub">${escHtml(inv.notes)}</div>`:''}
                 </div>
                 <div class="cr-inv-actions">
                   <div class="cr-inv-amount">£${(parseFloat(inv.amount)||0).toLocaleString('en-GB',{maximumFractionDigits:0})}</div>
