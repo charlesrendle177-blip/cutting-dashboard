@@ -7232,7 +7232,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       }
       if (row.key === 'tmmb_plan_payments') {
         if (row.value && typeof row.value === 'object' && !Array.isArray(row.value) && Object.keys(row.value).length > 0) {
-          localStorage.setItem('tmmb_plan_payments', JSON.stringify(row.value));
+          // Merge: remote fills gaps, local wins for conflicts (preserves toggles when hub_data write is blocked)
+          const local = tmmb_getPlanPayments();
+          const merged = { ...row.value, ...local };
+          localStorage.setItem('tmmb_plan_payments', JSON.stringify(merged));
         }
         continue;
       }
