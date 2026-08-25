@@ -6658,7 +6658,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     let totalCash = 0, totalComm = 0;
     closes.forEach(c => {
-      const comm = Math.round((c.dealValue || 4000) * 0.1);
+      // Use per-payment commission slice, not full deal commission —
+      // instalment rows below carry the remaining slices separately
+      const n    = tmmb_paytypeMonths(c.paytype || 'pif');
+      const comm = Math.round((c.dealValue || 4000) * 0.1 / n);
       totalCash += (c.cash || 0);
       totalComm += comm;
       rows.push([c.date, c.name || 'Unknown', c.deal || 'TMMB Academy', paytypeLabel[c.paytype] || c.paytype || 'PIF', (c.dealValue || 4000), (c.cash || 0), comm]);
