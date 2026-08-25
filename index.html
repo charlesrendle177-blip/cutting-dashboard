@@ -1179,6 +1179,7 @@
     .tmmb-pill.followup{ background: rgba(217,119,6,0.1);    color: #d97706; }
     .tmmb-pill.noshow  { background: rgba(239,68,68,0.1);    color: #ef4444; }
     .tmmb-pill.noclose { background: rgba(107,114,128,0.1);  color: #6b7280; }
+    .tmmb-pill.dq      { background: rgba(159,18,57,0.1);    color: #9f1239; }
 
     /* forms */
     .tmmb-form-group { margin-bottom: 14px; }
@@ -2914,6 +2915,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                   <option value="followup">Follow-up booked</option>
                   <option value="noclose">No close</option>
                   <option value="noshow">No show</option>
+                  <option value="dq">Disqualified (DQ)</option>
                 </select>
               </div>
             </div>
@@ -3074,6 +3076,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('followup',this)">Follow-up</button>
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noclose',this)">No Close</button>
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('noshow',this)">No Show</button>
+              <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('dq',this)">DQ</button>
               <button class="tmmb-vault-filter" onclick="tmmb_setVaultFilter('starred',this)">⭐ Starred</button>
             </div>
           </div>
@@ -5359,17 +5362,35 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return map[paytype] || 1;
   }
 
-  // Commission attributable to a specific year/month for a single call
-  function tmmb_commissionForMonth(call, year, month) {
+  // Commission attributable to a specific year/month for a single call.
+  // Respects tmmb_plan_payments: if an instalment was paid early/late,
+  // its commission moves to the actual paid month rather than the scheduled one.
+  function tmmb_commissionForMonth(call, year, month, paidMap) {
     if (call.outcome !== 'closed') return 0;
+    if (!paidMap) paidMap = tmmb_getPlanPayments();
     const n = tmmb_paytypeMonths(call.paytype || 'pif');
     const totalComm = Math.round((call.dealValue || 4000) * 0.1);
+    const perPayment = Math.round(totalComm / n);
     const d = new Date(call.date + 'T12:00:00');
-    const callAbsMonth = d.getFullYear() * 12 + d.getMonth();
+    const closeAbsMonth = d.getFullYear() * 12 + d.getMonth();
     const targetAbsMonth = year * 12 + month;
-    const diff = targetAbsMonth - callAbsMonth;
-    if (diff < 0 || diff >= n) return 0;
-    return Math.round(totalComm / n);
+    let earned = 0;
+    for (let payNum = 1; payNum <= n; payNum++) {
+      let absMonth;
+      if (payNum === 1) {
+        absMonth = closeAbsMonth;
+      } else {
+        const paidDate = tmmb_getPaymentDate(paidMap, call.id, payNum);
+        if (paidDate) {
+          const pd = new Date(paidDate + 'T12:00:00');
+          absMonth = pd.getFullYear() * 12 + pd.getMonth();
+        } else {
+          absMonth = closeAbsMonth + (payNum - 1);
+        }
+      }
+      if (absMonth === targetAbsMonth) earned += perPayment;
+    }
+    return earned;
   }
 
   function tmmb_onOutcomeChange(val) {
@@ -5481,6 +5502,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
                 <option value="followup">Follow-up</option>
                 <option value="noclose">No Close</option>
                 <option value="noshow">No Show</option>
+                <option value="dq">Disqualified (DQ)</option>
               </select>
             </div>
           </div>
@@ -5627,10 +5649,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   function tmmb_outcomeLabel(o) {
-    return { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show' }[o] || o;
+    return { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show', dq:'DQ' }[o] || o;
   }
   function tmmb_outcomeClass(o) {
-    return { closed:'closed', followup:'followup', noshow:'noshow', noclose:'noclose' }[o] || 'noclose';
+    return { closed:'closed', followup:'followup', noshow:'noshow', noclose:'noclose', dq:'dq' }[o] || 'noclose';
   }
 
   function tmmb_renderCallHistory() {
@@ -5766,9 +5788,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     }
 
     const paytypeLabel = { pif:'PIF', deposit:'Deposit', plan2:'Plan · 2m', plan3:'Plan · 3m', plan4:'Plan · 4m', plan6:'Plan · 6m', plan12:'Plan · 12m' };
-    const outcomeAccent = { closed:'#059669', followup:'#d97706', noclose:'#9ca3af', noshow:'#ef4444' };
-    const outcomeLabel  = { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show' };
-    const outcomeClass  = { closed:'closed', followup:'followup', noclose:'noclose', noshow:'noshow' };
+    const outcomeAccent = { closed:'#059669', followup:'#d97706', noclose:'#9ca3af', noshow:'#ef4444', dq:'#9f1239' };
+    const outcomeLabel  = { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show', dq:'DQ' };
+    const outcomeClass  = { closed:'closed', followup:'followup', noclose:'noclose', noshow:'noshow', dq:'dq' };
     const sourceLabel   = { setter:'Setter', referral:'Referral', ad:'Paid Ad', inbound:'Inbound', other:'Other' };
 
     grid.innerHTML = calls.map(c => {
@@ -6682,10 +6704,24 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const occ        = calls.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
     const fup        = calls.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
     const closeRate  = shows > 0 ? Math.round((closes / shows) * 100) : 0;
-    // Commission: spread payment plan deals across their months
+    // Commission: spread payment plan deals across their months, respecting actual paid dates
+    const paidMap    = tmmb_getPlanPayments();
     const allCalls   = tmmb_getFilteredCalls();
-    const commission = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, year, month), 0);
-    const cashIn     = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
+    const commission = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, year, month, paidMap), 0);
+    // Cash collected = upfront cash from deals closed this month + instalments paid this month
+    const planTypes  = ['deposit','plan2','plan3','plan4','plan6','plan12'];
+    let instalmentCashIn = 0;
+    allCalls.filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype)).forEach(c => {
+      const n = tmmb_paytypeMonths(c.paytype);
+      const perPayment = Math.round((c.dealValue || 4000) / n);
+      for (let payNum = 2; payNum <= n; payNum++) {
+        const paidDate = tmmb_getPaymentDate(paidMap, c.id, payNum);
+        if (!paidDate) continue;
+        const pd = new Date(paidDate);
+        if (pd.getFullYear() === year && pd.getMonth() === month) instalmentCashIn += perPayment;
+      }
+    });
+    const cashIn     = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0) + instalmentCashIn;
 
     document.getElementById('tm-shows').textContent      = shows;
     document.getElementById('tm-closes').textContent     = closes;
@@ -6698,7 +6734,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const MONTHLY_TARGET = 5500;
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear  = month === 0 ? year - 1 : year;
-    const lastMonthComm = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, prevYear, prevMonth), 0);
+    const lastMonthComm = allCalls.filter(c => c.outcome === 'closed').reduce((s,c) => s + tmmb_commissionForMonth(c, prevYear, prevMonth, paidMap), 0);
 
     const now          = new Date();
     const isThisMonth  = year === now.getFullYear() && month === now.getMonth();
