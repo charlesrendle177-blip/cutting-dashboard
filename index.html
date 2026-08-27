@@ -6123,6 +6123,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     }
     tmmb_savePlanPayments(p);
     tmmb_renderPaymentPlans();
+    tmmb_updateOverview();
+    if (document.getElementById('tmmb-monthly')?.classList.contains('active')) tmmb_renderMonthly();
   }
 
   const GCAL_CLIENT_ID = '1066527538775-4heptaeilm8em7hkvv3f3gshtuh851em.apps.googleusercontent.com';
