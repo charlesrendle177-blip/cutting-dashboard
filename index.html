@@ -5356,6 +5356,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       .then(({ error }) => { if (error) console.error('[hub_sync] tmmb_saveCalls failed:', error); });
   }
 
+  // Commission rate: 12% for Project Gains, 10% for TMMB
+  function tmmb_commRate(call) {
+    return (call && (call.offer || 'tmmb') === 'gains') ? 0.12 : 0.10;
+  }
+
   // Returns how many monthly payments a paytype involves
   function tmmb_paytypeMonths(paytype) {
     const map = { pif:1, deposit:2, plan2:2, plan3:3, plan4:4, plan6:6, plan12:12 };
@@ -5369,7 +5374,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (call.outcome !== 'closed') return 0;
     if (!paidMap) paidMap = tmmb_getPlanPayments();
     const n = tmmb_paytypeMonths(call.paytype || 'pif');
-    const totalComm = Math.round((call.dealValue || 4000) * 0.1);
+    const totalComm = Math.round((call.dealValue || 4000) * tmmb_commRate(call));
     const perPayment = Math.round(totalComm / n);
     const d = new Date(call.date + 'T12:00:00');
     const closeAbsMonth = d.getFullYear() * 12 + d.getMonth();
@@ -5671,7 +5676,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       '<th></th><th>Date</th><th>Prospect</th><th>Programme</th><th>Cash</th><th>Outcome</th><th></th>' +
       '</tr></thead><tbody>' +
       calls.map(c => {
-        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        const comm = Math.round((c.dealValue || 4000) * tmmb_commRate(c));
         const contactLine = c.email || '';
         const sourceBit   = c.source ? ` <span style="color:#9ca3af;font-size:10px;">${sourceLabel[c.source]||escHtml(c.source)}</span>` : '';
         const dealBit     = c.deal ? escHtml(c.deal) : '—';
@@ -5760,7 +5765,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     // Stats always from full set
     const closed = all.filter(c => c.outcome === 'closed');
     const totalCash = closed.reduce((s,c) => s + (c.cash||0), 0);
-    const totalComm = closed.reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const totalComm = closed.reduce((s,c) => s + Math.round((c.dealValue||4000)*tmmb_commRate(c)), 0);
     const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
     set('vault-stat-total',  all.length || '—');
     set('vault-stat-closed', closed.length || '—');
@@ -5795,7 +5800,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     grid.innerHTML = calls.map(c => {
       const accent  = outcomeAccent[c.outcome] || '#9ca3af';
-      const comm    = Math.round((c.dealValue||4000)*0.1);
+      const comm    = Math.round((c.dealValue||4000)*tmmb_commRate(c));
       const contact = c.email || '';
       const src     = c.source ? sourceLabel[c.source] || c.source : '';
 
@@ -5878,7 +5883,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     set('tmmb-stat-calls', shown);
     set('tmmb-stat-shows', total  ? Math.round(shown/total*100)  + '%' : '—');
     set('tmmb-stat-close', shown  ? Math.round(closed/shown*100) + '%' : '—');
-    const earned   = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+    const earned   = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*tmmb_commRate(c)), 0);
     const cashLive = calls.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
     set('tmmb-stat-earn',  '£' + earned.toLocaleString());
     set('tmmb-stat-cash',  '£' + (TMMB_CASH_OFFSET + cashLive).toLocaleString());
@@ -5937,7 +5942,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           const d = new Date(c.date + 'T12:00:00');
           const key = d.getFullYear() + '-' + d.getMonth();
           if (!monthCommMap[key]) monthCommMap[key] = { comm: 0, label: d.toLocaleDateString('en-GB', {month:'short', year:'numeric'}) };
-          monthCommMap[key].comm += Math.round((c.dealValue || 4000) * 0.1);
+          monthCommMap[key].comm += Math.round((c.dealValue || 4000) * tmmb_commRate(c));
         });
         const bestMonth = Object.values(monthCommMap).sort((a,b) => b.comm - a.comm)[0];
         const bestCloseRate = (() => {
@@ -6012,7 +6017,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     } else {
       card.style.display = 'block';
       body.innerHTML = atRisk.map(({ c, daysLeft }) => {
-        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        const comm = Math.round((c.dealValue || 4000) * tmmb_commRate(c));
         const col  = daysLeft <= 7 ? '#ef4444' : '#d97706';
         const bg   = daysLeft <= 7 ? '#fee2e2' : '#fef3c7';
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
@@ -6028,7 +6033,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       }).join('');
       const clawSummaryEl = document.getElementById('tmmb-clawback-summary');
       if (clawSummaryEl) {
-        const totalAtRisk = atRisk.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * 0.1), 0);
+        const totalAtRisk = atRisk.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * tmmb_commRate(c)), 0);
         const soonest = atRisk[0].daysLeft;
         clawSummaryEl.textContent = `${atRisk.length} clients · £${totalAtRisk.toLocaleString()} · soonest ${soonest}d`;
       }
@@ -6040,9 +6045,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       lCard.style.display = 'none';
     } else {
       lCard.style.display = 'block';
-      const total = locked.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * 0.1), 0);
+      const total = locked.reduce((s, { c }) => s + Math.round((c.dealValue || 4000) * tmmb_commRate(c)), 0);
       lBody.innerHTML = locked.map(({ c }) => {
-        const comm = Math.round((c.dealValue || 4000) * 0.1);
+        const comm = Math.round((c.dealValue || 4000) * tmmb_commRate(c));
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:16px;line-height:1;">✅</span>
@@ -6642,7 +6647,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         if (!paidDate) continue;
         const d = new Date(paidDate);
         if (d.getFullYear() !== year || d.getMonth() !== month) continue;
-        const comm = Math.round(perPayment * 0.1);
+        const comm = Math.round(perPayment * tmmb_commRate(c));
         instalmentRows.push({ date: paidDate, name: c.name || 'Unknown', deal: c.deal || 'TMMB Academy', type: `Instalment ${payNum}/${n} · ${paytypeLabel[c.paytype] || c.paytype}`, cash: perPayment, comm });
       }
     });
@@ -6661,7 +6666,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       // Use per-payment commission slice, not full deal commission —
       // instalment rows below carry the remaining slices separately
       const n    = tmmb_paytypeMonths(c.paytype || 'pif');
-      const comm = Math.round((c.dealValue || 4000) * 0.1 / n);
+      const comm = Math.round((c.dealValue || 4000) * tmmb_commRate(c) / n);
       totalCash += (c.cash || 0);
       totalComm += comm;
       rows.push([c.date, c.name || 'Unknown', c.deal || 'TMMB Academy', paytypeLabel[c.paytype] || c.paytype || 'PIF', (c.dealValue || 4000), (c.cash || 0), comm]);
@@ -6893,7 +6898,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const wOcc    = wk.filter(c => c.outcome === 'closed' && c.type === 'call1').length;
       const wFup    = wk.filter(c => c.outcome === 'closed' && c.type === 'call2').length;
       const wRate   = wShows > 0 ? Math.round((wCloses / wShows) * 100) : 0;
-      const wComm   = wk.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*0.1), 0);
+      const wComm   = wk.filter(c => c.outcome === 'closed').reduce((s,c) => s + Math.round((c.dealValue||4000)*tmmb_commRate(c)), 0);
       const wCash   = wk.filter(c => c.outcome === 'closed').reduce((s,c) => s + (c.cash||0), 0);
       const rc = wRate >= 30 ? '#059669' : wRate >= 15 ? '#d97706' : wRate > 0 ? '#ef4444' : '#9ca3af';
       rows += `<tr>
