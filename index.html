@@ -3194,6 +3194,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
               ↓ Download
             </button>
           </div>
+
+          <!-- Payment plan instalments for this month -->
+          <div id="tmmb-monthly-plans" style="margin-top:16px;"></div>
         </div>
 
         <!-- ===== INVOICES ===== -->
@@ -6920,6 +6923,77 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <td><div style="color:#059669;font-weight:700">£${commission.toLocaleString()}</div><div style="font-size:10px;color:#9ca3af">£${cashIn.toLocaleString()} in</div></td>
     </tr>`;
     document.getElementById('tmmb-weekly-tbody').innerHTML = rows;
+
+    // Payment plan instalments this month
+    const planEl = document.getElementById('tmmb-monthly-plans');
+    if (planEl) {
+      const planTypes = ['deposit','plan2','plan3','plan4','plan6','plan12'];
+      const paytypeLabel = { deposit:'Deposit + Balance', plan2:'2-Month Plan', plan3:'3-Month Plan', plan4:'4-Month Plan', plan6:'6-Month Plan', plan12:'12-Month Plan' };
+      const planCalls = tmmb_getFilteredCalls().filter(c => c.outcome === 'closed' && c.date && planTypes.includes(c.paytype));
+      const targetAbs = year * 12 + month;
+      const items = [];
+      planCalls.forEach(c => {
+        const n = tmmb_paytypeMonths(c.paytype);
+        const perPayment = Math.round((c.dealValue || 4000) / n);
+        const closeD = new Date(c.date + 'T12:00:00');
+        const closeAbs = closeD.getFullYear() * 12 + closeD.getMonth();
+        for (let payNum = 1; payNum <= n; payNum++) {
+          let absMonth, isPaid = false, paidDate = null;
+          if (payNum === 1) {
+            absMonth = closeAbs;
+            isPaid = true;
+            paidDate = c.date;
+          } else {
+            const pd = tmmb_getPaymentDate(paidMap, c.id, payNum);
+            if (pd) {
+              const pdD = new Date(pd + 'T12:00:00');
+              absMonth = pdD.getFullYear() * 12 + pdD.getMonth();
+              isPaid = true;
+              paidDate = pd;
+            } else {
+              absMonth = closeAbs + (payNum - 1);
+            }
+          }
+          if (absMonth === targetAbs) {
+            items.push({ name: c.name || 'Unknown', payNum, n, amount: perPayment, isPaid, paidDate, paytype: c.paytype });
+          }
+        }
+      });
+
+      if (items.length === 0) {
+        planEl.innerHTML = '';
+      } else {
+        const totalIn = items.filter(x => x.isPaid).reduce((s, x) => s + x.amount, 0);
+        const totalDue = items.filter(x => !x.isPaid).reduce((s, x) => s + x.amount, 0);
+        const itemRows = items.map(x => {
+          const statusHtml = x.isPaid
+            ? `<span style="background:rgba(5,150,105,0.1);color:#059669;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;">Paid ${x.paidDate}</span>`
+            : `<span style="background:rgba(217,119,6,0.1);color:#d97706;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;">Scheduled</span>`;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #f1f5f9;">
+            <div>
+              <span style="font-size:13px;font-weight:700;color:var(--text);">${escHtml(x.name)}</span>
+              <span style="font-size:12px;color:#6b7280;margin-left:8px;">Payment ${x.payNum} of ${x.n} &middot; ${paytypeLabel[x.paytype] || x.paytype}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${statusHtml}
+              <span style="font-size:14px;font-weight:700;color:${x.isPaid ? '#059669' : '#d97706'};">£${x.amount.toLocaleString()}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+        planEl.innerHTML = `
+          <div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f9fafb;border-bottom:1.5px solid #e5e7eb;">
+              <span style="font-size:13px;font-weight:700;color:var(--text);">Payment Plan Activity</span>
+              <div style="display:flex;gap:14px;">
+                ${totalIn > 0 ? `<span style="font-size:12px;color:#059669;font-weight:700;">£${totalIn.toLocaleString()} received</span>` : ''}
+                ${totalDue > 0 ? `<span style="font-size:12px;color:#d97706;font-weight:700;">£${totalDue.toLocaleString()} scheduled</span>` : ''}
+              </div>
+            </div>
+            ${itemRows}
+          </div>`;
+      }
+    }
   }
 
   function tmmb_initSales() {
