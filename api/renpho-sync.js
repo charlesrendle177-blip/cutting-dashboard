@@ -95,8 +95,23 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const email    = process.env.RENPHO_EMAIL;
-  const password = process.env.RENPHO_PASSWORD;
+  const email    = (process.env.RENPHO_EMAIL || '').trim();
+  const password = (process.env.RENPHO_PASSWORD || '').trim();
+
+  // ?debug=1 returns env var diagnostics without attempting login
+  if (req.query && req.query.debug === '1') {
+    const masked = email.length > 4
+      ? email.slice(0, 2) + '***' + email.slice(email.indexOf('@'))
+      : '(empty)';
+    return res.status(200).json({
+      emailSet: !!email,
+      emailMasked: masked,
+      emailLength: email.length,
+      passwordSet: !!password,
+      passwordLength: password.length,
+    });
+  }
+
   if (!email || !password) {
     return res.status(500).json({ error: 'RENPHO_EMAIL or RENPHO_PASSWORD not set in Vercel env vars' });
   }
