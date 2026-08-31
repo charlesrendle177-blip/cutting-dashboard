@@ -1,92 +1,139 @@
 // Renpho automatic sync — pulls latest body measurements and upserts into cutting_logs.
-// Missing days between real measurements are filled with linear interpolation.
+// Uses the current cloud.renpho.com API with AES-128-ECB encrypted payloads.
 // REQUIRES Vercel env vars: RENPHO_EMAIL, RENPHO_PASSWORD
 
 const crypto = require('crypto');
 
-const RENPHO_SERVERS = [
-  'https://renpho.qnclouds.com',
-  'https://uk.renpho.qnclouds.com',
-  'https://eu.renpho.qnclouds.com',
+const BASE_URL  = 'https://cloud.renpho.com';
+const AES_KEY   = 'ed*wijdi$h6fe3ew'; // 16-byte AES-128 key (published in reverse-engineering)
+const APP_VER   = '6.6.0';
+const PLATFORM  = 'android';
+
+const BODY_WEIGHT_SCALES = [
+  '01','02','03','04','05','06','07','08','09','0A',
+  '0B','0C','0D','0E','0F','10','11','12','13','14',
 ];
+
 const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
-// Anon key — already public in cutting-logs.js, safe to include here
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 
-const UA = 'Renpho/4.0.0 (iPhone; iOS 17.0; Scale/1.0)';
+const SUCCESS_CODES = new Set([0, '0', 101, '101', 200, '200', 20000, '20000']);
 
-async function tryLogin(base, email, password_hash, useForm) {
-  const endpoint = `${base}/api/v3/users/sign_in.json?app_id=Renpho`;
-  const payload = { secure_flag: 1, email, password_hash };
-  const headers = { 'User-Agent': UA };
-  let res;
-  if (useForm) {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    res = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: new URLSearchParams(payload).toString(),
-    });
-  } else {
-    headers['Content-Type'] = 'application/json';
-    res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(payload) });
+// AES-128-ECB helpers
+function aesEncrypt(plaintext) {
+  const cipher = crypto.createCipheriv('aes-128-ecb', Buffer.from(AES_KEY, 'utf8'), null);
+  return Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]).toString('base64');
+}
+
+function aesDecrypt(b64) {
+  const decipher = crypto.createDecipheriv('aes-128-ecb', Buffer.from(AES_KEY, 'utf8'), null);
+  return Buffer.concat([decipher.update(Buffer.from(b64, 'base64')), decipher.final()]).toString('utf8');
+}
+
+function encryptReq(obj) {
+  return { encryptData: aesEncrypt(JSON.stringify(obj)) };
+}
+
+function decryptRes(data) {
+  return JSON.parse(aesDecrypt(data));
+}
+
+async function renphoPost(endpoint, body, token, userId) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers.token    = token;
+    headers.userId   = String(userId);
+    headers.appVersion = APP_VER;
+    headers.platform = PLATFORM;
   }
-  const data = await res.json();
-  return data;
+  const res = await fetch(`${BASE_URL}/${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from /${endpoint}`);
+  return res.json();
+}
+
+function checkResp(result, ctx) {
+  const code = result.code;
+  const msg  = (result.msg || '').toLowerCase();
+  if (msg === 'success' || SUCCESS_CODES.has(code)) return;
+  throw new Error(`${ctx} failed: code=${code} msg=${result.msg}`);
 }
 
 async function renphoLogin(email, password) {
-  const base = RENPHO_SERVERS[0];
-  const md5  = crypto.createHash('md5').update(password).digest('hex');
-  const sha  = crypto.createHash('sha256').update(password).digest('hex');
-  const errors = [];
+  const payload = encryptReq({
+    questionnaire: {},
+    login: {
+      password,
+      areaCode: 'US',
+      appRevision: APP_VER,
+      cellphoneType: 'PythonScript',
+      systemType: '11',
+      email,
+      platform: PLATFORM,
+    },
+    bindingList: { deviceTypes: BODY_WEIGHT_SCALES },
+  });
 
-  for (const [label, hash, form] of [
-    ['md5+json',    md5, false],
-    ['md5+form',    md5, true],
-    ['sha256+json', sha, false],
-    ['sha256+form', sha, true],
-  ]) {
-    try {
-      const data = await tryLogin(base, email, hash, form);
-      const key = data.terminal_user_session_key;
-      if (key) return { key, base };
-      errors.push(`[${label}] ${JSON.stringify(data)}`);
-    } catch (e) {
-      errors.push(`[${label}] ${e.message}`);
-    }
+  const result = await renphoPost('renpho-aggregation/user/login', payload);
+  checkResp(result, 'Login');
+
+  const data      = decryptRes(result.data);
+  const loginInfo = data.login || {};
+  const token     = loginInfo.token;
+  const userId    = loginInfo.id;
+
+  if (!token) throw new Error('No token in login response: ' + JSON.stringify(data).slice(0, 200));
+  return { token, userId };
+}
+
+async function getDeviceInfo(token, userId) {
+  const result = await renphoPost('renpho-aggregation/device/count', encryptReq({}), token, userId);
+  checkResp(result, 'DeviceInfo');
+  return decryptRes(result.data);
+}
+
+async function getMeasurements(token, userId, tableName) {
+  const all  = [];
+  let   page = 1;
+
+  while (true) {
+    const payload = encryptReq({
+      pageNum:   page,
+      pageSize:  50,
+      userIds:   [String(userId)],
+      tableName,
+    });
+    const result = await renphoPost('RenphoHealth/scale/queryAllMeasureDataList', payload, token, userId);
+    if (!result.data) break;
+
+    const raw  = decryptRes(result.data);
+    const rows = Array.isArray(raw) ? raw : (raw.list || raw.data || []);
+    if (!rows.length) break;
+
+    all.push(...rows);
+    if (rows.length < 50) break;
+    page++;
   }
-  throw new Error('All auth attempts failed:\n' + errors.join('\n'));
+
+  return all;
 }
 
-async function getScaleUserId(base, sessionKey) {
-  const res = await fetch(
-    `${base}/api/v3/scale_users/list_scale_user?locale=en&terminal_user_session_key=${sessionKey}`
-  );
-  const data = await res.json();
-  const users = data.scale_users || [];
-  if (!users.length) throw new Error('No scale users found on this Renpho account');
-  return users[0].user_id;
-}
-
-async function getMeasurements(base, sessionKey, userId, daysBack = 60) {
-  const lastAt = Math.floor(Date.now() / 1000) - daysBack * 86400;
-  const res = await fetch(
-    `${base}/api/v2/measurements/list.json?user_id=${userId}&last_at=${lastAt}&locale=en&app_id=Renpho&terminal_user_session_key=${sessionKey}`
-  );
-  const data = await res.json();
-  return data.last_ary || [];
-}
-
-function tsToIso(ts) {
-  return new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+function measurementDate(m) {
+  // Different Renpho firmware/table versions use different field names
+  const ts = m.time_stamp || m.timeStamp || m.measureTime || m.createTime;
+  if (!ts) return null;
+  const ms = ts > 1e10 ? ts : ts * 1000; // handle seconds vs milliseconds
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
 }
 
 function interpolateMissing(knownPoints) {
   const sortedDates = Object.keys(knownPoints).sort();
   if (sortedDates.length < 2) return { ...knownPoints };
 
-  const result = { ...knownPoints };
+  const result  = { ...knownPoints };
   const startMs = Date.parse(sortedDates[0]);
   const endMs   = Date.parse(sortedDates[sortedDates.length - 1]);
 
@@ -110,10 +157,10 @@ async function upsertWeights(entries) {
   const res = await fetch(`${SB_URL}/rest/v1/cutting_logs?on_conflict=date`, {
     method: 'POST',
     headers: {
-      apikey: SB_ANON,
-      Authorization: `Bearer ${SB_ANON}`,
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
+      apikey:           SB_ANON,
+      Authorization:    `Bearer ${SB_ANON}`,
+      'Content-Type':   'application/json',
+      Prefer:           'resolution=merge-duplicates',
     },
     body: JSON.stringify(entries),
   });
@@ -129,7 +176,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const email    = (process.env.RENPHO_EMAIL || '').trim();
+  const email    = (process.env.RENPHO_EMAIL    || '').trim();
   const password = (process.env.RENPHO_PASSWORD || '').trim();
 
   if (req.query && req.query.debug === '1') {
@@ -137,11 +184,8 @@ module.exports = async (req, res) => {
       ? email.slice(0, 2) + '***' + email.slice(email.indexOf('@'))
       : '(empty)';
     return res.status(200).json({
-      emailSet: !!email,
-      emailMasked: masked,
-      emailLength: email.length,
-      passwordSet: !!password,
-      passwordLength: password.length,
+      emailSet: !!email, emailMasked: masked, emailLength: email.length,
+      passwordSet: !!password, passwordLength: password.length,
     });
   }
 
@@ -150,23 +194,36 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { key: sessionKey, base } = await renphoLogin(email, password);
-    const userId = await getScaleUserId(base, sessionKey);
-    const raw    = await getMeasurements(base, sessionKey, userId, 60);
+    const { token, userId } = await renphoLogin(email, password);
+    const deviceData        = await getDeviceInfo(token, userId);
+    const scales            = deviceData.scale || [];
+
+    if (!scales.length) {
+      return res.status(200).json({ ok: true, message: 'No scales found on account', synced: 0 });
+    }
+
+    const tableName = scales[0].tableName;
+    const raw       = await getMeasurements(token, userId, tableName);
 
     if (!raw.length) {
-      return res.status(200).json({ ok: true, message: 'No measurements in last 60 days', synced: 0 });
+      return res.status(200).json({ ok: true, message: 'No measurements found', synced: 0 });
     }
 
     const knownPoints = {};
     const seenTs      = {};
     for (const m of raw) {
-      const iso = tsToIso(m.time_stamp);
+      const iso = measurementDate(m);
       const w   = parseFloat(m.weight);
-      if (!seenTs[iso] || m.time_stamp > seenTs[iso]) {
+      if (!iso || isNaN(w)) continue;
+      const ts = m.time_stamp || m.timeStamp || m.measureTime || m.createTime || 0;
+      if (!seenTs[iso] || ts > seenTs[iso]) {
         knownPoints[iso] = w;
-        seenTs[iso]      = m.time_stamp;
+        seenTs[iso]      = ts;
       }
+    }
+
+    if (!Object.keys(knownPoints).length) {
+      return res.status(200).json({ ok: true, message: 'No valid weight readings', synced: 0 });
     }
 
     const filled  = interpolateMissing(knownPoints);
@@ -176,8 +233,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      server: base,
-      synced: entries.length,
+      synced:       entries.length,
       realReadings: Object.keys(knownPoints).length,
       interpolated: entries.length - Object.keys(knownPoints).length,
     });
