@@ -2333,19 +2333,19 @@
           <div class="metric-sub" id="f-weight-date">No data yet</div>
         </div>
         <div class="metric-card">
+          <div class="metric-label">7-Day Avg Weight</div>
+          <div class="metric-value" id="f-avg-weight">—<span class="unit">kg</span></div>
+          <div class="metric-sub" id="f-avg-trend">Rolling average</div>
+        </div>
+        <div class="metric-card">
           <div class="metric-label">Workouts This Week</div>
           <div class="metric-value" id="f-sessions">0<span class="unit">sessions</span></div>
           <div class="metric-sub" id="f-last-session">No recent session</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">Sleep Last Night</div>
-          <div class="metric-value" id="f-sleep">—<span class="unit">hrs</span></div>
-          <div class="metric-sub">Recovery tracker</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Daily Steps</div>
-          <div class="metric-value" id="f-steps">—<span class="unit">steps</span></div>
-          <div class="metric-sub">Zone 2 & activity</div>
+          <div class="metric-label">Yesterday vs Target</div>
+          <div class="metric-value" id="f-yesterday-deficit" style="font-size:28px;">—</div>
+          <div class="metric-sub" id="f-yesterday-cals">No cal data</div>
         </div>
       </div>
 
@@ -2388,24 +2388,39 @@
         <button class="btn-save" onclick="logFitness()">Save Entry</button>
       </div>
 
-      <!-- View Toggle -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;">Charts & History</div>
+      <!-- Calorie target + view toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;">
+          <span style="font-size:13px;font-weight:600;color:#374151;">Daily target:</span>
+          <input type="number" id="f-cal-target" placeholder="2200" step="50" min="500" max="5000"
+            style="width:80px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:13px;font-weight:700;color:#0d2345;text-align:center;font-family:'Inter',sans-serif;"
+            onchange="setCalTarget(this.value)" onblur="setCalTarget(this.value)">
+          <span style="font-size:12px;color:#6b7280;">kcal</span>
+        </div>
         <div style="display:flex;gap:8px;">
           <button id="f-btn-all" class="f-view-btn f-view-active" onclick="setFitnessView('all')">All Time</button>
           <button id="f-btn-2w" class="f-view-btn" onclick="setFitnessView('2weeks')">Last 2 Weeks</button>
         </div>
       </div>
 
-      <!-- Charts -->
-      <div class="f-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;">
+      <!-- Charts (stacked) -->
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:22px;">
         <div class="log-card" style="margin-bottom:0;padding:22px 24px;">
-          <div class="log-card-title" style="margin-bottom:16px;">Weight Trend</div>
-          <div style="height:220px;position:relative;"><canvas id="f-weight-chart"></canvas></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="log-card-title" style="margin-bottom:0;">Weight Trend</div>
+            <div style="display:flex;align-items:center;gap:14px;font-size:11px;color:#6b7280;">
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:20px;height:2px;background:#0d2345;display:inline-block;border-radius:2px;"></span>Daily</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:20px;height:2px;background:#4f46e5;display:inline-block;border-radius:2px;border-top:2px dashed #4f46e5;"></span>7-day avg</span>
+            </div>
+          </div>
+          <div style="height:200px;position:relative;"><canvas id="f-weight-chart"></canvas></div>
         </div>
         <div class="log-card" style="margin-bottom:0;padding:22px 24px;">
-          <div class="log-card-title" style="margin-bottom:16px;">Daily Calories</div>
-          <div style="height:220px;position:relative;"><canvas id="f-cal-chart"></canvas></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="log-card-title" style="margin-bottom:0;">Daily Calories</div>
+            <span style="font-size:11px;color:#6b7280;">Dashed line = your target</span>
+          </div>
+          <div style="height:200px;position:relative;"><canvas id="f-cal-chart"></canvas></div>
         </div>
       </div>
 
@@ -2413,29 +2428,23 @@
       <div class="table-card">
         <div class="table-card-header">
           <div class="table-card-title" id="f-table-title">Log History</div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="exportForClaude()" style="background:#0d2345;color:#ffffff;border:none;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
-              📋 Copy for Claude
-            </button>
-            <button onclick="exportCSV()" style="background:#ffffff;color:#0d2345;border:1px solid rgba(13,35,69,0.18);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
-              ⬇ Download CSV
-            </button>
-          </div>
+          <button onclick="exportCSV()" style="background:#ffffff;color:#0d2345;border:1px solid rgba(13,35,69,0.18);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">
+            ⬇ CSV
+          </button>
         </div>
         <div class="table-scroll"><table>
           <thead>
             <tr>
               <th>Date</th>
               <th>Weight</th>
-              <th>Sleep</th>
-              <th>Steps</th>
-              <th>Calories</th>
               <th>Workout</th>
+              <th>Calories</th>
+              <th>vs Target</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="f-log-body">
-            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--white-40);">Loading…</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--white-40);">Loading…</td></tr>
           </tbody>
         </table></div>
       </div>
@@ -2456,45 +2465,6 @@
           <button onclick="openStrongImport()" style="display:inline-flex;align-items:center;gap:7px;background:#0d2345;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(13,35,69,0.2);">
             📲 Import from Strong
           </button>
-        </div>
-
-        <!-- Spain Prep Plan -->
-        <div class="table-card">
-          <div class="table-card-header">
-            <div>
-              <div class="table-card-title">🇪🇸 Spain Prep — Training &amp; Calorie Plan</div>
-              <div style="font-size:11px;color:var(--white-40);margin-top:3px;" id="sp-today-tag">15 Jun – 7 Jul · Goal: ~85.5–86kg, lean &amp; developed</div>
-            </div>
-          </div>
-          <div class="table-scroll"><table>
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Session</th>
-                <th style="text-align:right;">Calorie Target</th>
-              </tr>
-            </thead>
-            <tbody id="sp-plan-body">
-              <tr data-day="1"><td><strong>Monday</strong></td><td>Pull</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
-              <tr data-day="2"><td><strong>Tuesday</strong></td><td>Hyrox Speed Session <span style="color:var(--white-40);">— 3×1200m repeats, Zone 4, after work</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,400 kcal</td></tr>
-              <tr data-day="3"><td><strong>Wednesday</strong></td><td>Push</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
-              <tr data-day="4"><td><strong>Thursday</strong></td><td>Legs <span style="color:var(--white-40);">(quad focus)</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,300 kcal</td></tr>
-              <tr data-day="5"><td><strong>Friday</strong></td><td>Pull + Legs <span style="color:var(--white-40);">(posterior, combined session)</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,400 kcal</td></tr>
-              <tr data-day="6"><td><strong>Saturday</strong></td><td>Push</td><td style="text-align:right;font-weight:700;color:var(--white);">3,200 kcal</td></tr>
-              <tr data-day="0"><td><strong>Sunday</strong></td><td>Zone 2 5k <span style="color:var(--white-40);">— conversational pace, HR 140–153bpm, ~6:00–6:20/km</span></td><td style="text-align:right;font-weight:700;color:var(--white);">3,300 kcal</td></tr>
-            </tbody>
-          </table></div>
-          <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-            <span style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:0.6px;margin-right:4px;">Non-negotiables:</span>
-            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">🥩 Protein 220g+</span>
-            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">👟 Steps 9,000+</span>
-            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">😴 Sleep 7.5h+</span>
-            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">💊 Creatine 5g</span>
-            <span class="badge" style="background:var(--accent-dim);color:var(--accent);">🌙 Magnesium 400mg before bed</span>
-          </div>
-          <div style="padding:14px 24px;border-top:1px solid var(--border);font-size:12.5px;color:var(--white-70);line-height:1.6;background:var(--bg);">
-            🎯 <strong>Goal:</strong> Maintain muscle, clear surplus water &amp; food volume — arrive in Spain at <strong>~85.5–86kg</strong>, lean and developed, by <strong>7 July</strong>.
-          </div>
         </div>
 
         <!-- Setup banner (shown if table not ready) -->
@@ -4517,6 +4487,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   let fitnessAllData = [];
   let fitnessView = 'all';
   let fCharts = {};
+  let fitCalTarget = parseInt(localStorage.getItem('fit_cal_target') || '0') || 0;
+
+  function setCalTarget(val) {
+    const n = parseInt(val) || 0;
+    fitCalTarget = n;
+    if (n > 0) localStorage.setItem('fit_cal_target', n);
+    renderFitnessCharts();
+    renderFitnessTable();
+    fitUpdateDeficitCard();
+  }
 
   function setFitnessView(mode) {
     fitnessView = mode;
@@ -4537,11 +4517,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     return fitnessAllData;
   }
 
+  function fitRolling7(data) {
+    return data.map((_, i) => {
+      const window = data.slice(Math.max(0, i - 6), i + 1).filter(e => e.weight != null);
+      if (!window.length) return null;
+      return Math.round((window.reduce((s, e) => s + e.weight, 0) / window.length) * 10) / 10;
+    });
+  }
+
   function renderFitnessCharts() {
     const d = getFitnessDisplay().slice().sort((a,b) => a.date.localeCompare(b.date));
     const labels = d.map(e => new Date(e.date).toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
     const navy = '#0d2345';
     const navyAlpha = 'rgba(13,35,69,0.08)';
+    const indigo = '#4f46e5';
     const gridColor = 'rgba(13,35,69,0.06)';
     const tickColor = 'rgba(13,35,69,0.45)';
     const axisOpts = (beginZero) => ({
@@ -4550,22 +4539,41 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       grid: { color: gridColor }
     });
 
+    const rolling = fitRolling7(d);
+
     if (fCharts.weight) fCharts.weight.destroy();
     fCharts.weight = new Chart(document.getElementById('f-weight-chart'), {
       type: 'line',
       data: {
         labels,
-        datasets: [{ label: 'Weight (kg)', data: d.map(e => e.weight), borderColor: navy, backgroundColor: navyAlpha, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: navy }]
+        datasets: [
+          { label: 'Daily', data: d.map(e => e.weight), borderColor: navy, backgroundColor: navyAlpha, borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: navy },
+          { label: '7-day avg', data: rolling, borderColor: indigo, backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 4], fill: false, tension: 0.4, pointRadius: 0 }
+        ]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: axisOpts(false), x: { ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 10 }, grid: { display: false } } } }
     });
+
+    const calData = d.map(e => e.calories || null);
+    const calColors = calData.map(v => {
+      if (!v || !fitCalTarget) return navyAlpha;
+      return v > fitCalTarget ? 'rgba(220,38,38,0.25)' : 'rgba(5,150,105,0.25)';
+    });
+    const calBorders = calData.map(v => {
+      if (!v || !fitCalTarget) return navy;
+      return v > fitCalTarget ? '#dc2626' : '#059669';
+    });
+    const targetLine = fitCalTarget > 0 ? d.map(() => fitCalTarget) : [];
 
     if (fCharts.cal) fCharts.cal.destroy();
     fCharts.cal = new Chart(document.getElementById('f-cal-chart'), {
       type: 'bar',
       data: {
         labels,
-        datasets: [{ label: 'Calories', data: d.map(e => e.calories || null), backgroundColor: navyAlpha, borderColor: navy, borderWidth: 1, borderRadius: 4 }]
+        datasets: [
+          { label: 'Calories', data: calData, backgroundColor: calColors, borderColor: calBorders, borderWidth: 1, borderRadius: 4 },
+          ...(fitCalTarget > 0 ? [{ label: 'Target', data: targetLine, type: 'line', borderColor: '#dc2626', borderWidth: 1.5, borderDash: [6, 4], backgroundColor: 'transparent', pointRadius: 0, fill: false }] : [])
+        ]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: axisOpts(true), x: { ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 10 }, grid: { display: false } } } }
     });
@@ -4577,18 +4585,25 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tbody.innerHTML = '';
     const d = getFitnessDisplay().slice().sort((a,b) => b.date.localeCompare(a.date));
     if (!d.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:rgba(13,35,69,0.4);">No entries yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:rgba(13,35,69,0.4);">No entries yet</td></tr>';
       return;
     }
     d.forEach(e => {
+      let deficitHtml = '—';
+      if (e.calories && fitCalTarget > 0) {
+        const diff = fitCalTarget - e.calories;
+        const color = diff >= 0 ? '#059669' : '#dc2626';
+        const label = diff >= 0 ? `−${diff.toLocaleString()}` : `+${Math.abs(diff).toLocaleString()}`;
+        const title = diff >= 0 ? 'Under target' : 'Over target';
+        deficitHtml = `<span style="font-weight:700;color:${color};" title="${title}">${label}</span>`;
+      }
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${new Date(e.date).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'})}</td>
         <td style="font-weight:700;color:var(--accent)">${e.weight ? e.weight + ' kg' : '—'}</td>
-        <td>${e.sleep ? e.sleep + ' hrs' : '—'}</td>
-        <td>${e.steps ? Number(e.steps).toLocaleString() : '—'}</td>
-        <td>${e.calories ? Number(e.calories).toLocaleString() : '—'}</td>
         <td>${e.workout || '—'}</td>
+        <td>${e.calories ? Number(e.calories).toLocaleString() + ' kcal' : '—'}</td>
+        <td>${deficitHtml}</td>
         <td><button onclick="openFitnessEdit('${e.date}')" style="background:rgba(13,35,69,0.06);color:#0d2345;border:1px solid rgba(13,35,69,0.14);border-radius:6px;padding:4px 11px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;">Edit</button></td>
       `;
       tbody.appendChild(tr);
@@ -4702,29 +4717,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.getElementById('ftab-workouts').style.cssText += tab === 'workouts' ? activeStyle : inactiveStyle;
     if (tab === 'workouts' && !workoutData.length) loadWorkouts();
     if (tab === 'workouts') pb_render();
-  }
-
-  /* ===================== SPAIN PREP PLAN ===================== */
-  function highlightSpainPrepToday() {
-    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const today = new Date();
-    const dayIdx = today.getDay();
-    document.querySelectorAll('#sp-plan-body tr').forEach(tr => {
-      if (parseInt(tr.dataset.day, 10) === dayIdx) {
-        tr.style.background = 'var(--accent-dim)';
-        const firstCell = tr.querySelector('td');
-        firstCell.innerHTML += ' <span class="badge" style="background:var(--accent);color:#fff;margin-left:6px;">Today</span>';
-      }
-    });
-    const tag = document.getElementById('sp-today-tag');
-    if (tag) {
-      const start = new Date('2026-06-15T00:00:00');
-      const end = new Date('2026-07-07T23:59:59');
-      if (today >= start && today <= end) {
-        const daysLeft = Math.ceil((end - today) / 86400000);
-        tag.textContent = `Today: ${dayNames[dayIdx]} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} to Spain`;
-      }
-    }
   }
 
   /* ===================== WORKOUT TRACKER ===================== */
@@ -5002,6 +4994,24 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
   /* ============================================================ */
 
+  function fitUpdateDeficitCard() {
+    const sorted = [...fitnessAllData].sort((a,b) => b.date.localeCompare(a.date));
+    const yesterday = sorted.find(e => e.calories);
+    const defEl = document.getElementById('f-yesterday-deficit');
+    const calEl = document.getElementById('f-yesterday-cals');
+    if (yesterday && fitCalTarget > 0) {
+      const diff = fitCalTarget - yesterday.calories;
+      const color = diff >= 0 ? '#059669' : '#dc2626';
+      const label = diff >= 0 ? `−${Math.abs(diff).toLocaleString()}` : `+${Math.abs(diff).toLocaleString()}`;
+      const word = diff >= 0 ? 'under' : 'over';
+      if (defEl) { defEl.textContent = label; defEl.style.color = color; }
+      if (calEl) calEl.textContent = `${Number(yesterday.calories).toLocaleString()} kcal · ${word} target`;
+    } else if (yesterday) {
+      if (defEl) { defEl.textContent = `${Number(yesterday.calories).toLocaleString()}`; defEl.style.color = ''; }
+      if (calEl) calEl.textContent = 'Set a target to see deficit';
+    }
+  }
+
   async function loadFitness() {
     if (!sb) return;
     try {
@@ -5010,24 +5020,45 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       if (!data?.length) return;
 
       fitnessAllData = data;
+
+      // Seed calorie target input from localStorage
+      if (fitCalTarget > 0) {
+        const inp = document.getElementById('f-cal-target');
+        if (inp) inp.value = fitCalTarget;
+      }
+
       renderFitnessCharts();
       renderFitnessTable();
 
-      const latest = [...data].sort((a,b) => b.date.localeCompare(a.date))[0];
+      const sorted = [...data].sort((a,b) => b.date.localeCompare(a.date));
+      const latest = sorted[0];
+
       if (latest.weight) {
         document.getElementById('f-weight').innerHTML = latest.weight + '<span class="unit">kg</span>';
         document.getElementById('f-weight-date').textContent = 'Logged ' + fmtDate(latest.date);
         document.getElementById('s-weight').textContent = latest.weight + 'kg';
       }
-      if (latest.sleep) document.getElementById('f-sleep').innerHTML = latest.sleep + '<span class="unit">hrs</span>';
-      if (latest.steps) document.getElementById('f-steps').innerHTML = Number(latest.steps).toLocaleString() + '<span class="unit">steps</span>';
+
+      // 7-day rolling average
+      const recent7 = sorted.slice(0, 7).filter(e => e.weight);
+      if (recent7.length) {
+        const avg = Math.round((recent7.reduce((s, e) => s + e.weight, 0) / recent7.length) * 10) / 10;
+        document.getElementById('f-avg-weight').innerHTML = avg + '<span class="unit">kg</span>';
+        const delta = latest.weight ? Math.round((latest.weight - avg) * 10) / 10 : null;
+        if (delta !== null) {
+          const sign = delta > 0 ? '+' : '';
+          document.getElementById('f-avg-trend').textContent = `${sign}${delta} kg vs avg`;
+        }
+      }
+
+      fitUpdateDeficitCard();
 
       const mon = getMonday();
       const weekSessions = data.filter(d => d.workout && d.workout !== 'Rest' && d.workout !== '' && new Date(d.date) >= mon);
       document.getElementById('f-sessions').innerHTML = weekSessions.length + '<span class="unit">sessions</span>';
       document.getElementById('s-sessions').textContent = weekSessions.length + ' sessions';
 
-      const lastW = [...data].sort((a,b) => b.date.localeCompare(a.date)).find(d => d.workout && d.workout !== 'Rest' && d.workout !== '');
+      const lastW = sorted.find(d => d.workout && d.workout !== 'Rest' && d.workout !== '');
       if (lastW) {
         document.getElementById('f-last-session').textContent = 'Last: ' + lastW.workout + ' on ' + fmtDate(lastW.date);
         document.getElementById('s-workout').textContent = lastW.workout;
@@ -7476,7 +7507,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     navigate('home');
     loadFitness();
     loadWorkouts();
-    highlightSpainPrepToday();
     htd_updateCard();
     dev_render();
     hub_initSync();
