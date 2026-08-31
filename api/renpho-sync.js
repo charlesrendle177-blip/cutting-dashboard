@@ -4,28 +4,39 @@
 
 const crypto = require('crypto');
 
-const RENPHO  = 'https://renpho.qnclouds.com';
+const RENPHO_SERVERS = [
+  'https://renpho.qnclouds.com',
+  'https://uk.renpho.qnclouds.com',
+  'https://eu.renpho.qnclouds.com',
+];
 const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
 // Anon key — already public in cutting-logs.js, safe to include here
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 
 async function renphoLogin(email, password) {
   const password_hash = crypto.createHash('md5').update(password).digest('hex');
-  const res = await fetch(`${RENPHO}/api/v3/users/sign_in.json?app_id=Renpho`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secure_flag: 1, email, password_hash }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Renpho login failed (${res.status}): ${JSON.stringify(data)}`);
-  const key = data.terminal_user_session_key;
-  if (!key) throw new Error('No session key returned — check credentials. Response: ' + JSON.stringify(data));
-  return key;
+  let lastErr = null;
+  for (const base of RENPHO_SERVERS) {
+    try {
+      const res = await fetch(`${base}/api/v3/users/sign_in.json?app_id=Renpho`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secure_flag: 1, email, password_hash }),
+      });
+      const data = await res.json();
+      const key = data.terminal_user_session_key;
+      if (key) return { key, base };
+      lastErr = `[${base}] ${JSON.stringify(data)}`;
+    } catch (e) {
+      lastErr = `[${base}] ${e.message}`;
+    }
+  }
+  throw new Error('No session key from any server. Last: ' + lastErr);
 }
 
-async function getScaleUserId(sessionKey) {
+async function getScaleUserId(base, sessionKey) {
   const res = await fetch(
-    `${RENPHO}/api/v3/scale_users/list_scale_user?locale=en&terminal_user_session_key=${sessionKey}`
+    `${base}/api/v3/scale_users/list_scale_user?locale=en&terminal_user_session_key=${sessionKey}`
   );
   const data = await res.json();
   const users = data.scale_users || [];
@@ -33,17 +44,16 @@ async function getScaleUserId(sessionKey) {
   return users[0].user_id;
 }
 
-async function getMeasurements(sessionKey, userId, daysBack = 60) {
+async function getMeasurements(base, sessionKey, userId, daysBack = 60) {
   const lastAt = Math.floor(Date.now() / 1000) - daysBack * 86400;
   const res = await fetch(
-    `${RENPHO}/api/v2/measurements/list.json?user_id=${userId}&last_at=${lastAt}&locale=en&app_id=Renpho&terminal_user_session_key=${sessionKey}`
+    `${base}/api/v2/measurements/list.json?user_id=${userId}&last_at=${lastAt}&locale=en&app_id=Renpho&terminal_user_session_key=${sessionKey}`
   );
   const data = await res.json();
   return data.last_ary || [];
 }
 
 function tsToIso(ts) {
-  // Renpho timestamps are Unix seconds → YYYY-MM-DD in UK time
   return new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
 }
 
@@ -72,7 +82,6 @@ function interpolateMissing(knownPoints) {
 }
 
 async function upsertWeights(entries) {
-  // Only sends { date, weight } — leaves sleep/steps/notes untouched on existing rows
   const res = await fetch(`${SB_URL}/rest/v1/cutting_logs?on_conflict=date`, {
     method: 'POST',
     headers: {
@@ -98,7 +107,6 @@ module.exports = async (req, res) => {
   const email    = (process.env.RENPHO_EMAIL || '').trim();
   const password = (process.env.RENPHO_PASSWORD || '').trim();
 
-  // ?debug=1 returns env var diagnostics without attempting login
   if (req.query && req.query.debug === '1') {
     const masked = email.length > 4
       ? email.slice(0, 2) + '***' + email.slice(email.indexOf('@'))
@@ -117,15 +125,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const sessionKey = await renphoLogin(email, password);
-    const userId     = await getScaleUserId(sessionKey);
-    const raw        = await getMeasurements(sessionKey, userId, 60);
+    const { key: sessionKey, base } = await renphoLogin(email, password);
+    const userId = await getScaleUserId(base, sessionKey);
+    const raw    = await getMeasurements(base, sessionKey, userId, 60);
 
     if (!raw.length) {
       return res.status(200).json({ ok: true, message: 'No measurements in last 60 days', synced: 0 });
     }
 
-    // Build known-points map, keeping latest reading per day if multiple exist
     const knownPoints = {};
     const seenTs      = {};
     for (const m of raw) {
@@ -144,6 +151,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       ok: true,
+      server: base,
       synced: entries.length,
       realReadings: Object.keys(knownPoints).length,
       interpolated: entries.length - Object.keys(knownPoints).length,
