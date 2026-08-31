@@ -13,25 +13,34 @@ const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
 // Anon key — already public in cutting-logs.js, safe to include here
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 
+const RENPHO_ATTEMPTS = [
+  { secure_flag: 1, hash: 'md5' },
+  { secure_flag: 1, hash: 'sha256' },
+  { secure_flag: 0, hash: 'md5' },
+];
+
 async function renphoLogin(email, password) {
-  const password_hash = crypto.createHash('md5').update(password).digest('hex');
-  let lastErr = null;
-  for (const base of RENPHO_SERVERS) {
+  const base = RENPHO_SERVERS[0];
+  const errors = [];
+  for (const attempt of RENPHO_ATTEMPTS) {
+    const password_hash = crypto.createHash(attempt.hash).update(password).digest('hex');
+    const body = { email, password_hash };
+    if (attempt.secure_flag) body.secure_flag = attempt.secure_flag;
     try {
       const res = await fetch(`${base}/api/v3/users/sign_in.json?app_id=Renpho`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secure_flag: 1, email, password_hash }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       const key = data.terminal_user_session_key;
-      if (key) return { key, base };
-      lastErr = `[${base}] ${JSON.stringify(data)}`;
+      if (key) return { key, base, attempt };
+      errors.push(`[${attempt.hash}+secure_flag=${attempt.secure_flag}] ${JSON.stringify(data)}`);
     } catch (e) {
-      lastErr = `[${base}] ${e.message}`;
+      errors.push(`[${attempt.hash}+secure_flag=${attempt.secure_flag}] ${e.message}`);
     }
   }
-  throw new Error('No session key from any server. Last: ' + lastErr);
+  throw new Error('All auth attempts failed:\n' + errors.join('\n'));
 }
 
 async function getScaleUserId(base, sessionKey) {
