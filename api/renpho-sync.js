@@ -121,6 +121,32 @@ async function getMeasurements(token, userId, tableName) {
   return all;
 }
 
+async function getBodyCompMeasurements(token, userId, tableName) {
+  const all  = [];
+  let   page = 1;
+
+  while (true) {
+    const payload = encryptReq({
+      pageNum:   page,
+      pageSize:  50,
+      userIds:   [String(userId)],
+      tableName,
+    });
+    const result = await renphoPost('RenphoHealth/scale/queryBodyCompositionMeasureData', payload, token, userId);
+    if (!result.data) break;
+
+    const raw  = decryptRes(result.data);
+    const rows = Array.isArray(raw) ? raw : (raw.list || raw.data || []);
+    if (!rows.length) break;
+
+    all.push(...rows);
+    if (rows.length < 50) break;
+    page++;
+  }
+
+  return all;
+}
+
 function measurementDate(m) {
   // Different Renpho firmware/table versions use different field names
   const ts = m.time_stamp || m.timeStamp || m.measureTime || m.createTime;
@@ -203,10 +229,16 @@ module.exports = async (req, res) => {
     }
 
     const tableName = scales[0].tableName;
-    const raw       = await getMeasurements(token, userId, tableName);
+
+    // Try body-composition endpoint first (impedance scales), fall back to weight-only
+    let raw = await getBodyCompMeasurements(token, userId, tableName);
+    if (!raw.length) raw = await getMeasurements(token, userId, tableName);
 
     if (!raw.length) {
-      return res.status(200).json({ ok: true, message: 'No measurements found', synced: 0 });
+      return res.status(200).json({
+        ok: true, message: 'No measurements found', synced: 0,
+        diag: { scaleCount: scales.length, tableName, userId: String(userId) },
+      });
     }
 
     const knownPoints = {};
