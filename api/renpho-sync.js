@@ -13,31 +13,47 @@ const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
 // Anon key — already public in cutting-logs.js, safe to include here
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 
-const RENPHO_ATTEMPTS = [
-  { secure_flag: 1, hash: 'md5' },
-  { secure_flag: 1, hash: 'sha256' },
-  { secure_flag: 0, hash: 'md5' },
-];
+const UA = 'Renpho/4.0.0 (iPhone; iOS 17.0; Scale/1.0)';
+
+async function tryLogin(base, email, password_hash, useForm) {
+  const endpoint = `${base}/api/v3/users/sign_in.json?app_id=Renpho`;
+  const payload = { secure_flag: 1, email, password_hash };
+  const headers = { 'User-Agent': UA };
+  let res;
+  if (useForm) {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams(payload).toString(),
+    });
+  } else {
+    headers['Content-Type'] = 'application/json';
+    res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(payload) });
+  }
+  const data = await res.json();
+  return data;
+}
 
 async function renphoLogin(email, password) {
   const base = RENPHO_SERVERS[0];
+  const md5  = crypto.createHash('md5').update(password).digest('hex');
+  const sha  = crypto.createHash('sha256').update(password).digest('hex');
   const errors = [];
-  for (const attempt of RENPHO_ATTEMPTS) {
-    const password_hash = crypto.createHash(attempt.hash).update(password).digest('hex');
-    const body = { email, password_hash };
-    if (attempt.secure_flag) body.secure_flag = attempt.secure_flag;
+
+  for (const [label, hash, form] of [
+    ['md5+json',    md5, false],
+    ['md5+form',    md5, true],
+    ['sha256+json', sha, false],
+    ['sha256+form', sha, true],
+  ]) {
     try {
-      const res = await fetch(`${base}/api/v3/users/sign_in.json?app_id=Renpho`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
+      const data = await tryLogin(base, email, hash, form);
       const key = data.terminal_user_session_key;
-      if (key) return { key, base, attempt };
-      errors.push(`[${attempt.hash}+secure_flag=${attempt.secure_flag}] ${JSON.stringify(data)}`);
+      if (key) return { key, base };
+      errors.push(`[${label}] ${JSON.stringify(data)}`);
     } catch (e) {
-      errors.push(`[${attempt.hash}+secure_flag=${attempt.secure_flag}] ${e.message}`);
+      errors.push(`[${label}] ${e.message}`);
     }
   }
   throw new Error('All auth attempts failed:\n' + errors.join('\n'));
