@@ -80,12 +80,16 @@ async function renphoLogin(email, password) {
   const result = await renphoPost('renpho-aggregation/user/login', payload);
   checkResp(result, 'Login');
 
-  const data      = decryptRes(result.data);
+  const rawJson   = aesDecrypt(result.data);
+  const data      = JSON.parse(rawJson);
   const loginInfo = data.login || {};
   const token     = loginInfo.token;
-  const userId    = loginInfo.id;
 
-  if (!token) throw new Error('No token in login response: ' + JSON.stringify(data).slice(0, 200));
+  // Extract userId as raw string to preserve 64-bit precision (JS numbers can't hold it)
+  const idMatch = rawJson.match(/"id"\s*:\s*(\d+)/);
+  const userId  = idMatch ? idMatch[1] : String(loginInfo.id);
+
+  if (!token) throw new Error('No token in login response: ' + rawJson.slice(0, 200));
   return { token, userId };
 }
 
