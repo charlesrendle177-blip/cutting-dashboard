@@ -200,6 +200,59 @@ async function upsertWeights(entries) {
   }
 }
 
+async function syncWithRetry(email, password, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const { token, userId } = await renphoLogin(email, password);
+      const deviceData        = await getDeviceInfo(token, userId);
+      const scales            = deviceData.scale || [];
+      if (!scales.length) return { ok: true, message: 'No scales on account', synced: 0 };
+
+      const tableName = scales[0].tableName;
+      let raw = await getBodyCompMeasurements(token, userId, tableName);
+      if (!raw.length) raw = await getMeasurements(token, userId, tableName);
+
+      if (!raw.length) {
+        return { ok: true, message: 'No measurements found', synced: 0,
+          diag: { scaleCount: scales.length, tableName, userId: String(userId) } };
+      }
+
+      const knownPoints = {};
+      const seenTs      = {};
+      for (const m of raw) {
+        const iso = measurementDate(m);
+        const w   = parseFloat(m.weight);
+        if (!iso || isNaN(w)) continue;
+        const ts = m.time_stamp || m.timeStamp || m.measureTime || m.createTime || 0;
+        if (!seenTs[iso] || ts > seenTs[iso]) {
+          knownPoints[iso] = w;
+          seenTs[iso]      = ts;
+        }
+      }
+
+      if (!Object.keys(knownPoints).length) {
+        return { ok: true, message: 'No valid weight readings', synced: 0 };
+      }
+
+      const filled  = interpolateMissing(knownPoints);
+      const entries = Object.entries(filled).map(([date, weight]) => ({ date, weight }));
+      await upsertWeights(entries);
+
+      return {
+        ok: true,
+        synced:       entries.length,
+        realReadings: Object.keys(knownPoints).length,
+        interpolated: entries.length - Object.keys(knownPoints).length,
+      };
+    } catch (e) {
+      lastErr = e;
+      if (i < attempts - 1) await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -224,55 +277,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { token, userId } = await renphoLogin(email, password);
-    const deviceData        = await getDeviceInfo(token, userId);
-    const scales            = deviceData.scale || [];
-
-    if (!scales.length) {
-      return res.status(200).json({ ok: true, message: 'No scales found on account', synced: 0 });
-    }
-
-    const tableName = scales[0].tableName;
-
-    // Try body-composition endpoint first (impedance scales), fall back to weight-only
-    let raw = await getBodyCompMeasurements(token, userId, tableName);
-    if (!raw.length) raw = await getMeasurements(token, userId, tableName);
-
-    if (!raw.length) {
-      return res.status(200).json({
-        ok: true, message: 'No measurements found', synced: 0,
-        diag: { scaleCount: scales.length, tableName, userId: String(userId) },
-      });
-    }
-
-    const knownPoints = {};
-    const seenTs      = {};
-    for (const m of raw) {
-      const iso = measurementDate(m);
-      const w   = parseFloat(m.weight);
-      if (!iso || isNaN(w)) continue;
-      const ts = m.time_stamp || m.timeStamp || m.measureTime || m.createTime || 0;
-      if (!seenTs[iso] || ts > seenTs[iso]) {
-        knownPoints[iso] = w;
-        seenTs[iso]      = ts;
-      }
-    }
-
-    if (!Object.keys(knownPoints).length) {
-      return res.status(200).json({ ok: true, message: 'No valid weight readings', synced: 0 });
-    }
-
-    const filled  = interpolateMissing(knownPoints);
-    const entries = Object.entries(filled).map(([date, weight]) => ({ date, weight }));
-
-    await upsertWeights(entries);
-
-    return res.status(200).json({
-      ok: true,
-      synced:       entries.length,
-      realReadings: Object.keys(knownPoints).length,
-      interpolated: entries.length - Object.keys(knownPoints).length,
-    });
+    const result = await syncWithRetry(email, password);
+    return res.status(200).json(result);
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

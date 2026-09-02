@@ -17,6 +17,7 @@
     "api/receipt-scan.js":   { "maxDuration": 30, "memory": 512 }
   },
   "crons": [
-    { "path": "/api/renpho-sync", "schedule": "0 7 * * *" }
+    { "path": "/api/renpho-sync", "schedule": "0 7 * * *" },
+    { "path": "/api/renpho-sync", "schedule": "0 19 * * *" }
   ]
 }
