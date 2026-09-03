@@ -10,7 +10,8 @@
     { "source": "/api/cr-share-sync",   "destination": "/api/cr-share-sync.js" },
     { "source": "/api/receipt-upload",  "destination": "/api/receipt-upload.js" },
     { "source": "/api/receipt-action",  "destination": "/api/receipt-action.js" },
-    { "source": "/api/receipt-scan",    "destination": "/api/receipt-scan.js" }
+    { "source": "/api/receipt-scan",          "destination": "/api/receipt-scan.js" },
+    { "source": "/api/tmmb-fathom-import",    "destination": "/api/tmmb-fathom-import.js" }
   ],
   "functions": {
     "api/receipt-upload.js": { "maxDuration": 30, "memory": 1024 },

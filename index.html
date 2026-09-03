@@ -2860,7 +2860,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <div class="card" style="margin-bottom:20px;">
-            <div class="card-label">Log a Call</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-label" style="margin-bottom:0;">Log a Call</div>
+              <button type="button" id="fi-btn" onclick="fathomImport_open()" style="display:flex;align-items:center;gap:6px;background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.25);color:#7c3aed;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.15s;">
+                <span style="font-size:14px;">↓</span> Import from Fathom
+              </button>
+            </div>
+
+            <!-- Fathom Import Panel -->
+            <div id="fi-panel" style="display:none;margin-bottom:20px;border:1.5px solid rgba(124,58,237,0.2);border-radius:12px;overflow:hidden;background:#faf9ff;">
+              <div style="padding:10px 14px;background:rgba(124,58,237,0.06);border-bottom:1px solid rgba(124,58,237,0.12);display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.06em;">Recent Recordings</span>
+                <button onclick="document.getElementById('fi-panel').style.display='none'" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:16px;line-height:1;padding:0;">×</button>
+              </div>
+              <div id="fi-list" style="max-height:220px;overflow-y:auto;padding:6px 0;">
+                <div style="padding:14px;text-align:center;color:#9ca3af;font-size:13px;">Loading calls...</div>
+              </div>
+            </div>
 
             <!-- Offer selector -->
             <div class="tmmb-form-group" style="margin-bottom:16px;">
@@ -5686,6 +5702,74 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_renderVault();
     tmmb_closeEditModal();
   }
+
+  // ===== FATHOM IMPORT =====
+  async function fathomImport_open() {
+    const panel = document.getElementById('fi-panel');
+    const list  = document.getElementById('fi-list');
+    panel.style.display = 'block';
+    list.innerHTML = '<div style="padding:14px;text-align:center;color:#9ca3af;font-size:13px;">Loading calls...</div>';
+
+    try {
+      const res  = await fetch('/api/tmmb-fathom-import?action=list');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const calls = data.calls || [];
+      if (!calls.length) {
+        list.innerHTML = '<div style="padding:14px;text-align:center;color:#9ca3af;font-size:13px;">No recordings found.</div>';
+        return;
+      }
+
+      list.innerHTML = calls.map(c => `
+        <div onclick="fathomImport_select('${c.id}', this)"
+             style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(124,58,237,0.08);transition:background 0.1s;"
+             onmouseover="this.style.background='rgba(124,58,237,0.05)'" onmouseout="this.style.background=''">
+          <div style="font-size:13px;font-weight:600;color:#1f2937;line-height:1.3;">${c.title || 'Untitled Call'}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${c.date || ''}</div>
+        </div>`).join('');
+    } catch (e) {
+      list.innerHTML = `<div style="padding:14px;text-align:center;color:#ef4444;font-size:13px;">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function fathomImport_select(id, row) {
+    const list  = document.getElementById('fi-list');
+    const panel = document.getElementById('fi-panel');
+    list.innerHTML = '<div style="padding:14px;text-align:center;color:#7c3aed;font-size:13px;">Analysing transcript...</div>';
+
+    try {
+      const res  = await fetch(`/api/tmmb-fathom-import?action=analyse&id=${id}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Autofill the form
+      if (data.prospect_name)  document.getElementById('cl-name').value        = data.prospect_name;
+      if (data.prospect_email) document.getElementById('cl-email').value       = data.prospect_email;
+      if (data.meeting_date)   document.getElementById('cl-date').value        = data.meeting_date;
+      if (data.notes)          document.getElementById('cl-notes').value       = data.notes;
+      if (data.fathom_url)     document.getElementById('cl-fathom').value      = data.fathom_url;
+      if (data.programme)      document.getElementById('cl-deal').value        = data.programme;
+      if (data.deal_value)     document.getElementById('cl-dealvalue').value   = data.deal_value;
+      if (data.cash_collected) document.getElementById('cl-cash').value        = data.cash_collected;
+
+      if (data.outcome) {
+        document.getElementById('cl-outcome').value = data.outcome;
+        tmmb_onOutcomeChange(data.outcome);
+      }
+
+      if (Array.isArray(data.objections) && data.objections.length) {
+        document.querySelectorAll('#tmmb-obj-checkboxes input').forEach(cb => {
+          cb.checked = data.objections.includes(cb.value);
+        });
+      }
+
+      panel.style.display = 'none';
+    } catch (e) {
+      list.innerHTML = `<div style="padding:14px;text-align:center;color:#ef4444;font-size:13px;">Error: ${e.message}</div>`;
+    }
+  }
+  // ===== END FATHOM IMPORT =====
 
   function tmmb_outcomeLabel(o) {
     return { closed:'Closed', followup:'Follow-up', noclose:'No Close', noshow:'No Show', dq:'DQ' }[o] || o;
