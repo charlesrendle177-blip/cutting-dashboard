@@ -133,27 +133,6 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (action === 'debug_transcript' && id) {
-      const raw = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
-      const transcript = extractTranscriptText(raw);
-      return res.status(200).json({ raw_keys: Object.keys(raw), transcript_length: transcript.length, transcript_sample: transcript.slice(0, 300) });
-    }
-
-    if (action === 'debug_claude' && id) {
-      if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
-      const raw = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
-      const transcript = extractTranscriptText(raw);
-      const result = await analyseTranscript(transcript.slice(0, 9000), req.query.title || 'Sales Call', anthropicKey, true);
-      return res.status(200).json({ transcript_length: transcript.length, ...result });
-    }
-
-    if (action === 'debug_meeting' && id) {
-      const data  = await fathomGet(`/meetings?include_transcript=true&page_size=25`, fathomKey);
-      const items = Array.isArray(data) ? data : (data.data || data.meetings || []);
-      const match = items.find(m => String(m.recording_id) === String(id));
-      return res.status(200).json({ match: match ? { recording_id: match.recording_id, transcript_len: JSON.stringify(match.transcript||[]).length, transcript_sample: JSON.stringify((match.transcript||[]).slice(0,2)) } : null });
-    }
-
     return res.status(400).json({ error: 'Invalid action — use ?action=list or ?action=analyse&id=CALL_ID' });
   } catch (e) {
     return res.status(500).json({ error: e.message });
