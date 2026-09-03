@@ -88,13 +88,17 @@ module.exports = async (req, res) => {
     if (!action || action === 'list') {
       const data  = await fathomGet('/meetings?page_size=25', fathomKey);
       const items = Array.isArray(data) ? data : (data.data || data.meetings || data.items || []);
-      const calls = items.map(c => ({
-        id:       c.id,
-        title:    c.title || c.name || 'Untitled Call',
-        date:     (c.created_at || c.recorded_at || c.started_at || '').slice(0, 10),
-        duration: c.duration,
-        url:      c.url || c.recording_url || c.share_url,
-      }));
+      const calls = items.map(c => {
+        const url    = c.url || c.recording_url || c.share_url || '';
+        // ID lives on c.id if present, else extract from the call URL
+        const urlId  = (url.match(/\/calls\/(\d+)/) || [])[1];
+        return {
+          id:    c.id || urlId,
+          title: c.title || c.name || 'Untitled Call',
+          date:  (c.created_at || c.recorded_at || c.started_at || '').slice(0, 10),
+          url,
+        };
+      }).filter(c => c.id);
       return res.status(200).json({ calls });
     }
 
@@ -102,28 +106,22 @@ module.exports = async (req, res) => {
       if (!id)           return res.status(400).json({ error: 'Missing id parameter' });
       if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Vercel env vars' });
 
-      // Fetch meeting + transcript in one call
-      const data = await fathomGet(`/meetings?id=${id}&include_transcript=true`, fathomKey);
-      const items = Array.isArray(data) ? data : (data.data || data.meetings || []);
-      const meeting = items[0] || data;
+      // title and date passed from the frontend to avoid an extra API round-trip
+      const { title: qTitle, date: qDate, url: qUrl } = req.query;
 
-      // Fall back to dedicated transcript endpoint if not inline
-      let transcript = extractTranscriptText(meeting.transcript || '');
-      if (!transcript) {
-        const tData = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
-        transcript  = extractTranscriptText(tData);
-      }
+      // Get transcript directly from the recordings endpoint
+      const tData    = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
+      const transcript = extractTranscriptText(tData);
 
-      const extracted = await analyseTranscript(
-        transcript,
-        meeting.title || meeting.name || 'Sales Call',
-        anthropicKey,
-      );
+      if (!transcript) throw new Error('Empty transcript returned from Fathom');
 
-      const url  = meeting.url || meeting.recording_url || meeting.share_url || `https://fathom.video/calls/${id}`;
-      const date = (meeting.created_at || meeting.recorded_at || meeting.started_at || '').slice(0, 10);
+      const extracted = await analyseTranscript(transcript, qTitle || 'Sales Call', anthropicKey);
 
-      return res.status(200).json({ ...extracted, fathom_url: url, meeting_date: date });
+      return res.status(200).json({
+        ...extracted,
+        fathom_url:   qUrl  || `https://fathom.video/calls/${id}`,
+        meeting_date: qDate || '',
+      });
     }
 
     return res.status(400).json({ error: 'Invalid action — use ?action=list or ?action=analyse&id=CALL_ID' });
