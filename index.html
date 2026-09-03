@@ -5704,6 +5704,10 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
   }
 
   // ===== FATHOM IMPORT =====
+  const FATHOM_API_BASE = window.location.hostname.includes('github.io')
+    ? 'https://cutting-dashboard.vercel.app'
+    : '';
+
   async function fathomImport_open() {
     const panel = document.getElementById('fi-panel');
     const list  = document.getElementById('fi-list');
@@ -5711,7 +5715,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     list.innerHTML = '<div style="padding:14px;text-align:center;color:#9ca3af;font-size:13px;">Loading calls...</div>';
 
     try {
-      const res  = await fetch('/api/tmmb-fathom-import?action=list');
+      const res  = await fetch(`${FATHOM_API_BASE}/api/tmmb-fathom-import?action=list`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -5740,19 +5744,20 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     try {
       const params = new URLSearchParams({ action: 'analyse', id, title, date, url });
-      const res  = await fetch(`/api/tmmb-fathom-import?${params}`);
+      const res  = await fetch(`${FATHOM_API_BASE}/api/tmmb-fathom-import?${params}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
       // Autofill the form
-      if (data.prospect_name)  document.getElementById('cl-name').value        = data.prospect_name;
-      if (data.prospect_email) document.getElementById('cl-email').value       = data.prospect_email;
-      if (data.meeting_date)   document.getElementById('cl-date').value        = data.meeting_date;
-      if (data.notes)          document.getElementById('cl-notes').value       = data.notes;
-      if (data.fathom_url)     document.getElementById('cl-fathom').value      = data.fathom_url;
-      if (data.programme)      document.getElementById('cl-deal').value        = data.programme;
-      if (data.deal_value)     document.getElementById('cl-dealvalue').value   = data.deal_value;
-      if (data.cash_collected) document.getElementById('cl-cash').value        = data.cash_collected;
+      if (data.prospect_name)  document.getElementById('cl-name').value      = data.prospect_name;
+      if (data.prospect_email) document.getElementById('cl-email').value     = data.prospect_email;
+      if (data.meeting_date)   document.getElementById('cl-date').value      = data.meeting_date;
+      if (data.notes)          document.getElementById('cl-notes').value     = data.notes;
+      if (data.fathom_url)     document.getElementById('cl-fathom').value    = data.fathom_url;
+      if (data.programme)      document.getElementById('cl-deal').value      = data.programme;
+      if (data.deal_value)     document.getElementById('cl-dealvalue').value = data.deal_value;
+      if (data.cash_collected) document.getElementById('cl-cash').value      = data.cash_collected;
+      if (data.lead_source)    document.getElementById('cl-source').value    = data.lead_source;
 
       if (data.outcome) {
         document.getElementById('cl-outcome').value = data.outcome;
@@ -5766,6 +5771,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       }
 
       panel.style.display = 'none';
+
+      // Scroll the form into view so Charles can review and hit Log Call
+      document.getElementById('cl-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (e) {
       list.innerHTML = `<div style="padding:14px;text-align:center;color:#ef4444;font-size:13px;">Error: ${e.message}</div>`;
     }

@@ -47,12 +47,13 @@ ${transcript.slice(0, 9000)}
 
 Return ONLY valid JSON with these fields (use null if unknown):
 {
-  "prospect_name":   "full name of the prospect (not Charles)",
+  "prospect_name":   "full name of the prospect (not Charles Rendle)",
   "prospect_email":  "prospect's email if mentioned, else null",
   "outcome":         "one of: closed, followup, noclose, noshow, dq",
   "deal_value":      "total deal value in GBP as integer if closed, else null",
   "cash_collected":  "cash collected today in GBP as integer if closed, else null",
-  "programme":       "exact programme name discussed e.g. TMMB Academy, Project Gains",
+  "programme":       "exact programme name e.g. TMMB Academy, Project Gains",
+  "lead_source":     "one of: setter, referral, ad, inbound, other — infer from context (setter = booked by a setter/VA, referral = word of mouth, ad = paid ad/Facebook/Instagram, inbound = prospect reached out directly)",
   "notes":           "2–3 sentence summary: what went well, key moments, what to improve",
   "objections":      "array of any that applied: fear-money, fear-think, fear-doubt, tried-before, logic-time, logic-partner, value"
 }`,
