@@ -7135,6 +7135,74 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_updateOverview();
     tmmb_calcCommission();
     tmmb_renderMonthly();
+    tmmb_fathomAutoSync();
+  }
+
+  async function tmmb_fathomAutoSync() {
+    const COOLDOWN_MS  = 30 * 60 * 1000; // run at most every 30 min
+    const MAX_AGE_DAYS = 7;              // only consider calls from last 7 days
+    const MAX_NEW      = 5;              // max new calls to analyse per sync
+
+    const lastSync = parseInt(localStorage.getItem('tmmb_fathom_sync_ts') || '0');
+    if (Date.now() - lastSync < COOLDOWN_MS) return;
+
+    const cutoff = new Date(Date.now() - MAX_AGE_DAYS * 86400000).toISOString().slice(0,10);
+
+    try {
+      const base = typeof FATHOM_API_BASE !== 'undefined' ? FATHOM_API_BASE : '';
+      const listRes  = await fetch(`${base}/api/tmmb-fathom-import?action=list`);
+      const listData = await listRes.json();
+      if (!listData.calls?.length) { localStorage.setItem('tmmb_fathom_sync_ts', String(Date.now())); return; }
+
+      // Only calls within MAX_AGE_DAYS
+      const recent = listData.calls.filter(c => c.date >= cutoff);
+      if (!recent.length) { localStorage.setItem('tmmb_fathom_sync_ts', String(Date.now())); return; }
+
+      // Find calls not already logged (match by fathom share_url)
+      const logged   = tmmb_getCalls();
+      const loggedUrls = new Set(logged.map(c => (c.fathom||'').trim()).filter(Boolean));
+      const toLog    = recent.filter(c => c.url && !loggedUrls.has(c.url)).slice(0, MAX_NEW);
+
+      let added = 0;
+      for (const call of toLog) {
+        try {
+          const params  = new URLSearchParams({ action:'analyse', id:call.id, title:call.title, date:call.date, url:call.url });
+          const aRes    = await fetch(`${base}/api/tmmb-fathom-import?${params}`);
+          const data    = await aRes.json();
+          if (data.error || !data.prospect_name) continue; // skip non-sales calls
+
+          const allCalls = tmmb_getCalls();
+          allCalls.unshift({
+            id:           Date.now() + added,
+            date:         data.meeting_date || call.date,
+            name:         data.prospect_name || '',
+            email:        data.prospect_email || '',
+            source:       data.lead_source || '',
+            outcome:      data.outcome || 'followup',
+            type:         'cold',
+            parentCallId: '',
+            deal:         data.programme || '',
+            paytype:      'pif',
+            cash:         data.cash_collected || 0,
+            dealValue:    data.deal_value || 4000,
+            fathom:       data.fathom_url || call.url,
+            prosvideo:    '',
+            notes:        data.notes || '',
+            objections:   data.objections || [],
+            offer:        'tmmb',
+            autoLogged:   true,
+          });
+          tmmb_saveCalls(allCalls);
+          added++;
+        } catch (e) { /* skip this call, try next */ }
+      }
+
+      localStorage.setItem('tmmb_fathom_sync_ts', String(Date.now()));
+      if (added > 0) {
+        tmmb_renderCallHistory();
+        tmmb_updateOverview();
+      }
+    } catch (e) { /* silent — auto-sync is best-effort */ }
   }
 
   /* ---------- JARVIS CHAT ---------- */
