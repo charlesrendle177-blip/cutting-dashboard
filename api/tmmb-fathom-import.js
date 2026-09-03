@@ -17,11 +17,16 @@ async function fathomGet(path, apiKey) {
 
 function extractTranscriptText(data) {
   if (typeof data === 'string') return data;
-  if (data.transcript) return typeof data.transcript === 'string' ? data.transcript : JSON.stringify(data.transcript);
-  if (data.text)       return data.text;
-  if (Array.isArray(data)) {
-    return data.map(seg => `${seg.speaker || seg.name || ''}: ${seg.text || seg.content || ''}`).join('\n');
+  // Fathom transcript endpoint returns array of {speaker:{display_name}, text, timestamp}
+  const items = Array.isArray(data) ? data : (data.transcript || data.items || data.data || null);
+  if (Array.isArray(items)) {
+    return items.map(seg => {
+      const name = seg.speaker?.display_name || seg.speaker || seg.name || '';
+      const text = seg.text || seg.content || '';
+      return `${name}: ${text}`;
+    }).join('\n');
   }
+  if (data.text) return data.text;
   return JSON.stringify(data).slice(0, 8000);
 }
 
@@ -89,17 +94,12 @@ module.exports = async (req, res) => {
     if (!action || action === 'list') {
       const data  = await fathomGet('/meetings?page_size=25', fathomKey);
       const items = Array.isArray(data) ? data : (data.data || data.meetings || data.items || []);
-      const calls = items.map(c => {
-        const url    = c.url || c.recording_url || c.share_url || '';
-        // ID lives on c.id if present, else extract from the call URL
-        const urlId  = (url.match(/\/calls\/(\d+)/) || [])[1];
-        return {
-          id:    c.id || urlId,
-          title: c.title || c.name || 'Untitled Call',
-          date:  (c.created_at || c.recorded_at || c.started_at || '').slice(0, 10),
-          url,
-        };
-      }).filter(c => c.id);
+      const calls = items.map(c => ({
+        id:    c.recording_id,
+        title: c.title || c.meeting_title || 'Untitled Call',
+        date:  (c.created_at || c.recording_start_time || '').slice(0, 10),
+        url:   c.share_url || c.url || '',
+      })).filter(c => c.id);
       return res.status(200).json({ calls });
     }
 
