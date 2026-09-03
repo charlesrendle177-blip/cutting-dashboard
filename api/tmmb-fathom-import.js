@@ -125,6 +125,18 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (action === 'debug_transcript' && id) {
+      const raw = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
+      return res.status(200).json({ raw });
+    }
+
+    if (action === 'debug_meeting' && id) {
+      const data  = await fathomGet(`/meetings?include_transcript=true&page_size=25`, fathomKey);
+      const items = Array.isArray(data) ? data : (data.data || data.meetings || []);
+      const match = items.find(m => String(m.recording_id) === String(id));
+      return res.status(200).json({ match: match ? { recording_id: match.recording_id, transcript_len: JSON.stringify(match.transcript||[]).length, transcript_sample: JSON.stringify((match.transcript||[]).slice(0,2)) } : null });
+    }
+
     return res.status(400).json({ error: 'Invalid action — use ?action=list or ?action=analyse&id=CALL_ID' });
   } catch (e) {
     return res.status(500).json({ error: e.message });
