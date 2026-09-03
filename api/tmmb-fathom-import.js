@@ -71,8 +71,10 @@ Return ONLY valid JSON with these fields (use null if unknown):
     throw new Error(`Claude analysis failed: ${res.status} — ${err.slice(0, 200)}`);
   }
 
-  const data    = await res.json();
-  const text    = (data.content?.[0]?.text || '').trim();
+  const data      = await res.json();
+  // Opus 5 uses adaptive thinking — content[0] may be a thinking block, find the text block
+  const textBlock = data.content?.find(b => b.type === 'text');
+  const text      = (textBlock?.text || '').trim();
   const match   = text.match(/\{[\s\S]*\}/);
   const jsonStr = match ? match[0] : '{}';
   if (debug) return { _raw_claude: text, _json_str: jsonStr };
