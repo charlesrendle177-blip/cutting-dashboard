@@ -59,7 +59,7 @@ Return ONLY valid JSON with these fields (use null if unknown):
   "cash_collected":  "cash collected today in GBP as integer if closed, else null",
   "programme":       "exact programme name e.g. TMMB Academy, Project Gains",
   "lead_source":     "one of: setter, referral, ad, inbound, other — infer from context (setter = booked by a setter/VA, referral = word of mouth, ad = paid ad/Facebook/Instagram, inbound = prospect reached out directly)",
-  "notes":           "2–3 sentence summary: what went well, key moments, what to improve",
+  "notes":           "1 sentence max. Just the key facts: who they are, where they're at, what happened on the call.",
   "objections":      "array of any that applied: fear-money, fear-think, fear-doubt, tried-before, logic-time, logic-partner, value"
 }`,
       }],
