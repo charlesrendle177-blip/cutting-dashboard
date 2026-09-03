@@ -5726,7 +5726,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       }
 
       list.innerHTML = calls.map(c => {
-        const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
         return `<div onclick="fathomImport_select(this)"
              data-id="${esc(c.id)}" data-title="${esc(c.title||'')}" data-date="${esc(c.date||'')}" data-url="${esc(c.url||'')}"
              style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(124,58,237,0.08);transition:background 0.1s;"
