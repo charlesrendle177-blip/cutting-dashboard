@@ -30,7 +30,7 @@ function extractTranscriptText(data) {
   return JSON.stringify(data).slice(0, 8000);
 }
 
-async function analyseTranscript(transcript, title, anthropicKey) {
+async function analyseTranscript(transcript, title, anthropicKey, debug = false) {
   const res = await fetch(`${ANTHROPIC_BASE}/v1/messages`, {
     method: 'POST',
     headers: {
@@ -71,10 +71,16 @@ Return ONLY valid JSON with these fields (use null if unknown):
     throw new Error(`Claude analysis failed: ${res.status} — ${err.slice(0, 200)}`);
   }
 
-  const data = await res.json();
-  const text = (data.content?.[0]?.text || '').trim();
-  const jsonStr = text.startsWith('{') ? text : text.match(/\{[\s\S]*\}/)?.[0] || '{}';
-  return JSON.parse(jsonStr);
+  const data    = await res.json();
+  const text    = (data.content?.[0]?.text || '').trim();
+  const match   = text.match(/\{[\s\S]*\}/);
+  const jsonStr = match ? match[0] : '{}';
+  if (debug) return { _raw_claude: text, _json_str: jsonStr };
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    throw new Error(`Claude JSON parse failed: ${e.message}. Raw: ${text.slice(0, 200)}`);
+  }
 }
 
 module.exports = async (req, res) => {
@@ -127,7 +133,16 @@ module.exports = async (req, res) => {
 
     if (action === 'debug_transcript' && id) {
       const raw = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
-      return res.status(200).json({ raw });
+      const transcript = extractTranscriptText(raw);
+      return res.status(200).json({ raw_keys: Object.keys(raw), transcript_length: transcript.length, transcript_sample: transcript.slice(0, 300) });
+    }
+
+    if (action === 'debug_claude' && id) {
+      if (!anthropicKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
+      const raw = await fathomGet(`/recordings/${id}/transcript`, fathomKey);
+      const transcript = extractTranscriptText(raw);
+      const result = await analyseTranscript(transcript.slice(0, 9000), req.query.title || 'Sales Call', anthropicKey, true);
+      return res.status(200).json({ transcript_length: transcript.length, ...result });
     }
 
     if (action === 'debug_meeting' && id) {
