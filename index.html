@@ -6372,6 +6372,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const data = await r.json();
       const items = (data.items || []);
       if (btn) { btn.textContent = 'Refresh'; btn.disabled = false; btn.onclick = () => home_connectGCal(); }
+      localStorage.setItem('gcal_auto_connect', '1');
       if (!items.length) {
         if (evEl) evEl.innerHTML = '<span style="color:#6b7280;">Nothing booked today — free day 🎯</span>';
         return;
@@ -6381,6 +6382,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         return `<span style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:3px 9px;margin-right:6px;margin-bottom:4px;font-size:12px;"><strong style="color:#1e40af;">${start}</strong> ${ev.summary || 'Event'}</span>`;
       }).join('');
     } catch(e) {
+      localStorage.removeItem('gcal_auto_connect');
       if (evEl) evEl.textContent = 'Could not load calendar. Try reconnecting.';
       if (btn) { btn.textContent = 'Connect GCal'; btn.disabled = false; }
     }
@@ -7624,6 +7626,19 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     htd_updateCard();
     dev_render();
     hub_initSync();
+
+    // Auto-reconnect GCal silently if user has previously connected
+    if (localStorage.getItem('gcal_auto_connect') === '1') {
+      // GSI is loaded async — wait for it before attempting silent auth
+      const tryAutoGCal = () => {
+        if (window.google?.accounts?.oauth2) {
+          home_connectGCal();
+        } else {
+          setTimeout(tryAutoGCal, 500);
+        }
+      };
+      setTimeout(tryAutoGCal, 800);
+    }
   });
 
   if ('serviceWorker' in navigator) {
