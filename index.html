@@ -8842,37 +8842,21 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <div class="cr-tax-row"><span class="cr-tax-key">Allowable Expenses</span><span class="cr-tax-val">£${totalExp.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
         <div class="cr-tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;"><span class="cr-tax-key" style="color:#0d2345;">Self-Employment Profit</span><span class="cr-tax-val" style="color:#0d2345;">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
       </div>
-      <div class="biz-card" style="margin-bottom:14px;">
-        <div class="biz-card-label">Personal Allowance Tracker</div>
-        <div style="font-size:11px;color:#6b7280;margin-bottom:10px;">£12,570 tax-free — ${ty.label}</div>
-        <div style="background:#f3f4f6;border-radius:8px;height:18px;overflow:hidden;margin-bottom:10px;display:flex;">
-          ${payePct > 0 ? `<div style="width:${payePct}%;background:#f59e0b;height:100%;" title="PAYE: £${payeUsed.toLocaleString()}"></div>` : ''}
-          ${sePct   > 0 ? `<div style="width:${sePct}%;background:#3b82f6;height:100%;" title="SE profit: £${seUsed.toLocaleString()}"></div>` : ''}
-          ${remPct  > 0 ? `<div style="width:${remPct}%;background:#bbf7d0;height:100%;" title="Still free: £${paLeft.toLocaleString()}"></div>` : ''}
+      <div class="biz-card" style="margin-bottom:14px;background:${paLeft > 0 ? '#f0fdf4' : '#fef2f2'};border-color:${paLeft > 0 ? '#86efac' : '#fca5a5'};">
+        <div style="font-size:10px;font-weight:800;color:${paLeft > 0 ? '#166534' : '#991b1b'};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Personal Allowance</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px;">
+          <span style="font-size:34px;font-weight:900;color:${paLeft > 0 ? '#059669' : '#dc2626'};letter-spacing:-1px;">£${paLeft.toLocaleString()}</span>
+          <span style="font-size:13px;color:${paLeft > 0 ? '#166534' : '#991b1b'};font-weight:600;">remaining tax-free</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-          <div style="background:#fffbeb;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:9px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:3px;">PAYE Used</div>
-            <div style="font-size:15px;font-weight:800;color:#d97706;">£${payeUsed.toLocaleString()}</div>
-          </div>
-          <div style="background:#eff6ff;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:9px;font-weight:800;color:#1e3a8a;text-transform:uppercase;margin-bottom:3px;">SE Profit Used</div>
-            <div style="font-size:15px;font-weight:800;color:#2563eb;">£${seUsed.toLocaleString()}</div>
-          </div>
-          <div style="background:${paLeft > 0 ? '#f0fdf4' : '#fef2f2'};border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:9px;font-weight:800;color:${paLeft > 0 ? '#065f46' : '#991b1b'};text-transform:uppercase;margin-bottom:3px;">Still Free</div>
-            <div style="font-size:15px;font-weight:800;color:${paLeft > 0 ? '#059669' : '#dc2626'};">£${paLeft.toLocaleString()}</div>
-          </div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:14px;">£${(payeUsed + seUsed).toLocaleString()} used of £12,570 allowance</div>
+        <div style="background:rgba(0,0,0,0.06);border-radius:99px;height:10px;overflow:hidden;margin-bottom:12px;">
+          <div style="height:100%;width:${100 - remPct}%;background:${paLeft > 0 ? '#059669' : '#dc2626'};border-radius:99px;transition:width 0.4s;"></div>
         </div>
-        <div style="display:flex;gap:10px;font-size:10px;color:#6b7280;margin-bottom:10px;">
-          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;flex-shrink:0;display:inline-block;"></span>PAYE</span>
-          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;flex-shrink:0;display:inline-block;"></span>SE profit</span>
-          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#bbf7d0;flex-shrink:0;display:inline-block;"></span>Remaining</span>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;">
+          <span>PAYE &nbsp;<strong style="color:#0d2345;">£${payeUsed.toLocaleString()}</strong></span>
+          <span>Self-employment &nbsp;<strong style="color:#0d2345;">£${seUsed.toLocaleString()}</strong></span>
+          <span>Total allowance &nbsp;<strong style="color:#0d2345;">£12,570</strong></span>
         </div>
-        ${paLeft > 0
-          ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:9px 12px;font-size:12px;color:#065f46;">&#10003; £${paLeft.toLocaleString('en-GB')} of your personal allowance still tax-free</div>`
-          : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:9px 12px;font-size:12px;color:#991b1b;">&#10007; Personal allowance fully used — all further income is taxable</div>`
-        }
       </div>
       <div class="biz-card" style="margin-bottom:14px;">
         <div class="biz-card-label accent">Income Tax Calculation</div>
