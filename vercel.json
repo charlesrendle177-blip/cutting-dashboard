@@ -18,9 +18,10 @@
     "api/receipt-scan.js":   { "maxDuration": 30, "memory": 512 }
   },
   "crons": [
-    { "path": "/api/renpho-sync", "schedule": "0 7 * * *" },
-    { "path": "/api/renpho-sync", "schedule": "0 19 * * *" },
-    { "path": "/api/renpho-sync", "schedule": "0 21 * * *" },
-    { "path": "/api/renpho-sync", "schedule": "0 23 * * *" }
+    { "path": "/api/renpho-sync",         "schedule": "0 7 * * *"   },
+    { "path": "/api/renpho-sync",         "schedule": "0 19 * * *"  },
+    { "path": "/api/renpho-sync",         "schedule": "0 21 * * *"  },
+    { "path": "/api/renpho-sync",         "schedule": "0 23 * * *"  },
+    { "path": "/api/nightly-brief?mode=weekly", "schedule": "0 7 * * 1" }
   ]
 }

@@ -5404,6 +5404,33 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     if (sb) sb.from('hub_data')
       .upsert({ key: 'tmmb_calls', value: calls, updated_at: new Date().toISOString() }, { onConflict: 'key' })
       .then(({ error }) => { if (error) console.error('[hub_sync] tmmb_saveCalls failed:', error); });
+    tmmb_syncCallsToSupabase(calls);
+  }
+
+  function tmmb_syncCallsToSupabase(calls) {
+    if (!sb) return;
+    const rows = calls
+      .filter(c => c.id && c.date)
+      .map(c => ({
+        client_id:      c.id,
+        fathom_url:     c.fathom   || null,
+        call_date:      c.date,
+        prospect_name:  c.name     || null,
+        prospect_email: c.email    || null,
+        outcome:        c.outcome  || null,
+        deal_value:     c.dealValue ? parseInt(c.dealValue) : null,
+        cash_collected: c.cash     ? parseInt(c.cash)      : null,
+        programme:      c.offer === 'gains' ? 'Project Gains' : 'TMMB Academy',
+        lead_source:    c.source   || null,
+        notes:          c.notes    || null,
+        objections:     Array.isArray(c.objections) ? c.objections : [],
+        auto_logged:    !!c.autoLogged,
+        synced_at:      new Date().toISOString(),
+      }));
+    if (!rows.length) return;
+    sb.from('tmmb_calls')
+      .upsert(rows, { onConflict: 'client_id' })
+      .then(({ error }) => { if (error) console.error('[tmmb_supabase_sync]', error.message); });
   }
 
   // Commission rate: 12% for Project Gains, 10% for TMMB
