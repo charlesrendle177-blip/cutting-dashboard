@@ -2685,7 +2685,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-development',this);dev_render()">My Development</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-invoices',this);inv_render()">Invoices</button>
       <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-pipeline',this);pipe_render()">Follow Up Deals</button>
-      <button class="tmmb-tab" onclick="tmmb_showTab('tmmb-playbook',this)">Objection Playbook</button>
     </div>
 
     <div class="tmmb-wrap">
@@ -3304,86 +3303,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div id="pipe-list"></div>
         </div>
 
-        <!-- OBJECTION PLAYBOOK -->
-        <div id="tmmb-playbook" class="tmmb-section">
-          <div class="tmmb-section-header">
-            <h2>Objection Playbook</h2>
-            <p>Quick-reference responses — study these, breathe them, own them</p>
-          </div>
-
-          <div style="display:grid;gap:12px;">
-
-            <!-- 1 -->
-            <div style="background:#faf5ff;border:1.5px solid #e9d5ff;border-left:5px solid #7c3aed;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#5b21b6;margin-bottom:6px;">💭 "I need to think about it / speak to my partner"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Call it out:</strong> "What specifically do you need to think about? Is it the investment, or is it whether this is the right fit?" — isolate the real concern.<br>
-              <strong>Partner angle:</strong> "Would your partner want you to fix this problem? You're the one who got on this call today — what do you think is stopping you from making this decision yourself?"<br>
-              <strong>Close:</strong> Silence. Let them speak. The one who talks next loses. Wait them out.</div>
-            </div>
-
-            <!-- 2 -->
-            <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-left:5px solid #f97316;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#9a3412;margin-bottom:6px;">💸 "It's too expensive / I don't have the money"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Reframe the cost:</strong> "If you don't fix this now, what does the next 12 months look like? What's that costing you?"<br>
-              <strong>Money objection killer:</strong> "The reason you need this is exactly because of the money situation — this is how you fix it. We can structure the payment to make it work."<br>
-              <strong>Plan option:</strong> Offer the payment plan — break it into something monthly that feels manageable. The deposit gets them in the game.</div>
-            </div>
-
-            <!-- 3 -->
-            <div style="background:#f0fdf4;border:1.5px solid #a7f3d0;border-left:5px solid #059669;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#064e3b;margin-bottom:6px;">⏰ "The timing isn't right / I'm not ready yet"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>When will it be right?</strong> "What needs to change for the timing to work? Because in 3 months, you'll have the same problem — just 3 months bigger."<br>
-              <strong>The real question:</strong> "Is it timing, or is it confidence that this will actually work for you? Because those are two very different things."<br>
-              <strong>Hormozi close:</strong> "If I could guarantee the result, would timing still be the issue?"</div>
-            </div>
-
-            <!-- 4 -->
-            <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-left:5px solid #2563eb;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#1e3a8a;margin-bottom:6px;">📉 "I've tried programs / courses like this before"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Acknowledge and differentiate:</strong> "I get that — most people who come to us have already spent money on something that didn't deliver. What didn't work about it?"<br>
-              <strong>Then pivot:</strong> "What you're describing is why we built it differently. You're not paying for content — you're paying for outcomes. The accountability structure is what changes the result."<br>
-              <strong>Don't oversell:</strong> Ask what they genuinely need, then show how this is built to solve exactly that.</div>
-            </div>
-
-            <!-- 5 -->
-            <div style="background:#fefce8;border:1.5px solid #fef08a;border-left:5px solid #eab308;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#713f12;margin-bottom:6px;">🔍 "Can I see more results / proof first?"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>You have results — use them:</strong> Present 2-3 specific outcome stories. Not testimonials. Actual numbers from real clients.<br>
-              <strong>Flip it:</strong> "How many results would you need to see before you'd be comfortable? Because at some point this becomes about trust in yourself, not the program."<br>
-              <strong>Commitment question:</strong> "If you had all the proof in the world that this works, what would stop you from starting today?"</div>
-            </div>
-
-            <!-- 6 -->
-            <div style="background:#fdf4ff;border:1.5px solid #e9d5ff;border-left:5px solid #a855f7;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#581c87;margin-bottom:6px;">😨 "What if it doesn't work for me?"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>De-risk it:</strong> "What would 'not working' look like to you? Let's define it — because then we can talk about whether that's actually a realistic outcome."<br>
-              <strong>Turn it round:</strong> "What's the cost of not trying? The fear of it not working is smaller than the certainty of staying where you are."<br>
-              <strong>Universal reframe:</strong> "That fear is actually the reason you need this more than anyone. People who have it figured out don't need to ask that question."</div>
-            </div>
-
-            <!-- 7 -->
-            <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-left:5px solid #0ea5e9;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#0c4a6e;margin-bottom:6px;">🤔 "I need to do more research first"</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Reframe research:</strong> "What information would actually change your decision? Because everything you need to know, you just heard in this call."<br>
-              <strong>The real blocker:</strong> Research is usually a stall. "Is there something specific you'd need to find out, or is this more about feeling confident in the decision?"<br>
-              <strong>Create urgency:</strong> "The cohort fills up — research is great, but not if the spot's gone when you come back."</div>
-            </div>
-
-            <!-- 8 -->
-            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-left:5px solid #ef4444;border-radius:12px;padding:16px 18px;">
-              <div style="font-size:13px;font-weight:800;color:#7f1d1d;margin-bottom:6px;">🚫 Straight "No" / Silent / Disengaged</div>
-              <div style="font-size:12px;color:#374151;line-height:1.6;"><strong>Never panic close:</strong> Dropping your tone or getting desperate kills it. Stay grounded.<br>
-              <strong>Ask the real question:</strong> "Can I ask you something honestly? What would need to be true for this to be a yes?" Then shut up.<br>
-              <strong>Hormozi's rule:</strong> The person who asks the most times without pissing them off wins. Ask again. Different frame. Same question.</div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:20px;padding:14px 18px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb;">
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Golden Rule</div>
-            <div style="font-size:13px;color:#374151;line-height:1.6;">"The person who speaks most in the sale loses. Sales is in your ears, not your mouth. Isolate the real objection, then ask again. The salespeople who close the most are the ones who ask the most times." — Hormozi</div>
-          </div>
-        </div>
 
       </div><!-- /tmmb-main -->
     </div><!-- /tmmb-wrap -->
