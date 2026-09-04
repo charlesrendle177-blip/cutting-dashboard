@@ -642,12 +642,52 @@ function renderTax() {
   const taxable  = Math.max(0, profit - remainingAllowance);
   const eff      = profit>0?(tax.total/profit*100).toFixed(1):'0.0';
   const monthly  = profit>0?Math.round(tax.total/12):0;
+  const PA       = 12570;
+  const payeUsed = Math.min(empIncome, PA);
+  const seUsed   = Math.min(Math.max(0, profit), Math.max(0, PA - payeUsed));
+  const paLeft   = Math.max(0, PA - payeUsed - seUsed);
+  const payePct  = Math.round((payeUsed / PA) * 100);
+  const sePct    = Math.round((seUsed   / PA) * 100);
+  const remPct   = 100 - payePct - sePct;
+
   document.getElementById('tax-body').innerHTML = `
     <div class="card">
       <div class="card-label">Tax year ${ty.label} · ${ty.start} → ${ty.end}</div>
       <div class="tax-row"><span class="tax-key">Total Income</span><span class="tax-val">${fmt(totalInc)}</span></div>
       <div class="tax-row"><span class="tax-key">Allowable Expenses</span><span class="tax-val">${fmt(totalExp)}</span></div>
       <div class="tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;font-weight:700;"><span class="tax-key" style="color:#0d2345;">Taxable Profit</span><span class="tax-val" style="color:#0d2345;">${fmt(profit)}</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Personal Allowance Tracker</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:10px;">£12,570 tax-free — ${ty.label}</div>
+      <div style="background:#f3f4f6;border-radius:8px;height:18px;overflow:hidden;margin-bottom:10px;display:flex;">
+        ${payePct > 0 ? `<div style="width:${payePct}%;background:#f59e0b;height:100%;" title="PAYE: £${payeUsed.toLocaleString()}"></div>` : ''}
+        ${sePct   > 0 ? `<div style="width:${sePct}%;background:#3b82f6;height:100%;" title="SE profit: £${seUsed.toLocaleString()}"></div>` : ''}
+        ${remPct  > 0 ? `<div style="width:${remPct}%;background:#bbf7d0;height:100%;" title="Still free: £${paLeft.toLocaleString()}"></div>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="background:#fffbeb;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:3px;">PAYE Used</div>
+          <div style="font-size:15px;font-weight:800;color:#d97706;">£${payeUsed.toLocaleString()}</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:#1e3a8a;text-transform:uppercase;margin-bottom:3px;">SE Profit Used</div>
+          <div style="font-size:15px;font-weight:800;color:#2563eb;">£${seUsed.toLocaleString()}</div>
+        </div>
+        <div style="background:${paLeft > 0 ? '#f0fdf4' : '#fef2f2'};border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:9px;font-weight:800;color:${paLeft > 0 ? '#065f46' : '#991b1b'};text-transform:uppercase;margin-bottom:3px;">Still Free</div>
+          <div style="font-size:15px;font-weight:800;color:${paLeft > 0 ? '#059669' : '#dc2626'};">£${paLeft.toLocaleString()}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:10px;color:#6b7280;margin-bottom:10px;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block;"></span>PAYE</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block;"></span>SE profit</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#bbf7d0;display:inline-block;"></span>Remaining</span>
+      </div>
+      ${paLeft > 0
+        ? `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:9px 12px;font-size:12px;color:#065f46;">&#10003; £${paLeft.toLocaleString('en-GB')} of your personal allowance still tax-free</div>`
+        : `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:9px 12px;font-size:12px;color:#991b1b;">&#10007; Personal allowance fully used — all further income is taxable</div>`
+      }
     </div>
     <div class="card">
       <div class="card-label blue">Income Tax Calculation</div>
