@@ -377,7 +377,7 @@
     .section-card:hover .card-arrow {
       background: var(--c-accent, var(--accent));
       border-color: var(--c-accent, var(--accent));
-      color: var(--white);
+      color: #fff;
       box-shadow: 0 4px 14px var(--c-glow, var(--accent-glow));
     }
 
@@ -2191,14 +2191,37 @@
     </div>
   </div>
 
-  <!-- Today's Calls Widget -->
-  <div id="home-gcal-widget" style="margin:0 24px 0;padding:14px 18px;background:rgba(239,246,255,0.7);backdrop-filter:blur(8px);border:1.5px solid rgba(191,219,254,0.6);border-radius:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <span style="font-size:16px;">📅</span>
-      <span style="font-size:13px;font-weight:800;color:#1e3a8a;">Today's Calls</span>
+  <!-- Today's workout + target weight strip -->
+  <div style="margin:0 80px;padding:20px 0 0;display:flex;gap:16px;flex-wrap:wrap;">
+
+    <!-- Today's session -->
+    <div style="flex:1;min-width:200px;padding:16px 20px;background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(13,35,69,0.06);">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;" id="home-wo-emoji">💪</div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px;">Today's session</div>
+        <div style="font-size:17px;font-weight:800;color:#111827;letter-spacing:-0.3px;line-height:1.1;" id="home-wo-name">Push</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">3,200 kcal target</div>
+      </div>
     </div>
-    <div id="home-gcal-events" style="flex:1;font-size:13px;color:#6b7280;min-width:0;">Connect Google Calendar to see today's schedule</div>
-    <button id="home-gcal-btn" onclick="home_connectGCal()" style="flex-shrink:0;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Connect GCal</button>
+
+    <!-- Target weight -->
+    <div style="flex:1;min-width:200px;padding:16px 20px;background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:18px;box-shadow:0 1px 4px rgba(13,35,69,0.06);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px;">Current weight</div>
+          <div style="font-size:17px;font-weight:800;color:#111827;letter-spacing:-0.3px;" id="home-tw-current">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Target</div>
+          <div style="font-size:15px;font-weight:800;color:#059669;letter-spacing:-0.2px;">84.5 kg</div>
+        </div>
+      </div>
+      <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden;">
+        <div id="home-tw-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#059669,#34d399);width:0%;transition:width 0.9s cubic-bezier(0.34,1.56,0.64,1);"></div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:5px;" id="home-tw-remaining">Syncing…</div>
+    </div>
+
   </div>
 
   <div class="sections-wrapper">
@@ -2288,7 +2311,7 @@
         <div class="card-title">Business</div>
         <div class="card-subtitle">CR Revenue · Vidaire</div>
         <div class="card-divider"></div>
-        <div class="card-stats" style="padding-top: 4px; display:flex; flex-direction:column; gap:4px;">
+        <div class="card-stats" style="padding-top:4px;display:flex;flex-direction:column;gap:4px;">
           <div style="font-size:11px;font-weight:600;color:var(--amber);">CR Revenue</div>
           <div style="font-size:11px;color:var(--text-secondary);">Income · Expenses · Tax · Receipts · Invoices</div>
           <div style="font-size:11px;font-weight:600;color:var(--amber);margin-top:4px;">Vidaire</div>
@@ -4972,6 +4995,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         document.getElementById('f-weight').innerHTML = latest.weight + '<span class="unit">kg</span>';
         document.getElementById('f-weight-date').textContent = 'Logged ' + fmtDate(latest.date);
         document.getElementById('s-weight').textContent = latest.weight + 'kg';
+        const allW = data.filter(d => d.weight).map(d => d.weight);
+        home_renderTargetWeight(latest.weight, allW);
       }
 
       // 7-day rolling average
@@ -6337,56 +6362,42 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     });
   }
 
-  // ── Home Screen — Today's GCal Calls ─────────────────────────
-  let _homeGcalClient = null;
-  async function home_connectGCal() {
-    const btn = document.getElementById('home-gcal-btn');
-    if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
-    if (!_homeGcalClient) {
-      _homeGcalClient = google.accounts.oauth2.initTokenClient({
-        client_id: GCAL_CLIENT_ID,
-        scope: GCAL_SCOPE,
-        callback: async (resp) => {
-          if (resp.error) {
-            if (btn) { btn.textContent = 'Connect GCal'; btn.disabled = false; }
-            return;
-          }
-          await home_fetchTodayEvents(resp.access_token);
-        },
-      });
-    }
-    _homeGcalClient.requestAccessToken({ prompt: '' });
+  // ── Home Screen — Today's workout + target weight ────────────
+  function home_renderWorkoutWidget() {
+    const schedule = {
+      0: { name: '5K Run', emoji: '🏃' },
+      1: { name: 'Push',   emoji: '💪' },
+      2: { name: 'Pull',   emoji: '🏋️' },
+      3: { name: 'Legs',   emoji: '🦵' },
+      4: { name: 'Rest',   emoji: '😴' },
+      5: { name: 'Push',   emoji: '💪' },
+      6: { name: 'Pull',   emoji: '🏋️' },
+    };
+    const session = schedule[new Date().getDay()];
+    const nameEl  = document.getElementById('home-wo-name');
+    const emojiEl = document.getElementById('home-wo-emoji');
+    if (nameEl)  nameEl.textContent  = session.name;
+    if (emojiEl) emojiEl.textContent = session.emoji;
   }
 
-  async function home_fetchTodayEvents(token) {
-    const btn = document.getElementById('home-gcal-btn');
-    const evEl = document.getElementById('home-gcal-events');
-    try {
-      const today = new Date();
-      const y = today.getFullYear(), mo = String(today.getMonth()+1).padStart(2,'0'), d = String(today.getDate()).padStart(2,'0');
-      const timeMin = encodeURIComponent(`${y}-${mo}-${d}T00:00:00Z`);
-      const timeMax = encodeURIComponent(`${y}-${mo}-${d}T23:59:59Z`);
-      const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=8`, {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await r.json();
-      const items = (data.items || []);
-      if (btn) { btn.textContent = 'Refresh'; btn.disabled = false; btn.onclick = () => home_connectGCal(); }
-      localStorage.setItem('gcal_auto_connect', '1');
-      if (!items.length) {
-        if (evEl) evEl.innerHTML = '<span style="color:#6b7280;">Nothing booked today — free day 🎯</span>';
-        return;
-      }
-      if (evEl) evEl.innerHTML = items.map(ev => {
-        const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : 'All day';
-        return `<span style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:3px 9px;margin-right:6px;margin-bottom:4px;font-size:12px;"><strong style="color:#1e40af;">${start}</strong> ${ev.summary || 'Event'}</span>`;
-      }).join('');
-    } catch(e) {
-      localStorage.removeItem('gcal_auto_connect');
-      if (evEl) evEl.textContent = 'Could not load calendar. Try reconnecting.';
-      if (btn) { btn.textContent = 'Connect GCal'; btn.disabled = false; }
+  function home_renderTargetWeight(currentWeight, allWeights) {
+    const TARGET  = 84.5;
+    const start   = allWeights?.length ? Math.max(...allWeights) : currentWeight;
+    const curEl   = document.getElementById('home-tw-current');
+    const barEl   = document.getElementById('home-tw-bar');
+    const remEl   = document.getElementById('home-tw-remaining');
+    if (!curEl || !currentWeight) return;
+    curEl.textContent = currentWeight + ' kg';
+    const toGo = Math.max(0, currentWeight - TARGET);
+    const range = Math.max(0.1, start - TARGET);
+    const pct   = Math.min(100, Math.max(0, ((start - currentWeight) / range) * 100));
+    if (barEl) barEl.style.width = pct.toFixed(1) + '%';
+    if (remEl) {
+      if (toGo <= 0) { remEl.textContent = 'Target reached!'; remEl.style.color = '#059669'; }
+      else           { remEl.textContent = toGo.toFixed(1) + ' kg to go'; }
     }
   }
+
 
   // ── Fitness PB Tracker ────────────────────────────────────────
   const PB_KEY = 'fitness_pbs';
@@ -7620,6 +7631,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
     initGreeting();
     setDates();
+    home_renderWorkoutWidget();
     navigate('home');
     loadFitness();
     loadWorkouts();
@@ -7627,18 +7639,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     dev_render();
     hub_initSync();
 
-    // Auto-reconnect GCal silently if user has previously connected
-    if (localStorage.getItem('gcal_auto_connect') === '1') {
-      // GSI is loaded async — wait for it before attempting silent auth
-      const tryAutoGCal = () => {
-        if (window.google?.accounts?.oauth2) {
-          home_connectGCal();
-        } else {
-          setTimeout(tryAutoGCal, 500);
-        }
-      };
-      setTimeout(tryAutoGCal, 800);
-    }
   });
 
   if ('serviceWorker' in navigator) {
