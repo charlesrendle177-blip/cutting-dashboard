@@ -1529,6 +1529,41 @@
       background: rgba(110,231,183,0.05) !important;
     }
 
+    /* ---- Call Countdown ---- */
+    .cc-card {
+      background: linear-gradient(135deg, #0d2345 0%, #1a3a6e 100%);
+      border-radius: 16px; padding: 20px 24px; margin-bottom: 20px; color: #fff;
+    }
+    .cc-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 14px;
+    }
+    .cc-next-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .cc-prospect { flex: 1; min-width: 0; }
+    .cc-name { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .cc-meta { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+    .cc-goal { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 6px; font-style: italic; }
+    .cc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex-shrink: 0; }
+    .cc-timer { font-size: 30px; font-weight: 900; letter-spacing: -1px; font-variant-numeric: tabular-nums; color: #fff; }
+    .cc-timer.soon { color: #fbbf24; }
+    .cc-timer.now  { color: #34d399; animation: cc-pulse 1s ease-in-out infinite; }
+    @keyframes cc-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .cc-join-btn {
+      display: inline-block; background: #059669; color: #fff;
+      font-size: 13px; font-weight: 700; padding: 9px 20px;
+      border-radius: 9px; text-decoration: none; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .cc-join-btn:hover { background: #047857; }
+    .cc-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0 12px; }
+    .cc-queue { display: flex; flex-direction: column; gap: 8px; }
+    .cc-queue-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .cc-queue-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); }
+    .cc-queue-time { font-size: 12px; color: rgba(255,255,255,0.45); flex-shrink: 0; }
+    .cc-queue-join { font-size: 11px; color: #6ee7b7; font-weight: 600; text-decoration: none; }
+    .cc-queue-join:hover { color: #34d399; }
+    .cc-empty { font-size: 13px; color: rgba(255,255,255,0.45); }
+
     @media (max-width: 640px) {
       .tmmb-tabs { padding: 0 8px; }
       .tmmb-tab { padding: 12px 14px; font-size: 12px; }
@@ -2723,6 +2758,8 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
 
         <!-- ===== OVERVIEW ===== -->
         <div id="tmmb-overview" class="tmmb-section active">
+          <div id="tmmb-call-countdown"></div>
+
           <div class="tmmb-section-header">
             <h2>Your Numbers</h2>
             <p>Live performance at a glance</p>
@@ -7095,6 +7132,70 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     tmmb_calcCommission();
     tmmb_renderMonthly();
     tmmb_fathomAutoSync();
+    tmmb_renderCallCountdown();
+  }
+
+  let _ccInterval = null;
+  async function tmmb_renderCallCountdown() {
+    const el = document.getElementById('tmmb-call-countdown');
+    if (!el || !sb) return;
+    const now = new Date();
+    const { data: calls } = await sb
+      .from('upcoming_calls')
+      .select('booking_id,name,age,occupation,goal,call_start,call_end,meeting_url,country')
+      .gte('call_end', now.toISOString())
+      .order('call_start', { ascending: true });
+    if (!calls || calls.length === 0) {
+      el.innerHTML = `<div class="cc-card"><div class="cc-label">Upcoming Calls</div><div class="cc-empty">No calls scheduled. Go book some.</div></div>`;
+      return;
+    }
+    const next = calls[0];
+    const rest = calls.slice(1, 5);
+    function fmt(iso) {
+      return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    }
+    function countdown(iso) {
+      const diff = new Date(iso) - new Date();
+      if (diff <= 0) return { str: 'NOW', cls: 'now' };
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const cls = diff < 900000 ? 'soon' : '';
+      const str = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+      return { str, cls };
+    }
+    function renderCard() {
+      const { str, cls } = countdown(next.call_start);
+      const queueHtml = rest.length ? `
+        <hr class="cc-divider">
+        <div class="cc-queue">
+          ${rest.map(c => `
+            <div class="cc-queue-item">
+              <span class="cc-queue-name">${c.name}</span>
+              <span class="cc-queue-time">${fmt(c.call_start)}</span>
+              ${c.meeting_url ? `<a class="cc-queue-join" href="${c.meeting_url}" target="_blank">Join</a>` : ''}
+            </div>`).join('')}
+        </div>` : '';
+      el.innerHTML = `
+        <div class="cc-card">
+          <div class="cc-label">Next Call</div>
+          <div class="cc-next-row">
+            <div class="cc-prospect">
+              <div class="cc-name">${next.name}</div>
+              <div class="cc-meta">${next.age ? `Age ${next.age}` : ''}${next.age && next.occupation ? ' &middot; ' : ''}${next.occupation || ''}${next.country ? ' &middot; ' + next.country : ''}</div>
+              ${next.goal ? `<div class="cc-goal">"${next.goal.slice(0,90)}${next.goal.length>90?'…':''}"</div>` : ''}
+            </div>
+            <div class="cc-right">
+              <div class="cc-timer ${cls}">${str}</div>
+              ${next.meeting_url ? `<a class="cc-join-btn" href="${next.meeting_url}" target="_blank">Join Call</a>` : ''}
+            </div>
+          </div>
+          ${queueHtml}
+        </div>`;
+    }
+    if (_ccInterval) clearInterval(_ccInterval);
+    renderCard();
+    _ccInterval = setInterval(renderCard, 1000);
   }
 
   async function tmmb_fathomAutoSync() {
