@@ -2406,7 +2406,7 @@
           <div class="metric-sub" id="f-weight-date">No data yet</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">7-Day Avg Weight</div>
+          <div class="metric-label">Weight Trend</div>
           <div class="metric-value" id="f-avg-weight">—<span class="unit">kg</span></div>
           <div class="metric-sub" id="f-avg-trend">Rolling average</div>
         </div>
@@ -4535,6 +4535,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     });
   }
 
+  // Compares the average of the last N weigh-ins to the N before that,
+  // then normalises the change to a kg/week rate so 7-day and 14-day windows are comparable.
+  function fitTrendStats(n) {
+    const weighIns = fitnessAllData.filter(e => e.weight != null).sort((a, b) => a.date.localeCompare(b.date));
+    if (weighIns.length < n * 2) return null;
+    const current = weighIns.slice(-n);
+    const prior   = weighIns.slice(-2 * n, -n);
+    const avgNow   = current.reduce((s, e) => s + e.weight, 0) / n;
+    const avgPrior = prior.reduce((s, e) => s + e.weight, 0) / n;
+    const change = avgNow - avgPrior;
+    return {
+      avg:         Math.round(avgNow * 10) / 10,
+      change:      Math.round(change * 100) / 100,
+      ratePerWeek: Math.round(change * (7 / n) * 100) / 100,
+    };
+  }
+
   function renderFitnessCharts() {
     const d = getFitnessDisplay().slice().sort((a,b) => a.date.localeCompare(b.date));
     const labels = d.map(e => new Date(e.date).toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
@@ -5051,16 +5068,21 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         home_renderTargetWeight(latest.weight, allW);
       }
 
-      // 7-day rolling average
-      const recent7 = sorted.slice(0, 7).filter(e => e.weight);
-      if (recent7.length) {
-        const avg = Math.round((recent7.reduce((s, e) => s + e.weight, 0) / recent7.length) * 10) / 10;
-        document.getElementById('f-avg-weight').innerHTML = avg + '<span class="unit">kg</span>';
-        const delta = latest.weight ? Math.round((latest.weight - avg) * 10) / 10 : null;
-        if (delta !== null) {
-          const sign = delta > 0 ? '+' : '';
-          document.getElementById('f-avg-trend').textContent = `${sign}${delta} kg vs avg`;
-        }
+      // Weight trend — 7-day vs 14-day rolling average, normalised to kg/week
+      const trend7  = fitTrendStats(7);
+      const trend14 = fitTrendStats(14);
+      const trendValEl = document.getElementById('f-avg-weight');
+      const trendSubEl = document.getElementById('f-avg-trend');
+      if (trend7) {
+        const arrowFor = (rate) => rate > 0.05 ? '↑' : rate < -0.05 ? '↓' : '→';
+        const colorFor = (rate) => rate > 0.05 ? '#dc2626' : rate < -0.05 ? '#059669' : '#6b7280';
+        trendValEl.innerHTML = `<span style="color:${colorFor(trend7.ratePerWeek)}">${arrowFor(trend7.ratePerWeek)} ${Math.abs(trend7.ratePerWeek).toFixed(2)}</span><span class="unit">kg/wk</span>`;
+        let sub = `7-day avg ${trend7.avg}kg`;
+        if (trend14) sub += ` · 14-day ${arrowFor(trend14.ratePerWeek)}${Math.abs(trend14.ratePerWeek).toFixed(2)}kg/wk`;
+        trendSubEl.textContent = sub;
+      } else {
+        trendValEl.innerHTML = '—<span class="unit">kg</span>';
+        trendSubEl.textContent = 'Needs 14+ days of weigh-ins';
       }
 
       fitUpdateDeficitCard();
