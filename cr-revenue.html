@@ -496,8 +496,11 @@ function changeYear(d) { taxYear += d; renderOverview(); }
 
 function taxCalc(profit, emp = 0) {
   const totalAllowance = 12570, basicTop = 50270;
+  const SL_THRESHOLD = 25000; // Plan 5
+  const totalEarnings = Math.max(0, profit) + Math.max(0, emp);
+  const studentLoan = Math.max(0, Math.round((totalEarnings - SL_THRESHOLD) * 0.09));
   const remainingAllowance = Math.max(0, totalAllowance - emp);
-  if (profit <= remainingAllowance) return { incomeTax:0, ni:0, total:0 };
+  if (profit <= remainingAllowance) return { incomeTax:0, ni:0, total:0, studentLoan };
   const taxable = profit - remainingAllowance;
   const empTaxable = Math.max(0, emp - totalAllowance);
   const basicBandRemaining = Math.max(0, (basicTop - totalAllowance) - empTaxable);
@@ -509,7 +512,7 @@ function taxCalc(profit, emp = 0) {
   const ni1 = Math.max(0, Math.min(profit, niUpper) - niLower);
   const ni2 = Math.max(0, profit - Math.max(niUpper, niLower));
   const ni  = Math.max(0, ni1) * 0.09 + Math.max(0, ni2) * 0.02;
-  return { incomeTax: Math.round(it), ni: Math.round(ni), total: Math.round(it + ni) };
+  return { incomeTax: Math.round(it), ni: Math.round(ni), total: Math.round(it + ni), studentLoan };
 }
 
 function fmt(n)     { return '£' + (n||0).toLocaleString('en-GB', {minimumFractionDigits:2}); }
@@ -524,7 +527,8 @@ function renderOverview() {
   const totalExp = exp.reduce((s,r)=>s+(r.amount||0),0);
   const profit   = totalInc - totalExp;
   const tax      = taxCalc(profit, empIncome);
-  const net      = profit - tax.total;
+  const netTotalDeductions = tax.total + (tax.studentLoan || 0);
+  const net      = profit - netTotalDeductions;
   const yrEl     = document.getElementById('yr-display');
   if (yrEl) yrEl.textContent = `Tax year ${ty.label}`;
 
@@ -532,16 +536,19 @@ function renderOverview() {
     <div class="pnl-row"><span class="pnl-label">Total Income</span><span class="pnl-val" style="color:#059669;">${fmt(totalInc)}</span></div>
     <div class="pnl-row"><span class="pnl-label">Total Expenses</span><span class="pnl-val" style="color:#dc2626;">−${fmt(totalExp)}</span></div>
     <div class="pnl-row total"><span class="pnl-label">Gross Profit</span><span class="pnl-val" style="color:${profit>=0?'#0d2345':'#dc2626'};">${fmt(profit)}</span></div>
-    <div class="pnl-row"><span class="pnl-label">Tax Estimate</span><span class="pnl-val" style="color:#d97706;">−£${tax.total.toLocaleString()}</span></div>
-    <div class="pnl-row total"><span class="pnl-label">Net Profit (after tax)</span><span class="pnl-val" style="color:${net>=0?'#059669':'#dc2626'};">${fmt(net)}</span></div>`;
+    <div class="pnl-row"><span class="pnl-label">Tax + NI estimate</span><span class="pnl-val" style="color:#d97706;">−£${tax.total.toLocaleString()}</span></div>
+    <div class="pnl-row"><span class="pnl-label">Student Loan (Plan 5)</span><span class="pnl-val" style="color:#7c3aed;">−£${(tax.studentLoan||0).toLocaleString()}</span></div>
+    <div class="pnl-row total"><span class="pnl-label">Net Profit (after all deductions)</span><span class="pnl-val" style="color:${net>=0?'#059669':'#dc2626'};">${fmt(net)}</span></div>`;
 
-  const eff = profit > 0 ? Math.round(tax.total/profit*100) : 0;
-  const monthly = profit > 0 ? Math.round(tax.total/12) : 0;
+  const overviewSLTotal = tax.total + (tax.studentLoan || 0);
+  const eff = profit > 0 ? Math.round(overviewSLTotal/profit*100) : 0;
+  const monthly = profit > 0 ? Math.round(overviewSLTotal/12) : 0;
   document.getElementById('tax-summary-body').innerHTML = `
     <div class="pnl-row"><span class="pnl-label">Income Tax</span><span class="pnl-val">£${tax.incomeTax.toLocaleString()}</span></div>
     <div class="pnl-row"><span class="pnl-label">Class 4 NI</span><span class="pnl-val">£${tax.ni.toLocaleString()}</span></div>
-    <div class="pnl-row total"><span class="pnl-label">Total Tax Liability</span><span class="pnl-val" style="color:#d97706;">£${tax.total.toLocaleString()}</span></div>
-    <div class="pnl-row"><span class="pnl-label">Effective Rate</span><span class="pnl-val">${eff}%</span></div>
+    <div class="pnl-row"><span class="pnl-label">Student Loan (Plan 5)</span><span class="pnl-val" style="color:#7c3aed;">£${(tax.studentLoan||0).toLocaleString()}</span></div>
+    <div class="pnl-row total"><span class="pnl-label">Total Deductions</span><span class="pnl-val" style="color:#d97706;">£${overviewSLTotal.toLocaleString()}</span></div>
+    <div class="pnl-row"><span class="pnl-label">Effective Rate (inc. SL)</span><span class="pnl-val">${eff}%</span></div>
     <div class="pnl-row"><span class="pnl-label">Set aside monthly</span><span class="pnl-val" style="color:#1e40af;">£${monthly.toLocaleString()}/mo</span></div>`;
 
   // Basic rate target card
@@ -640,8 +647,9 @@ function renderTax() {
   const tax      = taxCalc(profit, empIncome);
   const remainingAllowance = Math.max(0, 12570 - empIncome);
   const taxable  = Math.max(0, profit - remainingAllowance);
-  const eff      = profit>0?(tax.total/profit*100).toFixed(1):'0.0';
-  const monthly  = profit>0?Math.round(tax.total/12):0;
+  const totalDeductions = tax.total + (tax.studentLoan || 0);
+  const eff      = profit>0?(totalDeductions/profit*100).toFixed(1):'0.0';
+  const monthly  = profit>0?Math.round(totalDeductions/12):0;
   const PA       = 12570;
   const payeUsed = Math.min(empIncome, PA);
   const seUsed   = Math.min(Math.max(0, profit), Math.max(0, PA - payeUsed));
@@ -684,11 +692,21 @@ function renderTax() {
       <div class="tax-row"><span class="tax-key">Class 4 NI (9% / 2%)</span><span class="tax-val">£${tax.ni.toLocaleString()}</span></div>
       <div class="tax-row" style="border-top:2px solid #e5e7eb;padding-top:10px;"><span class="tax-key" style="font-weight:700;color:#0d2345;">Total Tax Liability</span><span class="tax-val" style="color:#d97706;font-size:16px;">£${tax.total.toLocaleString()}</span></div>
     </div>
+    <div class="card" style="background:#faf5ff;border-color:#d8b4fe;">
+      <div class="card-label" style="color:#6b21a8;">Student Loan — Plan 5</div>
+      <div class="tax-row"><span class="tax-key">Repayment threshold</span><span class="tax-val">£25,000/yr</span></div>
+      <div class="tax-row"><span class="tax-key">Total income (SE + PAYE)</span><span class="tax-val">£${(profit + empIncome).toLocaleString('en-GB',{minimumFractionDigits:2})}</span></div>
+      <div class="tax-row"><span class="tax-key">Repayment (9% above threshold)</span><span class="tax-val" style="color:#7c3aed;font-weight:700;">£${(tax.studentLoan||0).toLocaleString()}</span></div>
+      <div style="font-size:11px;color:#7c3aed;margin-top:6px;line-height:1.5;opacity:0.8;">Collected via HMRC Self Assessment. Interest tied to RPI only. Balance written off after 40 years.</div>
+    </div>
     <div class="card" style="background:#eff6ff;border-color:#c7d2fe;">
       <div class="card-label" style="color:#1e40af;">What to set aside</div>
-      <div class="tax-row"><span class="tax-key">Effective tax rate</span><span class="tax-val">${eff}%</span></div>
+      <div class="tax-row"><span class="tax-key">Income tax + NI</span><span class="tax-val">£${tax.total.toLocaleString()}</span></div>
+      <div class="tax-row"><span class="tax-key">Student Loan (Plan 5)</span><span class="tax-val">£${(tax.studentLoan||0).toLocaleString()}</span></div>
+      <div class="tax-row" style="border-top:2px solid #c7d2fe;padding-top:10px;"><span class="tax-key" style="font-weight:700;">Total deductions</span><span class="tax-val" style="font-weight:700;color:#1e40af;">£${totalDeductions.toLocaleString()}</span></div>
+      <div class="tax-row"><span class="tax-key">Effective rate (inc. SL)</span><span class="tax-val">${eff}%</span></div>
       <div class="tax-row"><span class="tax-key">Monthly set-aside</span><span class="tax-val" style="color:#1e40af;font-size:15px;">£${monthly.toLocaleString()}/mo</span></div>
-      <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on 2025–26 rates. Verify with your accountant.</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:8px;line-height:1.5;">Based on 2025–26 rates. Student Loan Plan 5 threshold £25,000 at 9%. Verify with your accountant.</div>
     </div>
     `;
 }
