@@ -3427,7 +3427,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <button class="biz-tab active" onclick="biz_showTab('biz-overview',this);biz_updateOverview()">Overview</button>
         <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
         <button class="biz-tab" onclick="biz_showTab('biz-revenue',this);biz_renderPnL();biz_renderRevenue()">Revenue</button>
-        <button class="biz-tab" onclick="biz_showTab('biz-goals',this);biz_renderGoals()">Goals</button>
         <button class="biz-tab" onclick="biz_showTab('biz-onboard',this);biz_renderOnboard()">Onboard</button>
       </div>
 
@@ -3529,36 +3528,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         </div>
 
         <!-- GOALS -->
-        <div id="biz-goals" class="biz-section">
-          <div class="biz-section-header">
-            <h2>Goals</h2>
-            <p>Track targets vs actuals</p>
-          </div>
-          <div class="biz-card">
-            <div class="biz-card-label">Add Goal</div>
-            <div style="display:grid;gap:14px;">
-              <div class="biz-form-grid">
-                <div><label class="biz-form-label">Goal Label</label><input type="text" id="biz-goal-label" placeholder="e.g. Monthly Revenue"></div>
-                <div><label class="biz-form-label">Target (£ or number)</label><input type="number" id="biz-goal-target" placeholder="0" min="0"></div>
-              </div>
-              <div class="biz-form-grid">
-                <div><label class="biz-form-label">Current Progress</label><input type="number" id="biz-goal-current" placeholder="0" min="0"></div>
-                <div>
-                  <label class="biz-form-label">Period</label>
-                  <select id="biz-goal-period">
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="annual">Annual</option>
-                    <option value="ongoing">Ongoing</option>
-                  </select>
-                </div>
-              </div>
-              <div><button onclick="biz_addGoal()" class="biz-btn biz-btn-primary">+ Add Goal</button></div>
-            </div>
-          </div>
-          <div id="biz-goal-list"></div>
-        </div>
-
         <!-- ONBOARD -->
         <div id="biz-onboard" class="biz-section">
           <div class="biz-section-header">
