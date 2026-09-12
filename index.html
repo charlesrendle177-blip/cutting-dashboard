@@ -9257,7 +9257,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     const fileInput = document.getElementById('cr-receipt-file');
     const file = fileInput && fileInput.files[0];
     if (!file) { alert('Please select a PDF file.'); return; }
-    if (file.size > 10 * 1024 * 1024) { alert('PDF is too large. Maximum size is 10 MB.'); return; }
+    if (file.size > 3 * 1024 * 1024) { alert('PDF is too large. Maximum size is 3 MB (base64 encoding overhead means larger files exceed Vercel\'s request limit). Compress the PDF first.'); return; }
 
     const amount      = document.getElementById('cr-receipt-amount').value;
     const date        = document.getElementById('cr-receipt-date').value;
