@@ -3408,11 +3408,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           <div style="font-size:13px;color:#6b7280;">Select a business to view its dashboard</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div onclick="biz_switchEntity('vidaire')" style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px 24px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#1e40af';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fff'">
+          <a href="https://vidaire.co.uk/dashboard/admin" target="_blank" rel="noopener" style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px 24px;cursor:pointer;transition:all 0.15s;text-decoration:none;display:block;" onmouseover="this.style.borderColor='#1e40af';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fff'">
             <div style="font-size:30px;margin-bottom:12px;">📡</div>
-            <div style="font-size:17px;font-weight:800;color:#0d2345;margin-bottom:4px;">Vidaire</div>
+            <div style="font-size:17px;font-weight:800;color:#0d2345;margin-bottom:4px;">Vidaire ↗</div>
             <div style="font-size:12px;color:#6b7280;line-height:1.5;">B2B SaaS cold outreach platform · client retainers · MRR tracking</div>
-          </div>
+          </a>
           <div onclick="biz_switchEntity('cr')" style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px 24px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#1e40af';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fff'">
             <div style="font-size:30px;margin-bottom:12px;">🧾</div>
             <div style="font-size:17px;font-weight:800;color:#0d2345;margin-bottom:4px;">CR Revenue</div>
@@ -3428,7 +3428,6 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
         <button class="biz-tab" onclick="biz_showTab('biz-clients',this);biz_renderClients()">Clients</button>
         <button class="biz-tab" onclick="biz_showTab('biz-revenue',this);biz_renderPnL();biz_renderRevenue()">Revenue</button>
         <button class="biz-tab" onclick="biz_showTab('biz-onboard',this);biz_renderOnboard()">Onboard</button>
-        <a href="https://vidaire.co.uk/dashboard/admin" target="_blank" rel="noopener" class="biz-tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;color:#0d2345;font-weight:700;">&#8599; Dashboard</a>
       </div>
 
       <div class="biz-main">
