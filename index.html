@@ -2451,11 +2451,11 @@
           </div>
           <div class="form-group">
             <label>Steps</label>
-            <input type="number" id="f-steps-in" placeholder="e.g. 8500">
+            <input type="number" id="f-steps-in" placeholder="10000">
           </div>
           <div class="form-group">
             <label>Calories</label>
-            <input type="number" id="f-cals" placeholder="e.g. 2200">
+            <input type="number" id="f-cals" placeholder="3200">
           </div>
         </div>
         <button class="btn-save" onclick="logFitness()">Save Entry</button>
@@ -4453,6 +4453,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const el = document.getElementById(id);
       if (el) el.value = today;
     });
+    // Pre-fill fitness log defaults — only if the field is currently empty
+    const stepsEl = document.getElementById('f-steps-in');
+    const calsEl  = document.getElementById('f-cals');
+    if (stepsEl && !stepsEl.value) stepsEl.value = '10000';
+    if (calsEl  && !calsEl.value)  calsEl.value  = '3200';
   }
 
   /* ---------- HELPERS ---------- */
