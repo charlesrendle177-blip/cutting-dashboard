@@ -7277,7 +7277,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
             prosvideo:    '',
             notes:        data.notes || '',
             objections:   data.objections || [],
-            offer:        'tmmb',
+            offer:        /gains/i.test(data.programme || '') ? 'gains' : 'tmmb',
             autoLogged:   true,
           });
           tmmb_saveCalls(allCalls);
@@ -7757,6 +7757,23 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && sb) hub_fetchRemote();
     });
+
+    // One-time migration: fix calls wrongly tagged tmmb that are actually Project Gains
+    (function fixGainOffers() {
+      const GAINS_NAMES = ['ross', 'martin okier', 'martin okafor', 'martin ok'];
+      try {
+        const calls = tmmb_getCalls();
+        let changed = false;
+        calls.forEach(c => {
+          if (c.offer === 'tmmb') {
+            const nameMatch = GAINS_NAMES.some(n => (c.name || '').toLowerCase().includes(n));
+            const dealMatch = /gains/i.test(c.deal || '');
+            if (nameMatch || dealMatch) { c.offer = 'gains'; changed = true; }
+          }
+        });
+        if (changed) tmmb_saveCalls(calls);
+      } catch(e) {}
+    })();
 
     initGreeting();
     setDates();
