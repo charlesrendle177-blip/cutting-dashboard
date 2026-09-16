@@ -3090,8 +3090,9 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           </div>
 
           <div class="card" style="overflow:hidden;padding:0;">
-            <div style="padding:16px 22px 12px;border-bottom:1px solid var(--border);">
+            <div style="padding:16px 22px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
               <div class="card-label" style="margin-bottom:0;">Call History</div>
+              <button id="fathom-sync-btn" onclick="tmmb_forceFathomSync()" style="display:flex;align-items:center;gap:5px;background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.25);color:#7c3aed;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">↻ Sync Fathom</button>
             </div>
             <div id="tmmb-call-history">
               <div class="tmmb-empty"><div class="icon">📞</div><p>No calls logged yet. Log your first call above.</p></div>
@@ -7231,6 +7232,14 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
     _ccInterval = setInterval(renderCard, 1000);
   }
 
+  async function tmmb_forceFathomSync() {
+    const btn = document.getElementById('fathom-sync-btn');
+    if (btn) { btn.textContent = '↻ Syncing…'; btn.disabled = true; }
+    localStorage.removeItem('tmmb_fathom_sync_ts');
+    await tmmb_fathomAutoSync();
+    if (btn) { btn.textContent = '↻ Sync Fathom'; btn.disabled = false; }
+  }
+
   async function tmmb_fathomAutoSync() {
     const COOLDOWN_MS  = 30 * 60 * 1000; // run at most every 30 min
     const MAX_AGE_DAYS = 7;              // only consider calls from last 7 days
@@ -7262,7 +7271,11 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           const params  = new URLSearchParams({ action:'analyse', id:call.id, title:call.title, date:call.date, url:call.url });
           const aRes    = await fetch(`${base}/api/tmmb-fathom-import?${params}`);
           const data    = await aRes.json();
-          if (data.error || !data.prospect_name) continue; // skip non-sales calls
+          if (data.error || !data.prospect_name) {
+            // Don't count this against the cooldown — transcript may not be ready yet
+            localStorage.removeItem('tmmb_fathom_sync_ts');
+            continue;
+          }
 
           const allCalls = tmmb_getCalls();
           allCalls.unshift({
