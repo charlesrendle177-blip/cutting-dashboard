@@ -5778,6 +5778,7 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const res  = await fetch(`${FATHOM_API_BASE}/api/tmmb-fathom-import?${params}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      if (!data.is_sales_call) throw new Error("This doesn't look like a sales call — nothing to import.");
 
       // Autofill the form
       if (data.prospect_name)  document.getElementById('cl-name').value      = data.prospect_name;
@@ -7258,10 +7259,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
       const recent = listData.calls.filter(c => c.date >= cutoff);
       if (!recent.length) { localStorage.setItem('tmmb_fathom_sync_ts', String(Date.now())); return; }
 
-      // Find calls not already logged (match by fathom share_url)
+      // Find calls not already logged (match by fathom share_url) and not
+      // already confirmed as non-sales-calls (skip list persists so we don't
+      // re-analyse — and re-bill the Anthropic API for — the same internal
+      // meeting every 30 minutes forever)
       const logged   = tmmb_getCalls();
-      const loggedUrls = new Set(logged.map(c => (c.fathom||'').trim()).filter(Boolean));
-      const toLog    = recent.filter(c => c.url && !loggedUrls.has(c.url)).slice(0, MAX_NEW);
+      const loggedUrls  = new Set(logged.map(c => (c.fathom||'').trim()).filter(Boolean));
+      let skippedUrls;
+      try { skippedUrls = new Set(JSON.parse(localStorage.getItem('tmmb_fathom_skipped') || '[]')); }
+      catch { skippedUrls = new Set(); }
+      const toLog = recent.filter(c => c.url && !loggedUrls.has(c.url) && !skippedUrls.has(c.url)).slice(0, MAX_NEW);
 
       let added = 0;
       for (const call of toLog) {
@@ -7269,9 +7276,16 @@ create policy "anon_delete" on public.workout_logs for delete using (true);</pre
           const params  = new URLSearchParams({ action:'analyse', id:call.id, title:call.title, date:call.date, url:call.url });
           const aRes    = await fetch(`${base}/api/tmmb-fathom-import?${params}`);
           const data    = await aRes.json();
-          if (data.error || !data.prospect_name) {
-            // Don't count this against the cooldown — transcript may not be ready yet
+
+          if (data.error) {
+            // Genuine failure (e.g. transcript not ready yet) — retry sooner
             localStorage.removeItem('tmmb_fathom_sync_ts');
+            continue;
+          }
+          if (!data.is_sales_call || !data.prospect_name) {
+            // Confirmed not a sales call — remember it, never ask again
+            skippedUrls.add(call.url);
+            localStorage.setItem('tmmb_fathom_skipped', JSON.stringify([...skippedUrls]));
             continue;
           }
 
