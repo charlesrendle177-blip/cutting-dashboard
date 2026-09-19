@@ -30,6 +30,40 @@ function extractTranscriptText(data) {
   return JSON.stringify(data).slice(0, 8000);
 }
 
+const VALID_OUTCOMES = new Set(['closed', 'followup', 'noclose', 'noshow', 'dq']);
+const VALID_SOURCES  = new Set(['setter', 'referral', 'ad', 'inbound', 'other']);
+const VALID_OBJECTIONS = new Set([
+  'fear-money', 'fear-think', 'fear-doubt', 'tried-before', 'logic-time', 'logic-partner', 'value',
+]);
+
+// Never trust the model's output shape directly — coerce/drop anything that
+// doesn't match what the frontend and downstream totals expect, rather than
+// letting a bad extraction corrupt real commission/cash data.
+function sanitizeExtracted(raw) {
+  const toNum = v => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() && Number.isFinite(Number(v))) return Number(v);
+    return null;
+  };
+
+  if (!raw.is_sales_call || !raw.prospect_name) {
+    return { is_sales_call: false };
+  }
+
+  return {
+    is_sales_call:  true,
+    prospect_name:  String(raw.prospect_name).slice(0, 200),
+    prospect_email: typeof raw.prospect_email === 'string' ? raw.prospect_email.slice(0, 200) : null,
+    outcome:        VALID_OUTCOMES.has(raw.outcome) ? raw.outcome : 'followup',
+    deal_value:     toNum(raw.deal_value),
+    cash_collected: toNum(raw.cash_collected),
+    programme:      typeof raw.programme === 'string' ? raw.programme.slice(0, 200) : null,
+    lead_source:    VALID_SOURCES.has(raw.lead_source) ? raw.lead_source : 'other',
+    notes:          typeof raw.notes === 'string' ? raw.notes.slice(0, 500) : '',
+    objections:     Array.isArray(raw.objections) ? raw.objections.filter(o => VALID_OBJECTIONS.has(o)) : [],
+  };
+}
+
 async function analyseTranscript(transcript, title, anthropicKey, debug = false) {
   const res = await fetch(`${ANTHROPIC_BASE}/v1/messages`, {
     method: 'POST',
@@ -43,24 +77,27 @@ async function analyseTranscript(transcript, title, anthropicKey, debug = false)
       max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `Analyse this sales call transcript. The salesperson is Charles Rendle selling a high-ticket fitness coaching programme (TMMB Academy or Project Gains).
+        content: `Analyse this call transcript. The salesperson is Charles Rendle selling a high-ticket fitness coaching programme (TMMB Academy or Project Gains).
+
+First decide: is this actually a sales/discovery call with a prospect for one of those programmes? It is NOT if it's an internal/team meeting, a personal call, a client check-in for someone already enrolled, or anything else that isn't a new-prospect sales conversation. When in doubt, say no — a missed call is far cheaper than a fake log entry.
 
 Meeting title: ${title}
 
 Transcript:
 ${transcript.slice(0, 9000)}
 
-Return ONLY valid JSON with these fields (use null if unknown):
+Return ONLY valid JSON with these fields:
 {
-  "prospect_name":   "full name of the prospect (not Charles Rendle)",
+  "is_sales_call":   true or false,
+  "prospect_name":   "full name of the prospect (not Charles Rendle), or null if is_sales_call is false",
   "prospect_email":  "prospect's email if mentioned, else null",
-  "outcome":         "one of: closed, followup, noclose, noshow, dq",
-  "deal_value":      "total deal value in GBP as integer if closed, else null",
-  "cash_collected":  "cash collected today in GBP as integer if closed, else null",
-  "programme":       "exact programme name e.g. TMMB Academy, Project Gains",
-  "lead_source":     "one of: setter, referral, ad, inbound, other — infer from context (setter = booked by a setter/VA, referral = word of mouth, ad = paid ad/Facebook/Instagram, inbound = prospect reached out directly)",
-  "notes":           "1 sentence on Charles's performance only — what he did well or poorly on this specific call. Sales skills, not prospect summary.",
-  "objections":      "array of any that applied: fear-money, fear-think, fear-doubt, tried-before, logic-time, logic-partner, value"
+  "outcome":         "one of: closed, followup, noclose, noshow, dq — or null if is_sales_call is false",
+  "deal_value":      "total deal value in GBP as a plain integer if closed, else null — NEVER a string",
+  "cash_collected":  "cash collected today in GBP as a plain integer if closed, else null — NEVER a string",
+  "programme":       "exact programme name e.g. TMMB Academy, Project Gains, or null",
+  "lead_source":     "one of: setter, referral, ad, inbound, other — infer from context (setter = booked by a setter/VA, referral = word of mouth, ad = paid ad/Facebook/Instagram, inbound = prospect reached out directly), or null",
+  "notes":           "1 sentence on Charles's performance only — what he did well or poorly on this specific call. Sales skills, not prospect summary. Null if is_sales_call is false",
+  "objections":      "array of any that applied: fear-money, fear-think, fear-doubt, tried-before, logic-time, logic-partner, value — empty array if none or is_sales_call is false"
 }`,
       }],
     }),
@@ -124,7 +161,12 @@ module.exports = async (req, res) => {
 
       if (!transcript) throw new Error('Empty transcript returned from Fathom');
 
-      const extracted = await analyseTranscript(transcript, qTitle || 'Sales Call', anthropicKey);
+      const raw       = await analyseTranscript(transcript, qTitle || 'Sales Call', anthropicKey);
+      const extracted = sanitizeExtracted(raw);
+
+      if (!extracted.is_sales_call) {
+        return res.status(200).json({ is_sales_call: false });
+      }
 
       return res.status(200).json({
         ...extracted,
