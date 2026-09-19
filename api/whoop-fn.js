@@ -1,6 +1,11 @@
 // WHOOP integration — one function, two jobs, split by whether a `code`
 // query param is present (kept as one file to stay under Vercel's Hobby
-// plan 12-serverless-function limit):
+// plan 12-serverless-function limit). Filename intentionally distinct
+// from earlier "whoop.js"/"whoop-sync.js"/"whoop-callback.js" attempts —
+// those names got created/deleted repeatedly during setup and one of
+// them appears to have a permanently stuck build/cache entry on Vercel
+// that serves raw source instead of executing, regardless of route,
+// browser, or cache settings. Fresh filename to get a clean cache key.
 //
 //   ?code=... (WHOOP's OAuth redirect) -> exchange code for tokens, store
 //   them in the whoop_tokens table (service-role only, never exposed to
