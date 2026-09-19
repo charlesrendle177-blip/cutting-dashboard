@@ -1,14 +1,22 @@
-// WHOOP daily sync — refreshes the stored access token, pulls recent sleep
-// records, and upserts sleep hours into cutting_logs. Only sends { date,
-// sleep } — leaves weight/steps/calories/notes untouched on existing rows.
-// Run /api/whoop-callback once first to authorize; this endpoint refreshes
-// itself after that.
+// WHOOP integration — one function, two jobs, split by whether a `code`
+// query param is present (kept as one file to stay under Vercel's Hobby
+// plan 12-serverless-function limit):
+//
+//   ?code=... (WHOOP's OAuth redirect) -> exchange code for tokens, store
+//   them in the whoop_tokens table (service-role only, never exposed to
+//   the browser's anon key). Visit once to authorize.
+//
+//   no code -> refresh the stored access token, pull recent sleep, upsert
+//   sleep hours into cutting_logs. Only sends { date, sleep } — leaves
+//   weight/steps/calories/notes untouched on existing rows.
+//
 // REQUIRES Vercel env vars: WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, SUPABASE_SERVICE_ROLE_KEY
-// Also needs the SB_ANON key below (already public in cutting-logs.js / renpho-sync.js)
 
 const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token';
-const WHOOP_API        = 'https://api.prod.whoop.com/developer/v1';
-const SB_URL  = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
+const WHOOP_API       = 'https://api.prod.whoop.com/developer/v1';
+const SB_URL          = 'https://rxwmfssdvpilfvbpbrrq.supabase.co';
+const REDIRECT_URI    = 'https://cutting-dashboard.vercel.app/api/whoop-callback';
+// Anon key — already public in cutting-logs.js / renpho-sync.js
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d21mc3NkdnBpbGZ2YnBicnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNDY3NjQsImV4cCI6MjA5MTkyMjc2NH0.mG9jnkxhvcXonICd6BAkjCxNDiJJ_xfcJORQIaQuztw';
 
 async function getStoredTokens(serviceKey) {
@@ -85,22 +93,38 @@ async function upsertSleep(entries) {
   if (!r.ok) throw new Error(`Supabase upsert failed (${r.status}): ${await r.text()}`);
 }
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+async function handleCallback(req, res, clientId, clientSecret, serviceKey) {
+  const { code, error, error_description } = req.query;
+  if (error) {
+    return res.status(400).send(`WHOOP authorization failed: ${error} — ${error_description || ''}`);
   }
 
-  const clientId     = process.env.WHOOP_CLIENT_ID;
-  const clientSecret = process.env.WHOOP_CLIENT_SECRET;
-  const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!clientId || !clientSecret) {
-    return res.status(500).json({ error: 'WHOOP_CLIENT_ID or WHOOP_CLIENT_SECRET not set in Vercel env vars' });
-  }
-  if (!serviceKey) {
-    return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not set in Vercel env vars' });
-  }
+  try {
+    const tokenRes = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: REDIRECT_URI,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    });
+    const tokens = await tokenRes.json();
+    if (!tokenRes.ok) {
+      return res.status(500).send(`Token exchange failed (${tokenRes.status}): ${JSON.stringify(tokens)}`);
+    }
 
+    await storeTokens(tokens, serviceKey);
+
+    return res.status(200).send('WHOOP connected. You can close this tab — daily sync will now run automatically.');
+  } catch (e) {
+    return res.status(500).send(`Error: ${e.message}`);
+  }
+}
+
+async function handleSync(req, res, clientId, clientSecret, serviceKey) {
   try {
     const stored = await getStoredTokens(serviceKey);
     if (!stored || !stored.refresh_token) {
@@ -138,4 +162,26 @@ module.exports = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
+}
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const clientId     = process.env.WHOOP_CLIENT_ID;
+  const clientSecret = process.env.WHOOP_CLIENT_SECRET;
+  const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!clientId || !clientSecret) {
+    return res.status(500).json({ error: 'WHOOP_CLIENT_ID or WHOOP_CLIENT_SECRET not set in Vercel env vars' });
+  }
+  if (!serviceKey) {
+    return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY not set in Vercel env vars' });
+  }
+
+  if (req.query.code || req.query.error) {
+    return handleCallback(req, res, clientId, clientSecret, serviceKey);
+  }
+  return handleSync(req, res, clientId, clientSecret, serviceKey);
 };
