@@ -9,7 +9,6 @@
     { "source": "/api/nightly-brief",   "destination": "/api/nightly-brief.js" },
     { "source": "/api/renpho-sync",     "destination": "/api/renpho-sync.js" },
     { "source": "/api/whoop-callback",  "destination": "/api/whoop-fn.js" },
-    { "source": "/api/whoop-pull",      "destination": "/api/whoop-fn.js" },
     { "source": "/api/cr-share-sync",   "destination": "/api/cr-share-sync.js" },
     { "source": "/api/receipt-upload",  "destination": "/api/receipt-upload.js" },
     { "source": "/api/receipt-action",  "destination": "/api/receipt-action.js" },
