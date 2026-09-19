@@ -2,7 +2,6 @@
   "name": "cutting-dashboard",
   "version": "1.0.0",
   "description": "Fitness cutting phase tracker with Supabase sync",
-  "main": "api/cutting-data.js",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Static site, no build needed'",
